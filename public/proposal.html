@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DingConnect Top-Up Platform - Complete Proposal & Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.min.js" integrity="sha384-yQ4mmBBT+vhTAwjFH0toJXNYJ6O4usWnt6EPIdWwrRvx2V/n5lXuDZQwQFeSFydF" crossorigin="anonymous"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { color-scheme: light; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #1a1a2e; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 { font-size: 2.5em; color: #0d9488; text-align: center; padding: 40px 20px; background: linear-gradient(135deg, #0d9488, #065f46); color: white; border-radius: 12px; margin-bottom: 30px; }
+        h2 { font-size: 1.8em; color: #0d9488; margin: 30px 0 15px; padding-bottom: 8px; border-bottom: 2px solid #0d9488; }
+        h3 { font-size: 1.3em; color: #065f46; margin: 20px 0 10px; }
+        h4 { font-size: 1.1em; color: #0d9488; margin: 15px 0 8px; }
+        .card { background: white; border-radius: 10px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin: 20px 0; }
+        .card-accent { border-left: 4px solid #0d9488; }
+        .card-blue { border-left: 4px solid #3b82f6; }
+        .card-amber { border-left: 4px solid #f59e0b; }
+        .card-red { border-left: 4px solid #ef4444; }
+        .card-green { border-left: 4px solid #10b981; }
+        .highlight-box { background: #f0fdfa; border: 1px solid #0d9488; border-radius: 8px; padding: 16px; margin: 15px 0; }
+        .warning-box { background: #fffbeb; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 15px 0; }
+        .info-box { background: #eff6ff; border: 1px solid #3b82f6; border-radius: 8px; padding: 16px; margin: 15px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th { background: #0d9488; color: white; padding: 12px; text-align: left; font-weight: 600; }
+        td { padding: 10px 12px; border-bottom: 1px solid #e5e7eb; }
+        tr:hover { background: #f9fafb; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.8em; font-weight: 600; }
+        .badge-green { background: #d1fae5; color: #065f46; }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
+        .badge-amber { background: #fef3c7; color: #92400e; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+        .flow-diagram { text-align: center; padding: 20px; }
+        .mermaid { margin: 20px auto; max-width: 900px; }
+        .money-flow { background: #f0fdf4; border: 2px solid #10b981; border-radius: 12px; padding: 20px; margin: 20px 0; }
+        .commission-bar { display: flex; height: 40px; border-radius: 8px; overflow: hidden; margin: 15px 0; }
+        .commission-bar div { display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.9em; }
+        .nav { position: sticky; top: 0; background: white; padding: 10px 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); z-index: 100; }
+        .nav a { color: #0d9488; text-decoration: none; margin-right: 20px; font-weight: 600; font-size: 0.9em; }
+        .nav a:hover { color: #065f46; }
+        .checklist { list-style: none; padding: 0; }
+        .checklist li { padding: 8px 0 8px 28px; position: relative; }
+        .checklist li::before { content: "✅"; position: absolute; left: 0; }
+        .checklist li.pending::before { content: "⏳"; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } h1 { font-size: 1.8em; } }
+        .section { scroll-margin-top: 80px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <h1>🔄 DingConnect Mobile Top-Up Platform<br><small style="font-size:0.5em">Complete Proposal & Architecture Document</small></h1>
+
+        <nav class="nav">
+            <a href="#overview">Overview</a>
+            <a href="#commission">Commission Model</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#modules">Modules</a>
+            <a href="#flows">User Flows</a>
+            <a href="#technical">Technical</a>
+            <a href="#cost">Pricing</a>
+            <a href="#timeline">Timeline</a>
+            <a href="#status">Build Status</a>
+        </nav>
+
+        <!-- ============================================================ -->
+        <div class="section" id="overview"></div>
+        <h2>1. Project Overview</h2>
+        <div class="card">
+            <p>You are building a <strong>B2B mobile top-up / recharge distribution platform</strong> — the middleman between retailers (who sell recharges to end customers) and DingConnect (the global wholesale API provider).</p>
+            <div class="highlight-box">
+                <strong>Your Role:</strong> Platform Owner / Middleman<br>
+                <strong>What you provide:</strong> A branded portal + API where retailers can:<br>
+                1. Create an account & get approved by you<br>
+                2. Load money into their wallet on your platform<br>
+                3. Use your platform's recharge features to send mobile top-ups via DingConnect<br>
+                4. Track transaction history, download receipts<br>
+                <strong>What DingConnect provides:</strong> The actual mobile top-up delivery to operators worldwide
+            </div>
+            <h3>Similar Platforms (Reference)</h3>
+            <ul>
+                <li><a href="https://topup.core-retail.com" target="_blank">core-retail.com</a> — C-Top platform (your reference)</li>
+                <li>Ding.com — DingConnect's own consumer-facing platform</li>
+                <li>Recharge.com — International top-up aggregator</li>
+            </ul>
+        </div>
+
+        <!-- ============================================================ -->
+        <div class="section" id="commission"></div>
+        <h2>2. How You Make Money (Commission Model)</h2>
+        <div class="card card-accent">
+            <p>You earn as the middleman by adding a <strong>markup on the DingConnect wholesale price</strong>. When a retailer recharges £10 on your platform, you charge them £10.50. DingConnect charges you £10. You pocket the £0.50 difference.</p>
+
+            <h3>Example Commission Flow</h3>
+            <div class="money-flow">
+                <table>
+                    <tr>
+                        <th>Step</th>
+                        <th>Party</th>
+                        <th>Amount</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td>1</td>
+                        <td><strong>Retailer (customer of yours)</strong></td>
+                        <td>£11.00</td>
+                        <td>Pays you for the top-up (your retail price)</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td><strong>You (Platform Owner)</strong></td>
+                        <td>£0.60</td>
+                        <td>Your commission/margin (≈5.5% markup)</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td><strong>DingConnect</strong></td>
+                        <td>£10.40</td>
+                        <td>Their wholesale price for the actual top-up</td>
+                    </tr>
+                    <tr style="background:#f0fdf4">
+                        <td>4</td>
+                        <td><strong>End Customer</strong></td>
+                        <td>£10.40 value</td>
+                        <td>Receives the mobile credit on their phone</td>
+                    </tr>
+                </table>
+            </div>
+
+            <h3>Commission Structure Options</h3>
+            <div class="card-grid">
+                <div class="card card-green">
+                    <h4>📊 Flat Markup Model (Recommended)</h4>
+                    <p>Add a fixed % markup on top of DingConnect's wholesale price. Simple and transparent.</p>
+                    <ul>
+                        <li><strong>Default:</strong> 2.5% — 5% markup</li>
+                        <li><strong>Per retailer override:</strong> Give better rates to high-volume retailers</li>
+                        <li><strong>Per operator:</strong> Higher markup on expensive operators, lower on popular ones</li>
+                    </ul>
+                </div>
+                <div class="card card-blue">
+                    <h4>💡 Volume-Based Tiers</h4>
+                    <p>Reward high-volume retailers with lower commission rates:</p>
+                    <table>
+                        <tr><th>Monthly Volume</th><th>Your Commission</th></tr>
+                        <tr><td>&lt; £1,000</td><td>5%</td></tr>
+                        <tr><td>£1,000 — £5,000</td><td>3.5%</td></tr>
+                        <tr><td>£5,000 — £20,000</td><td>2.5%</td></tr>
+                        <tr><td>&gt; £20,000</td><td>1.5%</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>⚠️ Key Insight:</strong> The DingConnect API shows you the <em>retail price</em> (what end-customers pay). You set your own <em>selling price</em> per retailer/operator in your admin panel. The difference between what you charge the retailer and what DingConnect charges you = your gross profit per transaction.
+            </div>
+
+            <h3>Additional Revenue Streams</h3>
+            <ul>
+                <li><strong>Wallet top-up fees:</strong> Add a small fee (e.g., 1.5%) on payment gateway deposits</li>
+                <li><strong>Failed transaction fees:</strong> Charge a small fee for unsuccessful recharges</li>
+                <li><strong>Monthly subscription:</strong> Charge retailers a small monthly fee for platform access</li>
+                <li><strong>API access fees:</strong> If you allow retailers to use your API programmatically, charge a higher rate</li>
+            </ul>
+        </div>
+
+        <!-- ============================================================ -->
+        <div class="section" id="architecture"></div>
+        <h2>3. System Architecture</h2>
+        <div class="card">
+            <div class="flow-diagram">
+                <pre class="mermaid">
+graph TD
+    A[End Customer] -->|Pays Retailer| B[Retailer]
+    B -->|1. Login to Your Portal| C[Your Platform<br/>Laravel + Vue + Inertia]
+    C -->|2. Load Wallet| D[Payment Gateway<br/>Razorpay/Stripe]
+    C -->|3. Recharge Request| E[DingConnect API]
+    E -->|4. Process Top-Up| F[Mobile Operator]
+    F -->|5. Credit Customer| A
+    E -->|6. Webhook/Callback| C
+    C -->|7. Real-time Update| G[Pusher]
+    G -->|8. Live Notification| B
+    C -->|9. Admin Panel| H[You - Platform Owner]
+    </pre>
+            </div>
+        </div>
+
+        <div class="card-grid">
+            <div class="card">
+                <h3>🖥️ Frontend</h3>
+                <ul>
+                    <li><strong>Framework:</strong> Laravel 13 + Vue 3 + Inertia.js</li>
+                    <li><strong>Retailer Portal:</strong> Recharge flow, wallet, history</li>
+                    <li><strong>Admin Panel:</strong> Manage retailers, operators, transactions, settings</li>
+                    <li><strong>Landing Page:</strong> Public homepage with contact info</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>⚙️ Backend</h3>
+                <ul>
+                    <li><strong>Laravel 13:</strong> Server-side framework</li>
+                    <li><strong>MySQL Database:</strong> All data storage</li>
+                    <li><strong>Laravel Echo + Pusher:</strong> Real-time transaction notifications</li>
+                    <li><strong>Queue System:</strong> Async processing for webhooks and Ding API calls</li>
+                    <li><strong>Broadcasting:</strong> Live transaction status updates to retailers</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>🔌 Integrations</h3>
+                <ul>
+                    <li><strong>DingConnect API:</strong> Global wholesale mobile top-up</li>
+                    <li><strong>Payment Gateway:</strong> Razorpay / Stripe for wallet loading</li>
+                    <li><strong>SMS Gateway:</strong> Optional — transaction confirmations via SMS</li>
+                    <li><strong>Pusher:</strong> Real-time notifications</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h3>🏗️ Infrastructure</h3>
+                <ul>
+                    <li><strong>Hosting:</strong> Shared/VPS (cPanel or similar)</li>
+                    <li><strong>SSL Certificate:</strong> Required for payment processing</li>
+                    <li><strong>Domain:</strong> Your branded domain</li>
+                    <li><strong>SSL:</strong> Let's Encrypt / Cloudflare</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <div class="section" id="modules"></div>
+        <h2>4. Platform Modules</h2>
+
+        <h3>4.1 Admin Panel (Your Control Center)</h3>
+        <div class="card">
+            <table>
+                <tr><th>Module</th><th>Features</th></tr>
+                <tr><td>📊 Dashboard</td><td>Revenue charts, transaction counts, active retailers, pending KYCs, top operators</td></tr>
+                <tr><td>👥 Retailer Management</td><td>Create/edit/block retailers, view KYC documents, credit wallet manually, send notifications</td></tr>
+                <tr><td>💰 Wallet Management</td><td>View retailer balances, manual credit/debit, transaction audit trail</td></tr>
+                <tr><td>📱 Operator Management</td><td>Sync operators from DingConnect, set per-operator commission, enable/disable operators</td></tr>
+                <tr><td>💳 Transaction Management</td><td>View all transactions, filter/search, refund failed transactions, export reports</td></tr>
+                <tr><td>⚙️ Settings</td><td>Commission rates, payment gateway config, DingConnect API credentials, SMS settings, email templates</td></tr>
+                <tr><td>📈 Reports</td><td>Revenue reports by date/retailer/operator, commission reports, CSV export</td></tr>
+            </table>
+        </div>
+
+        <h3>4.2 Retailer Portal (What Your Retailers See)</h3>
+        <div class="card">
+            <table>
+                <tr><th>Module</th><th>Features</th></tr>
+                <tr><td>🏠 Dashboard</td><td>Wallet balance, recent transactions, quick recharge button, earnings overview</td></tr>
+                <tr><td>🔋 Recharge (Main Feature)</td><td>Enter mobile number → auto-detect operator → select amount → confirm → get receipt</td></tr>
+                <tr><td>💰 Wallet</td><td>Current balance, top-up via payment gateway, transaction history, download statements</td></tr>
+                <tr><td>📜 Transaction History</td><td>Searchable list, filter by status/date/operator, downloadable receipts</td></tr>
+                <tr><td>👤 Profile</td><td>Edit business details, upload KYC documents, view account status</td></tr>
+            </table>
+        </div>
+
+        <h3>4.3 API Section (What core-retail.com shows)</h3>
+        <div class="card card-blue">
+            <p>The reference site <strong>topup.core-retail.com</strong> has these additional sections we'll replicate:</p>
+            <table>
+                <tr><th>Section</th><th>Purpose</th></tr>
+                <tr><td>🏢 Our Services</td><td>Describe your platform, benefits for retailers, coverage areas</td></tr>
+                <tr><td>📋 Pricing / Rate Card</td><td>Show commission rates per country/operator</td></tr>
+                <tr><td>📖 API Documentation</td><td>For retailers who want to integrate programmatically</td></tr>
+                <tr><td>📞 Contact / Support</td><td>Contact form, live chat, phone/email support info</td></tr>
+                <tr><td>🔐 KYC / Registration</td><td>Retailer sign-up form with business verification steps</td></tr>
+            </table>
+        </div>
+
+        <!-- ============================================================ -->
+        <div class="section" id="flows"></div>
+        <h2>5. Key User Flows</h2>
+
+        <h3>5.1 Retailer Sign-Up & Onboarding</h3>
+        <div class="card">
+            <div class="mermaid">
+                graph LR
+                    A[Retailer visits site] --> B[Registers with email/phone]
+                    B --> C[Admin receives notification]
+                    C --> D{Admin approves?}
+                    D -->|Yes| E[Account activated]
+                    D -->|No| F[Account rejected with reason]
+                    E --> G[Retailer loads wallet via payment gateway]
+                    G --> H[Retailer can now process recharges]
+            </div>
+        </div>
+
+        <h3>5.2 Recharge Transaction Flow</h3>
+        <div class="card">
+            <div class="mermaid">
+                graph LR
+                    A[Retailer enters mobile number] --> B[System detects operator]
+                    B --> C[Retailer selects top-up amount]
+                    C --> D[System shows price with your commission]
+                    D --> E{Retailer confirms?}
+                    E -->|Yes| F[Wallet balance checked]
+                    F -->|Sufficient| G[Amount HOLD from wallet]
+                    F -->|Insufficient| H[Show "Top Up Wallet" prompt]
+                    G --> I[Send to DingConnect API]
+                    I --> J{Response?}
+                    J -->|Success| K[Debit wallet, Mark success]
+                    J -->|Failed| L[Release hold, Mark failed]
+                    K --> M[Show receipt to retailer]
+                    L --> M
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <div class="section" id="technical"></div>
+        <h2>6. Technical Architecture</h2>
+
+        <h3>6.1 Database Schema (Key Tables)</h3>
+        <div class="card">
+            <table>
+                <tr><th>Table</th><th>Key Columns</th><th>Purpose</th></tr>
+                <tr><td>users</td><td>id, name, email, phone, role, kyc_status, is_active</td><td>Both admins & retailers</td></tr>
+                <tr><td>wallets</td><td>id, user_id, balance, currency, is_locked</td><td>Retailer wallet balances</td></tr>
+                <tr><td>wallet_ledgers</td><td>id, wallet_id, type, amount, balance_before, balance_after, reference_id, description</td><td>Immutable audit trail</td></tr>
+                <tr><td>wallet_topups</td><td>id, user_id, amount, gateway_order_id, gateway_transaction_id, status</td><td>Payment gateway records</td></tr>
+                <tr><td>transactions</td><td>id, user_id, mobile_number, operator_id, country_id, amount, ding_transaction_id, status</td><td>Recharge transactions</td></tr>
+                <tr><td>transaction_commissions</td><td>transaction_id, user_id, commission_rate, commission_amount</td><td>Your earnings per transaction</td></tr>
+                <tr><td>operators</td><td>id, ding_provider_code, name, country_id, commission_rate, is_active</td><td>Mobile operators from DingConnect</td></tr>
+                <tr><td>countries</td><td>id, name, iso_code, calling_code, flag_emoji</td><td>Supported countries</td></tr>
+                <tr><td>settings</td><td>id, key, value, type, group</td><td>Dynamic configuration (key-value)</td></tr>
+                <tr><td>notifications</td><td>id, user_id, type, data, read_at</td><td>In-app notifications (Pusher)</td></tr>
+                <tr><td>activity_logs</td><td>id, user_id, action, subject_type, subject_id, properties</td><td>Admin audit trail</td></tr>
+                <tr><td>ding_callbacks</td><td>id, transaction_id, payload, processed</td><td>Webhook audit trail</td></tr>
+            </table>
+        </div>
+
+        <h3>6.2 DingConnect API Integration</h3>
+        <div class="card">
+            <p>The DingConnectService wraps these API endpoints:</p>
+            <table>
+                <tr><th>Endpoint</th><th>Purpose</th><th>When Used</th></tr>
+                <tr><td>GetProviders</td><td>Identify operator from phone number</td><td>User enters mobile → auto-detect</td></tr>
+                <tr><td>GetProducts</td><td>List available top-up products</td><td>Show recharge options</td></tr>
+                <tr><td>GetPromotions</td><td>Show promotional offers</td><td>Display bonus deals to retailers</td></tr>
+                <tr><td>EstimatePrices</td><td>Get retail & wholesale pricing</td><td>Show retailer their cost + your markup</td></tr>
+                <tr><td>SendTransaction</td><td>Process the actual top-up</td><td>Retailer confirms recharge</td></tr>
+                <tr><td>GetAccount</td><td>Check your DingConnect balance</td><td>Admin dashboard</td></tr>
+                <tr><td>Webhook (callback)</td><td>Receive transaction status updates</td><td>Real-time status updates</td></tr>
+            </table>
+        </div>
+
+        <h3>6.3 Real-Time Notifications (Pusher)</h3>
+        <div class="card">
+            <p>When a transaction is created or updated, the system broadcasts events via Pusher. The retailer's browser listens in real-time:</p>
+            <ul>
+                <li><strong>TransactionCreated</strong> — New recharge submitted, shows "Processing..."</li>
+                <li><strong>TransactionUpdated</strong> — Status changed (success/failed), shows result immediately</li>
+                <li><strong>WalletUpdated</strong> — Balance changed (credit/debit), updates wallet display</li>
+                <li><strong>NotificationReceived</strong> — System alerts (KYC approved, wallet credited by admin)</li>
+            </ul>
+        </div>
+
+        <!-- ============================================================ -->
+        <div class="section" id="cost"></div>
+        <h2>7. Pricing & Cost Breakdown</h2>
+        <div class="card card-accent">
+            <h3>One-Time Costs</h3>
+            <table>
+                <tr><th>Item</th><th>Amount (INR)</th><th>Description</th></tr>
+                <tr><td>Platform Development</td><td>₹1,33,000</td><td>Full build as per scope (Laravel + Vue + DingConnect integration)</td></tr>
+                <tr><td>DingConnect Account Setup</td><td>Variable</td><td>DingConnect requires a funded account — you deposit to start</td></tr>
+            </table>
+
+            <h3 style="margin-top:20px">Recurring Costs (Monthly)</h3>
+            <table>
+                <tr><th>Item</th><th>Amount (INR/month)</th><th>Description</th></tr>
+                <tr><td>Hosting & Server</td><td>~₹2,000–5,000</td><td>VPS/shared hosting for the application</td></tr>
+                <tr><td>DingConnect API Usage</td><td>Pass-through</td><td>Per-transaction fee charged by DingConnect (varies by operator/country)</td></tr>
+                <tr><td>Payment Gateway</td><td>~1.5–2%</td><td>Razorpay/Stripe per-transaction fee on wallet top-ups</td></tr>
+                <tr><td>SMS Gateway (optional)</td><td>~₹0.15/SMS</td><td>For transaction confirmations</td></tr>
+                <tr><td>Pusher (or alternative)</td><td>Free–$49/mo</td><td>Real-time notifications</td></tr>
+                <tr><td>Domain + SSL</td><td>~₹800/year</td><td>Your branded domain</td></tr>
+            </table>
+
+            <h3 style="margin-top:20px">Payment Terms</h3>
+            <ul>
+                <li><strong>50% advance</strong> (₹66,500) to start development</li>
+                <li><strong>50% balance</strong> (₹66,500) before go-live</li>
+                <li><strong>Annual hosting:</strong> ₹5,000/year from go-live date</li>
+                <li><strong>Third-party costs:</strong> Billed on actuals</li>
+            </ul>
+        </div>
+
+        <!-- ============================================================ -->
+        <div class="section" id="timeline"></div>
+        <h2>8. Project Timeline (15 Days)</h2>
+        <div class="card">
+            <table>
+                <tr><th>Phase</th><th>Days</th><th>Activities</th></tr>
+                <tr><td>Phase 1: Setup & Foundation</td><td>Days 1–2</td><td>Project setup, database design, Laravel 13 scaffolding, Vue + Inertia + Pusher setup</td></tr>
+                <tr><td>Phase 2: Authentication & Role Management</td><td>Days 2–3</td><td>Login/register, role-based access (Admin/Retailer), middleware, KYC flow</td></tr>
+                <tr><td>Phase 3: Wallet System</td><td>Days 3–4</td><td>Wallet creation, ledger system, payment gateway integration (Razorpay/Stripe), wallet top-up flow</td></tr>
+                <tr><td>Phase 4: DingConnect Integration</td><td>Days 5–7</td><td>API wrapper service, operator sync, product listing, transaction sending, webhook handler</td></tr>
+                <tr><td>Phase 5: Recharge Flow (Core Feature)</td><td>Days 7–9</td><td>Mobile number input, operator detection, amount selection, commission calculation, transaction processing</td></tr>
+                <tr><td>Phase 6: Real-Time Notifications</td><td>Day 9</td><td>Pusher integration, broadcast events, live status updates, notification center</td></tr>
+                <tr><td>Phase 7: Admin Panel</td><td>Days 10–12</td><td>Dashboard with charts, retailer management, transaction management, operator management, settings</td></tr>
+                <tr><td>Phase 8: Reports & Receipts</td><td>Day 12</td><td>Transaction history, downloadable receipts, CSV exports, commission reports</td></tr>
+                <tr><td>Phase 9: Landing Page & Public Sections</td><td>Day 13</td><td>Homepage, services, pricing, API docs, contact page</td></tr>
+                <tr><td>Phase 10: Testing & UAT</td><td>Days 14–15</td><td>End-to-end testing, UAT, bug fixes, go-live</td></tr>
+            </table>
+        </div>
+
+        <!-- ============================================================ -->
+        <div class="section" id="status"></div>
+        <h2>9. Current Build Status</h2>
+        <div class="card">
+            <h3>✅ Completed (Backend)</h3>
+            <ul class="checklist">
+                <li>Database migrations (users, wallets, wallet_ledgers, transactions, operators, countries, settings, notifications, activity_logs, ding_callbacks, wallet_topups)</li>
+                <li>User model with role-based access (admin/retailer), KYC fields</li>
+                <li>DingConnectService — full API wrapper (getProducts, sendTopUp, checkStatus, getBalance, processWebhook)</li>
+                <li>WalletService — credit, debit, hold, refund, ledger tracking</li>
+                <li>PaymentGatewayService — Razorpay & Stripe order creation, verification, webhook handling</li>
+                <li>Transaction model with full relationships</li>
+                <li>TransactionCommission model for tracking your earnings</li>
+                <li>Events: TransactionCreated for real-time broadcasting</li>
+                <li>Job: ProcessDingWebhook for async webhook processing</li>
+                <li>All routes defined (admin, retailer, API, broadcasting)</li>
+                <li>Admin controllers: Dashboard, Retailer, Transaction, Operator, Setting</li>
+                <li>Retailer controllers: Dashboard, Recharge, Wallet, Transaction, Profile</li>
+                <li>API controllers: DingConnect callback, Payment webhook, Operators, Countries</li>
+            </ul>
+
+            <h3>✅ Completed (Frontend)</h3>
+            <ul class="checklist">
+                <li>Admin Dashboard, Retailers (Index, Create, Edit, Show), Transactions, Operators, Settings</li>
+                <li>Retailer Dashboard, Recharge page, Wallet (Index, TopUp), Transactions (Index, Show), Profile</li>
+                <li>Auth pages: Login, Register, Forgot Password, Reset Password</li>
+                <li>Landing pages: Home, Contact</li>
+                <li>Layouts: AdminLayout, RetailerLayout, AuthenticatedLayout, GuestLayout</li>
+                <li>Shared components: TextInput, PrimaryButton, InputLabel, Modal, Toast, etc.</li>
+            </ul>
+
+            <h3 style="color:#f59e0b">⏳ Remaining / Needs Completion</h3>
+            <ul class="checklist pending">
+                <li>Vue Recharge page — complete the interactive recharge flow (mobile input → operator detection → amount selection → confirmation)</li>
+                <li>Admin Settings page — full settings form with tabs (General, Commission, Payment, DingConnect, SMS, Email)</li>
+                <li>Public landing page sections — Services, Pricing, API Docs pages</li>
+                <li>Broadcasting channels configuration (channels.php)</li>
+                <li>Pusher configuration in Laravel Echo</li>
+                <li>Email notification templates (transaction confirmations, KYC approvals)</li>
+                <li>Export functionality for reports (Excel/CSV)</li>
+                <li>Complete the Settings model with helper methods</li>
+                <li>Testing & UAT</li>
+            </ul>
+        </div>
+
+        <!-- ============================================================ -->
+        <div class="section" id="commission"></div>
+        <h2>10. Commission Configuration Details</h2>
+        <div class="card">
+            <h3>Per-Operator Commission Rates</h3>
+            <p>In the Admin → Settings page, you can configure commission as:</p>
+            <table>
+                <tr><th>Method</th><th>Example</th></tr>
+                <tr><td>Percentage markup on DingConnect price</td><td>If DingConnect charges £10, you add 5% → sell at £10.50</td></tr>
+                <tr><td>Fixed fee per transaction</td><td>Add £0.50 flat fee on every recharge</td></tr>
+                <tr><td>Tiered by operator</td><td>Vodafone UK: 3%, Airtel India: 5%, MTN Nigeria: 4%</td></tr>
+                <tr><td>Tiered by retailer volume</td><td>High-volume retailers get lower commission rates</td></tr>
+            </table>
+
+            <div class="commission-bar">
+                <div style="width: 94%; background: #10b981;">Retailer Pays: £11.00</div>
+                <div style="width: 6%; background: #0d9488;">Your Profit: £0.60</div>
+            </div>
+            <p style="text-align:center; font-size:0.9em; color:#666;">Example: Retailer pays £11.00 → DingConnect charges £10.40 → You keep £0.60 (5.5% margin)</p>
+
+            <h3>Commission Calculation in Code</h3>
+            <pre style="background:#1e293b; color:#e2e8f0; padding:15px; border-radius:8px; overflow-x:auto; font-size:0.9em;">
+// When a transaction succeeds, your commission is:
+$commissionAmount = ($transaction->amount * $commissionRate) / 100;
+
+// Example:
+$transaction->amount = 10.00;  // What DingConnect charges
+$commissionRate = 5.5;          // Your markup percentage
+$commissionAmount = (10.00 * 5.5) / 100 = 0.55;
+// Retailer was charged: 10.55
+// You keep: £0.55 per transaction</pre>
+        </div>
+
+        <!-- ============================================================ -->
+        <div class="section" id="api"></div>
+        <h2>11. How DingConnect Works (For Your Understanding)</h2>
+        <div class="card">
+            <p>DingConnect is a <strong>wholesale</strong> mobile top-up provider. They have contracts with 500+ mobile operators in 150+ countries. You buy from them at wholesale rates and sell to retailers at retail rates.</p>
+
+            <h3>The Two Pricing Flows</h3>
+            <div class="two-col">
+                <div class="info-box">
+                    <strong>Flow A: Fixed Top-Up (Amount-based)</strong><br>
+                    Retailer wants to send exactly £10 to a phone.<br>
+                    You know the cost from DingConnect (£9.80).<br>
+                    You charge the retailer £10.00.<br>
+                    Your margin: £0.20 per transaction.
+                </div>
+                <div class="highlight-box">
+                    <strong>Flow B: Free Range (SKU-based)</strong><br>
+                    Retailer selects a specific operator plan (e.g., "Airtel ₹249 plan").<br>
+                    DingConnect tells you the retail price (£2.80).<br>
+                    You set your own selling price (e.g., £3.00).<br>
+                    Your margin: £0.20 per transaction.
+                </div>
+            </div>
+
+            <h3>What DingConnect Provides</h3>
+            <ul>
+                <li><strong>API Credentials:</strong> API Key + Customer ID (you get these after signing up)</li>
+                <li><strong>Wholesale rates:</strong> Per-operator, per-country pricing</li>
+                <li><strong>Webhook callbacks:</strong> Real-time transaction status updates</li>
+                <li><strong>Operator catalogue:</strong> 500+ operators across 150+ countries</li>
+                <li><strong>Settlement:</strong> They bill you monthly for all transactions</li>
+            </ul>
+        </div>
+
+        <!-- ============================================================ -->
+        <h2>12. What You Need to Provide</h2>
+        <div class="card card-red">
+            <h3>🔴 From You (Before We Can Go Live)</h3>
+            <ol>
+                <li><strong>DingConnect Account:</strong> Sign up at <a href="https://www.dingconnect.com" target="_blank">dingconnect.com</a> — get your API Key & Customer ID</li>
+                <li><strong>Payment Gateway Account:</strong> Razorpay (India) or Stripe (international) — get API keys</li>
+                <li><strong>Domain Name:</strong> e.g., topup.yourcompany.com</li>
+                <li><strong>Hosting:</strong> Server where the platform will be deployed</li>
+                <li><strong>Business Registration:</strong> UK company details (for DingConnect & payment gateway compliance)</li>
+                <li><strong>Bank Account:</strong> For receiving payments from payment gateway</li>
+                <li><strong>Content:</strong> Your company name, logo, contact details, service descriptions for the landing page</li>
+            </ol>
+        </div>
+
+        <div class="card">
+            <h3>🟡 What We Handle</h3>
+            <ul>
+                <li>✅ Full platform development (all modules listed above)</li>
+                <li>✅ DingConnect API integration</li>
+                <li>✅ Payment gateway integration</li>
+                <li>✅ Real-time notification system</li>
+                <li>✅ Responsive design for mobile/tablet</li>
+                <li>✅ Deployment to your hosting</li>
+                <li>✅ 15-day UAT support</li>
+                <li>✅ Documentation for platform management</li>
+            </ul>
+        </div>
+
+        <div class="card card-blue">
+            <h3>🟢 Your Ongoing Responsibilities (After Launch)</h3>
+            <ul>
+                <li>Monitor DingConnect account balance (top up when low)</li>
+                <li>Approve/reject retailer KYC applications</li>
+                <li>Manage retailer accounts (credit wallets if needed)</li>
+                <li>Handle customer support for your retailers</li>
+                <li>Ensure compliance with UK financial regulations (FCA if needed)</li>
+                <li>Pay DingConnect invoices on time</li>
+                <li>Market the platform to attract retailers</li>
+            </ul>
+        </div>
+
+        <h2>13. Risk Factors & Mitigations</h2>
+        <div class="card">
+            <table>
+                <tr><th>Risk</th><th>Impact</th><th>Mitigation</th></tr>
+                <tr><td>DingConnect pricing changes</td><td>Medium</td><td>You can adjust your commission rates in admin settings instantly</td></tr>
+                <tr><td>Failed transactions (operator issues)</td><td>Low</td><td>Wallet hold → release on failure; customers never lose money</td></tr>
+                <tr><td>Payment gateway disputes</td><td>Medium</td><td>Clear refund policy; keep detailed transaction records</td></tr>
+                <tr><td>Regulatory compliance (FCA/AML)</td><td>High</td><td>Consult a legal advisor; implement KYC + AML checks</td></tr>
+                <tr><td>High volume = cash flow needs</td><td>High</td><td>Maintain healthy DingConnect balance; monitor daily usage</td></tr>
+                <tr><td>Competitors undercutting prices</td><td>Medium</td><td>Focus on service quality, faster support, better UX</td></tr>
+            </table>
+        </div>
+
+        <h2>14. Next Steps</h2>
+        <div class="card card-green">
+            <ol>
+                <li><strong>Sign up for DingConnect</strong> — Get API credentials (this is the most important step)</li>
+                <li><strong>Sign up for Payment Gateway</strong> — Razorpay or Stripe</li>
+                <li><strong>Choose your domain & hosting</strong></li>
+                <li><strong>Sign the proposal</strong> — Pay 50% advance (₹66,500)</li>
+                <li><strong>Development starts</strong> — ~15 days to complete</li>
+                <li><strong>UAT & Testing</strong> — 15-day testing period with you</li>
+                <li><strong>Go Live!</strong> — Start onboarding retailers</li>
+            </ol>
+        </div>
+
+        <p style="text-align:center; padding: 30px; color: #666; font-size: 0.9em;">
+            Prepared by <strong>InTouch Software Solution</strong> | 📞 9691565883 | ✉️ sales@intouchsoftware.co.in<br>
+            Quotation No: QUOTE-ITS-061 | Valid until: 15 days from 29/08/2026
+        </p>
+    </div>
+
+    <script>
+        mermaid.initialize({ startOnLoad: true, securityLevel: 'strict', theme: 'default' });
+    </script>
+</body>
+</html>
