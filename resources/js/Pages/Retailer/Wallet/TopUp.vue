@@ -1,7 +1,7 @@
 <script setup>
 import { Head, router } from '@inertiajs/vue3';
 import RetailerLayout from '@/Layouts/RetailerLayout.vue';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 
 defineOptions({ layout: RetailerLayout });
 
@@ -33,43 +33,62 @@ function getAmount() {
 }
 
 async function loadStripe() {
-    if (window.Stripe) {
+    if (!props.stripePublishableKey) {
+        stripeLoaded.value = false;
+        errorMessage.value = 'Payment credentials not configured. Please contact support.';
+        return;
+    }
+
+    const init = () => {
         stripeLoaded.value = true;
         stripe.value = window.Stripe(props.stripePublishableKey);
-        initCardElement();
+        nextTick(() => {
+            initCardElement();
+        });
+    };
+
+    if (window.Stripe) {
+        init();
         return;
     }
 
     const script = document.createElement('script');
     script.src = 'https://js.stripe.com/v3/';
-    script.onload = () => {
-        stripeLoaded.value = true;
-        stripe.value = window.Stripe(props.stripePublishableKey);
-        initCardElement();
+    script.onload = init;
+    script.onerror = () => {
+        errorMessage.value = 'Failed to load Stripe. Please refresh.';
     };
     document.head.appendChild(script);
 }
 
 function initCardElement() {
-    if (!stripe.value) return;
+    if (!stripe.value) {
+        errorMessage.value = 'Stripe is not initialised. Please refresh.';
+        return;
+    }
 
-    elements.value = stripe.value.elements({
-        appearance: { theme: 'none' },
-    });
-
-    if (cardElement.value) {
-        const card = elements.value.create('card', {
-            style: {
-                base: {
-                    color: '#fff',
-                    fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-                    fontSize: '16px',
-                    '::placeholder': { color: '#6b7280' },
-                },
-                invalid: { color: '#ef4444' },
-            },
+    try {
+        elements.value = stripe.value.elements({
+            appearance: { theme: 'none' },
         });
-        card.mount(cardElement.value);
+
+        if (cardElement.value) {
+            const card = elements.value.create('card', {
+                style: {
+                    base: {
+                        color: '#fff',
+                        fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+                        fontSize: '16px',
+                        '::placeholder': { color: '#6b7280' },
+                    },
+                    invalid: { color: '#ef4444' },
+                },
+            });
+            card.mount(cardElement.value);
+        }
+    } catch (e) {
+        console.error('Stripe init error:', e);
+        errorMessage.value = 'Failed to initialise payment form. Please refresh.';
     }
 }
 
@@ -119,7 +138,7 @@ async function confirmCardPayment(clientSecret) {
     const card = elements.value.getElement('card');
 
     if (!card) {
-        errorMessage.value = 'Card element not ready. Please refresh.';
+        errorMessage.value = 'Card form failed to initialise. Please check Stripe credentials are configured and refresh the page.';
         processing.value = false;
         return;
     }
@@ -223,6 +242,10 @@ onMounted(() => {
             <p class="text-xs text-dark-400 mt-2">
                 🔒 Secured by Stripe. We do not store your card details.
             </p>
+        </div>
+
+        <div v-else-if="errorMessage" class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-300 text-sm">
+            {{ errorMessage }}
         </div>
 
         <div v-else class="bg-dark-800 rounded-2xl border border-dark-600 p-6">

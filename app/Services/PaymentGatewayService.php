@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Razorpay\Api\Api;
 
 class PaymentGatewayService
@@ -99,7 +100,7 @@ class PaymentGatewayService
         if (in_array($eventType, ['payment.captured', 'payment.failed']) && isset($paymentData['order_id'])) {
             $orderId = $paymentData['order_id'];
 
-            \DB::table('wallet_topups')
+            DB::table('wallet_topups')
                 ->where('gateway_order_id', $orderId)
                 ->where('status', 'pending')
                 ->update([
@@ -108,11 +109,11 @@ class PaymentGatewayService
                 ]);
 
             if ($eventType === 'payment.captured') {
-                $topup = \DB::table('wallet_topups')->where('gateway_order_id', $orderId)->first();
+                $topup = DB::table('wallet_topups')->where('gateway_order_id', $orderId)->first();
                 if ($topup) {
-                    \DB::table('wallets')->where('user_id', $topup->user_id)->increment('balance', $topup->amount);
+                    DB::table('wallets')->where('user_id', $topup->user_id)->increment('balance', $topup->amount);
 
-                    \DB::table('wallet_ledgers')->insert([
+                    DB::table('wallet_ledgers')->insert([
                         'wallet_id'      => $topup->user_id,
                         'type'           => 'credit',
                         'amount'         => $topup->amount,
@@ -128,7 +129,7 @@ class PaymentGatewayService
 
     protected function createStripeOrder(string $orderId, float $amount, string $currency): array
     {
-        \Stripe\Stripe::setApiKey(config('payment.stripe.secret'));
+        \Stripe\Stripe::setApiKey(config('platform.payment.stripe.secret_key'));
 
         $intent = \Stripe\PaymentIntent::create([
             'amount'         => (int) round($amount * 100),
@@ -143,14 +144,14 @@ class PaymentGatewayService
             'amount'        => $intent->amount,
             'currency'      => $intent->currency,
             'status'        => $intent->status,
-            'publishable_key' => config('payment.stripe.publishable'),
+            'publishable_key' => config('platform.payment.stripe.publishable_key'),
         ];
     }
 
     protected function verifyStripePayment(string $orderId, string $paymentId): bool
     {
         try {
-            \Stripe\Stripe::setApiKey(config('payment.stripe.secret'));
+            \Stripe\Stripe::setApiKey(config('platform.payment.stripe.secret_key'));
             $intent = \Stripe\PaymentIntent::retrieve($paymentId);
 
             return $intent->metadata->order_id === $orderId && $intent->status === 'succeeded';
@@ -168,7 +169,7 @@ class PaymentGatewayService
         if ($eventType === 'payment_intent.succeeded' && isset($intentData['metadata']['order_id'])) {
             $orderId = $intentData['metadata']['order_id'];
 
-            \DB::table('wallet_topups')
+            DB::table('wallet_topups')
                 ->where('gateway_order_id', $orderId)
                 ->where('status', 'pending')
                 ->update([
@@ -177,11 +178,11 @@ class PaymentGatewayService
                     'updated_at' => now(),
                 ]);
 
-            $topup = \DB::table('wallet_topups')->where('gateway_order_id', $orderId)->first();
+            $topup = DB::table('wallet_topups')->where('gateway_order_id', $orderId)->first();
             if ($topup) {
-                \DB::table('wallets')->where('user_id', $topup->user_id)->increment('balance', $topup->amount);
+                DB::table('wallets')->where('user_id', $topup->user_id)->increment('balance', $topup->amount);
 
-                \DB::table('wallet_ledgers')->insert([
+                DB::table('wallet_ledgers')->insert([
                     'wallet_id'      => $topup->user_id,
                     'type'           => 'credit',
                     'amount'         => $topup->amount,
@@ -194,7 +195,7 @@ class PaymentGatewayService
         } elseif ($eventType === 'payment_intent.payment_failed') {
             $orderId = $intentData['metadata']['order_id'] ?? null;
             if ($orderId) {
-                \DB::table('wallet_topups')
+                DB::table('wallet_topups')
                     ->where('gateway_order_id', $orderId)
                     ->where('status', 'pending')
                     ->update(['status' => 'failed', 'updated_at' => now()]);
