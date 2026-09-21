@@ -19,14 +19,12 @@ const countryIso = ref('');
 const phoneError = ref('');
 const providers = ref([]);
 const selectedProvider = ref(null);
-const regions = ref([]);
-const selectedRegion = ref(null);
 const providerLive = ref(true);
 const products = ref([]);
 const promotions = ref([]);
 const showPromotionsModal = ref(false);
-const loadingProducts = ref(false);
 const loadingProviders = ref(false);
+const loadingProducts = ref(false);
 const selectedProduct = ref(null);
 const selectedSkuCode = ref('');
 const isFreeRangeFlow = ref(false);
@@ -61,16 +59,12 @@ const form = useForm({
     receive_value_excluding_tax: 0,
 });
 
-const stepNames = ['Country', 'Phone', 'Provider', 'Region', 'Plan', 'Confirm'];
+const stepNames = ['Country', 'Phone', 'Operator', 'Products', 'Confirm'];
 const totalSteps = stepNames.length;
 
 const canProceedFromPhone = computed(() => cleanedPhone.value.length >= 7 && !phoneError.value);
 
-const canProceedFromProvider = computed(() => !!selectedProvider.value);
-
-const canProceedFromRegion = computed(() => true);
-
-const canProceedFromPlan = computed(() => !!selectedSkuCode.value || isFreeRangeFlow.value);
+const canProceedFromProvider = computed(() => !!selectedProvider.value && providerLive.value);
 
 const currentCountryIso = computed(() => {
     if (countryIso.value) return countryIso.value;
@@ -79,6 +73,10 @@ const currentCountryIso = computed(() => {
 });
 
 const showPromotionBadge = computed(() => promotions.value.length > 0);
+
+// =========================================================================
+// VALIDATION
+// =========================================================================
 
 function parseValidityPeriod(iso) {
     if (!iso || iso.trim() === '') return null;
@@ -92,9 +90,31 @@ function parseValidityPeriod(iso) {
     return parts.length ? 'Valid for ' + parts.join(' ') : null;
 }
 
-function formatValidity(iso) {
-    return parseValidityPeriod(iso);
+function validatePhone() {
+    const cleaned = mobileNumber.value.replace(/\D/g, '');
+    cleanedPhone.value = cleaned;
+
+    if (cleaned.length < 7) {
+        phoneError.value = 'Please enter a valid phone number';
+        return false;
+    }
+
+    // Prepend country calling code if not already present
+    if (selectedCountry.value?.calling_code) {
+        const code = selectedCountry.value.calling_code.replace(/\D/g, '');
+        if (!cleaned.startsWith(code)) {
+            const withoutCode = cleaned.startsWith('0') ? cleaned.slice(1) : cleaned;
+            cleanedPhone.value = code + withoutCode;
+        }
+    }
+
+    phoneError.value = '';
+    return true;
 }
+
+// =========================================================================
+// STEP NAVIGATION
+// =========================================================================
 
 function selectCountry(country) {
     selectedCountry.value = country;
@@ -109,35 +129,12 @@ function backToStep(step) {
     errorMessage.value = '';
 }
 
-function validatePhone() {
-    const cleaned = mobileNumber.value.replace(/\D/g, '');
-    cleanedPhone.value = cleaned;
-
-    if (cleaned.length < 7) {
-        phoneError.value = 'Please enter a valid phone number';
-        return false;
-    }
-
-    if (selectedCountry.value?.calling_code) {
-        const code = selectedCountry.value.calling_code.replace(/\D/g, '');
-        if (cleaned.startsWith(code)) {
-            phoneError.value = '';
-            return true;
-        } else {
-            const withoutCode = cleaned.startsWith('0') ? cleaned.slice(1) : cleaned;
-            cleanedPhone.value = code + withoutCode;
-            phoneError.value = '';
-            return true;
-        }
-    }
-
-    phoneError.value = '';
-    return true;
-}
+// =========================================================================
+// PROVIDERS
+// =========================================================================
 
 async function proceedToProviders() {
     if (!validatePhone()) return;
-    // Don't skip step 3 — always show providers
     currentStep.value = 3;
     await loadProviders();
 }
@@ -149,18 +146,18 @@ async function loadProviders() {
     errorMessage.value = '';
 
     try {
-        const res = await fetch(
-            `/retailer/recharge/operators?phone_number=${cleanedPhone.value}`
-        );
+        const params = new URLSearchParams();
+        params.append('phone_number', cleanedPhone.value);
+        params.append('country_iso', currentCountryIso.value);
+
+        const res = await fetch(`/retailer/recharge/operators?${params.toString()}`);
         const data = await res.json();
         if (data.success) {
-            countryIso.value = data.country_iso;
+            countryIso.value = data.country_iso; // Sync with API-detected country
             providers.value = data.providers || [];
 
             if (providers.value.length === 0) {
                 errorMessage.value = 'No operators available for this phone number.';
-            } else if (providers.value.length === 1) {
-                await selectProvider(providers.value[0]);
             }
         } else {
             errorMessage.value = data.error || 'Failed to load operators.';
@@ -175,25 +172,13 @@ async function loadProviders() {
 async function selectProvider(provider) {
     selectedProvider.value = provider;
     errorMessage.value = '';
-    // Don't auto-advance — let user click Continue
 }
 
-async function proceedFromProviders() {
+async function proceedToProducts() {
     if (!selectedProvider.value) return;
     errorMessage.value = '';
-    await checkProviderStatus();
-    if (!providerLive.value) return;
-    await loadRegions();
-    await loadProducts();
-    // After products load, advance to step 5 (or 4 if multiple regions)
-    if (regions.value.length > 1) {
-        currentStep.value = 4;
-    } else {
-        currentStep.value = 5;
-    }
-}
 
-async function checkProviderStatus() {
+    // Check provider status
     try {
         const res = await fetch(
             `/retailer/recharge/provider-status?provider_code=${selectedProvider.value.provider_code}`
@@ -202,38 +187,15 @@ async function checkProviderStatus() {
         providerLive.value = data.is_live !== false;
 
         if (!providerLive.value) {
-            errorMessage.value =
-                'Selected provider is down at this moment, please try after some time.';
+            errorMessage.value = 'Selected provider is down at this moment, please try after some time.';
+            return;
         }
     } catch (e) {
         providerLive.value = true;
     }
-}
 
-async function loadRegions() {
-    regions.value = [];
-    selectedRegion.value = null;
-
-    try {
-        const res = await fetch(
-            `/retailer/recharge/regions?provider_code=${selectedProvider.value.provider_code}`
-        );
-        const data = await res.json();
-        if (data.success) {
-            regions.value = data.regions || [];
-            if (regions.value.length === 1) {
-                selectedRegion.value = regions.value[0];
-            }
-        }
-    } catch (e) {
-        regions.value = [];
-    }
-}
-
-async function selectRegion(region) {
-    selectedRegion.value = region;
-    currentStep.value = 5;
     await loadProducts();
+    currentStep.value = 4;
 }
 
 async function loadProducts() {
@@ -247,24 +209,12 @@ async function loadProducts() {
         params.append('account_number', cleanedPhone.value);
         params.append('country_iso', currentCountryIso.value);
         if (selectedProvider.value) params.append('provider_code', selectedProvider.value.provider_code);
-        if (selectedRegion.value) params.append('region_code', selectedRegion.value.region_code);
 
         const res = await fetch(`/retailer/recharge/products?${params.toString()}`);
         const data = await res.json();
 
         if (data.success) {
             products.value = data.products || [];
-
-            // Separate by redemption type
-            const readReceiptProducts = products.value.filter(p => p.redemption_type === 'ReadReceipt');
-            const immediateProducts = products.value.filter(p => p.redemption_type !== 'ReadReceipt');
-
-            if (immediateProducts.length === 0 && readReceiptProducts.length > 0) {
-                // All are PIN/Voucher products - go to PIN flow
-                errorMessage.value = 'Only PIN/Voucher products available. Please use PIN flow.';
-            }
-
-            // Load promotions
             await loadPromotions();
         } else {
             errorMessage.value = data.error || 'Failed to load products.';
@@ -275,6 +225,10 @@ async function loadProducts() {
         loadingProducts.value = false;
     }
 }
+
+// =========================================================================
+// PROMOTIONS
+// =========================================================================
 
 async function loadPromotions() {
     try {
@@ -296,6 +250,10 @@ async function loadPromotions() {
 function closePromotionsModal() {
     showPromotionsModal.value = false;
 }
+
+// =========================================================================
+// PRODUCT SELECTION → CONFIRM
+// =========================================================================
 
 function selectProduct(product) {
     selectedProduct.value = product;
@@ -319,21 +277,26 @@ function selectProduct(product) {
     form.benefits = product.benefits || [];
     form.redemption_type = product.redemption_type || 'Immediate';
     form.product_type = product.product_type || '';
-    form.region_code = selectedRegion.value?.region_code || '';
+    form.region_code = '';
     form.provider_code = selectedProvider.value?.provider_code || '';
     form.receive_value_excluding_tax = product.receive_value_excluding_tax || product.receive_value || 0;
     form.free_range = isFreeRangeFlow.value;
 
-    currentStep.value = 6;
+    currentStep.value = 5;
 }
 
 function backToProducts() {
     selectedProduct.value = null;
     selectedSkuCode.value = '';
     isFreeRangeFlow.value = false;
+    freeRangePricing.value = null;
     form.sku_code = '';
-    currentStep.value = 5;
+    currentStep.value = 4;
 }
+
+// =========================================================================
+// FREE RANGE PRICING
+// =========================================================================
 
 async function fetchFreeRangePricing() {
     if (!freeRangeAmount.value || freeRangeAmount.value <= 0) {
@@ -374,10 +337,14 @@ async function fetchFreeRangePricing() {
     }
 }
 
+// =========================================================================
+// SUBMIT
+// =========================================================================
+
 function submitRecharge(action = 'buy') {
     errorMessage.value = '';
 
-    if (!canProceedFromPlan.value) {
+    if (!selectedProduct.value) {
         errorMessage.value = 'Please select a product';
         return;
     }
@@ -426,8 +393,6 @@ function resetFlow() {
     countryIso.value = '';
     providers.value = [];
     selectedProvider.value = null;
-    regions.value = [];
-    selectedRegion.value = null;
     products.value = [];
     selectedProduct.value = null;
     selectedSkuCode.value = '';
@@ -438,6 +403,10 @@ function resetFlow() {
     errorMessage.value = '';
     phoneError.value = '';
 }
+
+// =========================================================================
+// REAL-TIME LISTENERS
+// =========================================================================
 
 onMounted(() => {
     if (props.auth?.user && window.Echo?.private) {
@@ -471,7 +440,7 @@ onMounted(() => {
         >
             <p class="text-sm text-red-300">
                 Low wallet balance.
-                <a href="/retailer/wallet" class="underline font-medium hover:text-red-200">Top up now →</a>
+                <a href="/retailer/wallet" class="underline font-medium hover:text-red-200">Top up now &rarr;</a>
             </p>
         </div>
 
@@ -490,7 +459,7 @@ onMounted(() => {
                                       : 'bg-dark-700 text-dark-400 border border-dark-600',
                             ]"
                         >
-                            <span v-if="currentStep > idx + 1">✓</span>
+                            <span v-if="currentStep > idx + 1">&#10003;</span>
                             <span v-else>{{ idx + 1 }}</span>
                         </div>
                         <div
@@ -521,9 +490,12 @@ onMounted(() => {
             {{ errorMessage }}
         </div>
 
-        <!-- STEP 1: Country -->
+        <!-- =================================================================
+             STEP 1: COUNTRY
+             ================================================================= -->
         <div v-if="currentStep === 1">
             <h2 class="text-xl font-semibold text-white mb-4">Select Country</h2>
+            <p class="text-sm text-dark-300 mb-4">Choose the destination country for this recharge.</p>
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 <button
                     v-for="country in countries"
@@ -544,15 +516,17 @@ onMounted(() => {
             </div>
         </div>
 
-        <!-- STEP 2: Phone Number -->
+        <!-- =================================================================
+             STEP 2: PHONE NUMBER
+             ================================================================= -->
         <div v-if="currentStep === 2">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-xl font-semibold text-white">Enter Phone Number</h2>
-                <button @click="backToStep(1)" class="text-sm text-dark-300 hover:text-white">← Change country</button>
+                <button @click="backToStep(1)" class="text-sm text-dark-300 hover:text-white">&larr; Change country</button>
             </div>
 
             <div class="bg-dark-800 border border-dark-600 rounded-2xl p-6">
-                <label class="text-sm text-dark-300 mb-2 block">Mobile Number</label>
+                <label class="text-sm text-dark-300 mb-2 block">Mobile Number ({{ selectedCountry?.name }})</label>
                 <div class="flex items-center bg-dark-700 border border-dark-600 rounded-xl overflow-hidden">
                     <span class="px-4 py-3 text-white font-semibold border-r border-dark-600">
                         +{{ selectedCountry?.calling_code }}
@@ -573,42 +547,50 @@ onMounted(() => {
                     :disabled="!canProceedFromPhone"
                     class="mt-6 w-full btn-primary text-white py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    Continue →
+                    Continue &rarr;
                 </button>
             </div>
         </div>
 
-        <!-- STEP 3: Provider Selection -->
+        <!-- =================================================================
+             STEP 3: OPERATOR SELECTION
+             ================================================================= -->
         <div v-if="currentStep === 3">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-xl font-semibold text-white">Select Operator</h2>
-                <button @click="backToStep(2)" class="text-sm text-dark-300 hover:text-white">← Change phone</button>
+                <button @click="backToStep(2)" class="text-sm text-dark-300 hover:text-white">&larr; Change phone</button>
             </div>
 
+            <!-- Loading -->
             <div v-if="loadingProviders" class="text-center py-16">
                 <div class="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
                 <p class="mt-4 text-dark-300">Detecting operator...</p>
             </div>
 
-            <div v-else-if="providers.length === 0" class="text-center py-16">
-                <p class="text-dark-300 text-lg">No operators available for this phone number.</p>
-                <button @click="backToStep(2)" class="mt-4 text-primary hover:text-white">← Try a different number</button>
+            <!-- No providers found -->
+            <div v-else-if="providers.length === 0 && !loadingProviders" class="text-center py-16">
+                <p class="text-dark-300 text-lg mb-2">No operators found for this number.</p>
+                <p class="text-dark-400 text-sm mb-4">Try a different number or country.</p>
+                <button @click="backToStep(2)" class="btn-primary text-white px-6 py-2 rounded-xl text-sm">
+                    &larr; Change number
+                </button>
             </div>
 
+            <!-- Provider list -->
             <div v-else>
-                <p class="text-sm text-dark-300 mb-4">Available operators for +{{ cleanedPhone }}:</p>
-                <div
-                    :class="[
-                        'grid gap-4',
-                        providers.length === 1 ? 'grid-cols-1 max-w-md' : 'grid-cols-2 md:grid-cols-3'
-                    ]"
-                >
+                <p class="text-sm text-dark-300 mb-4">
+                    Available operators for +{{ cleanedPhone }}:
+                </p>
+                <div :class="[
+                    'grid gap-4',
+                    providers.length === 1 ? 'grid-cols-1 max-w-md' : 'grid-cols-2 md:grid-cols-3'
+                ]">
                     <button
                         v-for="provider in providers"
                         :key="provider.provider_code"
                         @click="selectProvider(provider)"
                         :class="[
-                            'rounded-2xl p-5 text-left transition',
+                            'rounded-2xl p-5 text-left transition relative',
                             selectedProvider?.provider_code === provider.provider_code
                                 ? 'bg-primary/20 border-2 border-primary'
                                 : 'bg-dark-800 border border-dark-600 hover:border-primary/50',
@@ -616,53 +598,32 @@ onMounted(() => {
                     >
                         <div class="text-lg font-semibold text-white">{{ provider.name }}</div>
                         <div class="text-xs text-dark-400 mt-1">{{ provider.provider_code }}</div>
-                        <div v-if="selectedProvider?.provider_code === provider.provider_code" class="text-xs text-primary mt-2 font-medium">
-                            ✓ Selected
+                        <div
+                            v-if="selectedProvider?.provider_code === provider.provider_code"
+                            class="text-xs text-primary mt-2 font-semibold"
+                        >
+                            &#10003; Selected
                         </div>
                     </button>
                 </div>
 
                 <button
-                    v-if="providers.length > 0"
-                    @click="proceedFromProviders"
-                    :disabled="!selectedProvider"
+                    @click="proceedToProducts"
+                    :disabled="!canProceedFromProvider"
                     class="mt-6 w-full btn-primary text-white py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    Continue →
+                    Continue &rarr;
                 </button>
             </div>
         </div>
 
-        <!-- STEP 4: Region Selection (only if multiple regions) -->
-        <div v-if="currentStep === 4 && regions.length > 0">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-semibold text-white">Select Region</h2>
-                <button @click="backToStep(3)" class="text-sm text-dark-300 hover:text-white">← Back</button>
-            </div>
-
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <button
-                    v-for="region in regions"
-                    :key="region.region_code"
-                    @click="selectRegion(region)"
-                    class="bg-dark-800 hover:bg-dark-700 border border-dark-600 hover:border-primary rounded-2xl p-5 transition"
-                >
-                    <div class="text-lg font-semibold text-white">{{ region.name }}</div>
-                    <div class="text-xs text-dark-400 mt-1">{{ region.region_code }}</div>
-                </button>
-            </div>
-        </div>
-
-        <!-- STEP 5: Products (categorized) -->
-        <div v-if="currentStep === 5">
+        <!-- =================================================================
+             STEP 4: PRODUCTS (categorized)
+             ================================================================= -->
+        <div v-if="currentStep === 4">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-xl font-semibold text-white">Select Product</h2>
-                <button
-                    @click="regions.length > 1 ? backToStep(4) : backToStep(3)"
-                    class="text-sm text-dark-300 hover:text-white"
-                >
-                    ← Back
-                </button>
+                <button @click="backToStep(3)" class="text-sm text-dark-300 hover:text-white">&larr; Change operator</button>
             </div>
 
             <!-- Promotions Badge -->
@@ -671,22 +632,31 @@ onMounted(() => {
                     @click="showPromotionsModal = true"
                     class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-2 text-yellow-300 text-sm hover:bg-yellow-500/20"
                 >
-                    🎁 {{ promotions.length }} promotion{{ promotions.length > 1 ? 's' : '' }} available
+                    &#127873; {{ promotions.length }} promotion{{ promotions.length > 1 ? 's' : '' }} available
                 </button>
             </div>
 
+            <!-- Product Categories Component -->
             <ProductCategories
                 :products="products"
                 :loading="loadingProducts"
                 @select-product="selectProduct"
             />
+
+            <div v-if="!loadingProducts && products.length === 0" class="text-center py-12">
+                <p class="text-dark-300">No products available for this operator.</p>
+            </div>
         </div>
 
-        <!-- STEP 6: Confirm / Free Range -->
-        <div v-if="currentStep === 6">
+        <!-- =================================================================
+             STEP 5: CONFIRM / REVIEW
+             ================================================================= -->
+        <div v-if="currentStep === 5">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-semibold text-white">{{ isFreeRangeFlow ? 'Enter Amount' : 'Review Order' }}</h2>
-                <button @click="backToProducts" class="text-sm text-dark-300 hover:text-white">← Back to products</button>
+                <h2 class="text-xl font-semibold text-white">
+                    {{ isFreeRangeFlow ? 'Enter Amount' : 'Review Order' }}
+                </h2>
+                <button @click="backToProducts" class="text-sm text-dark-300 hover:text-white">&larr; Back to products</button>
             </div>
 
             <div class="bg-dark-800 border border-dark-600 rounded-2xl p-6">
@@ -704,7 +674,7 @@ onMounted(() => {
                         class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-3 text-white text-lg outline-none"
                     />
                     <p class="text-xs text-dark-400 mt-2">
-                        Min: {{ selectedProduct?.send_currency }} {{ selectedProduct?.min_send_value }} ·
+                        Min: {{ selectedProduct?.send_currency }} {{ selectedProduct?.min_send_value }} &middot;
                         Max: {{ selectedProduct?.send_currency }} {{ selectedProduct?.max_send_value }}
                     </p>
 
@@ -731,16 +701,16 @@ onMounted(() => {
                 <!-- Order Summary -->
                 <div class="space-y-3 mb-6">
                     <div class="flex justify-between text-sm">
+                        <span class="text-dark-300">Country</span>
+                        <span class="text-white">{{ selectedCountry?.name }} ({{ currentCountryIso }})</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
                         <span class="text-dark-300">Phone</span>
                         <span class="text-white">+{{ cleanedPhone }}</span>
                     </div>
                     <div class="flex justify-between text-sm">
-                        <span class="text-dark-300">Provider</span>
+                        <span class="text-dark-300">Operator</span>
                         <span class="text-white">{{ selectedProvider?.name }}</span>
-                    </div>
-                    <div v-if="selectedRegion" class="flex justify-between text-sm">
-                        <span class="text-dark-300">Region</span>
-                        <span class="text-white">{{ selectedRegion.name }}</span>
                     </div>
                     <div class="flex justify-between text-sm">
                         <span class="text-dark-300">Product</span>
@@ -748,7 +718,7 @@ onMounted(() => {
                     </div>
                     <div v-if="selectedProduct?.validity_period" class="flex justify-between text-sm">
                         <span class="text-dark-300">Validity</span>
-                        <span class="text-green-400">{{ formatValidity(selectedProduct.validity_period) }}</span>
+                        <span class="text-green-400">{{ parseValidityPeriod(selectedProduct.validity_period) }}</span>
                     </div>
                     <div class="border-t border-dark-600 pt-3 mt-3">
                         <div class="flex justify-between items-baseline">
@@ -762,6 +732,13 @@ onMounted(() => {
                             <span class="text-green-400">
                                 {{ form.receive_currency }} {{ form.receive_value.toFixed(2) }}
                             </span>
+                        </div>
+                        <div
+                            v-if="form.receive_value !== form.receive_value_excluding_tax"
+                            class="flex justify-between text-xs mt-1 text-dark-400"
+                        >
+                            <span>Excl. tax</span>
+                            <span>{{ form.receive_currency }} {{ form.receive_value_excluding_tax.toFixed(2) }}</span>
                         </div>
                     </div>
                 </div>
@@ -791,7 +768,9 @@ onMounted(() => {
             </div>
         </div>
 
-        <!-- Promotions Modal -->
+        <!-- =================================================================
+             PROMOTIONS MODAL
+             ================================================================= -->
         <div
             v-if="showPromotionsModal"
             @click.self="closePromotionsModal"
@@ -799,8 +778,8 @@ onMounted(() => {
         >
             <div class="bg-dark-800 border border-dark-600 rounded-2xl max-w-md w-full p-6">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-white">🎁 Available Promotions</h3>
-                    <button @click="closePromotionsModal" class="text-dark-400 hover:text-white">✕</button>
+                    <h3 class="text-lg font-semibold text-white">&#127873; Available Promotions</h3>
+                    <button @click="closePromotionsModal" class="text-dark-400 hover:text-white">&times;</button>
                 </div>
                 <div class="space-y-3 max-h-96 overflow-y-auto">
                     <div
@@ -824,7 +803,9 @@ onMounted(() => {
             </div>
         </div>
 
-        <!-- PIN/Voucher Modal -->
+        <!-- =================================================================
+             PIN / VOUCHER MODAL
+             ================================================================= -->
         <div
             v-if="showPinModal"
             @click.self="closePinModal"
@@ -833,7 +814,7 @@ onMounted(() => {
             <div class="bg-dark-800 border border-green-500/30 rounded-2xl max-w-md w-full p-6">
                 <div class="text-center">
                     <div class="w-12 h-12 mx-auto bg-green-500/20 rounded-full flex items-center justify-center mb-4">
-                        ✓
+                        &#10003;
                     </div>
                     <h3 class="text-xl font-bold text-white mb-2">Recharge Successful!</h3>
                     <p class="text-sm text-dark-300 mb-4">Please share this PIN with your customer</p>

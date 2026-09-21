@@ -6,398 +6,334 @@ use App\Models\Transaction;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Exception;
 
 class DingConnectService
 {
     protected string $baseUrl;
     protected string $apiKey;
     protected string $customerId;
-    protected string $defaultAgent;
 
     public function __construct()
     {
-        $this->baseUrl      = config('ding.api_url', 'https://api.dingconnect.com');
+        $this->baseUrl      = rtrim(config('ding.api_url', 'https://api.dingconnect.com'), '/');
         $this->apiKey       = config('ding.api_key', '');
         $this->customerId   = config('ding.customer_id', '');
-        $this->defaultAgent = config('ding.default_agent', '');
     }
 
-    protected function httpClient()
-    {
-        $timeout = config('ding.timeout', 30);
-        $retries = config('ding.retry_attempts', 2);
-        $retryDelay = config('ding.retry_delay', 10);
-
-        return Http::withHeaders($this->headers())
-            ->timeout($timeout)
-            ->retry($retries, $retryDelay);
-    }
-
-    // ========================================================================
-    // GENERIC HELPERS
+    // =========================================================================
+    // HTTP HELPERS
     // =========================================================================
 
-    protected function headers(): array
-    {
-        return [
-            'api_key' => $this->apiKey,
-        ];
-    }
-
-    public function get(string $endpoint, array $params = []): array
+    protected function get(string $endpoint, array $params = []): array
     {
         try {
-            $response = $this->httpClient()->get($this->baseUrl . $endpoint, $params);
-
-            if ($response->successful()) {
-                return ['success' => true, 'data' => $response->json()];
+            $url = $this->baseUrl . $endpoint;
+            if (!empty($params)) {
+                $url .= '?' . http_build_query($params);
             }
 
-            Log::error('DingConnect GET failed', ['endpoint' => $endpoint, 'response' => $response->body()]);
-            return ['success' => false, 'error' => $response->json('Message', 'Request failed')];
-        } catch (\Throwable $e) {
-            Log::error('DingConnect GET error', ['endpoint' => $endpoint, 'error' => $e->getMessage()]);
+            Log::info('DingConnect GET', ['url' => $url]);
+
+            $response = Http::timeout(30)
+                ->withHeaders(['api_key' => $this->apiKey])
+                ->get($url);
+
+            Log::info('DingConnect GET response', [
+                'status' => $response->status(),
+                'body' => substr($response->body(), 0, 500),
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                if (($data['ResultCode'] ?? 0) == 1) {
+                    return ['success' => true, 'data' => $data];
+                }
+                return ['success' => false, 'error' => $data['ErrorCodes'][0] ?? $data['Message'] ?? 'API error', 'raw' => $data];
+            }
+
+            return ['success' => false, 'error' => 'HTTP ' . $response->status(), 'body' => substr($response->body(), 0, 200)];
+
+        } catch (Exception $e) {
+            Log::error('DingConnect GET Error: ' . $e->getMessage());
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
 
-    /**
-     * POST with JSON body (for newer V1 endpoints like SendTransfer, EstimatePrices)
-     */
-    public function post(string $endpoint, array $payload): array
+    protected function postForm(string $endpoint, array $formData = []): array
     {
         try {
-            $response = $this->httpClient()
-                ->withHeader('Content-Type', 'application/json')
-                ->post($this->baseUrl . $endpoint, $payload);
+            $url = $this->baseUrl . $endpoint;
 
-            if ($response->successful()) {
-                return ['success' => true, 'data' => $response->json()];
-            }
+            Log::info('DingConnect POST form', ['url' => $url, 'data' => $formData]);
 
-            Log::error('DingConnect POST JSON failed', ['endpoint' => $endpoint, 'response' => $response->body()]);
-            return ['success' => false, 'error' => $response->json('Message', 'Request failed')];
-        } catch (\Throwable $e) {
-            Log::error('DingConnect POST JSON error', ['endpoint' => $endpoint, 'error' => $e->getMessage()]);
-            return ['success' => false, 'error' => $e->getMessage()];
-        }
-    }
-
-    /**
-     * POST with form-encoded body (for legacy v1.0 endpoints like SendTransaction, GetProducts with CountryCode)
-     */
-    public function postForm(string $endpoint, array $formData): array
-    {
-        try {
-            $response = $this->httpClient()
+            $response = Http::timeout(90)
+                ->withHeaders(['api_key' => $this->apiKey])
                 ->asForm()
-                ->post($this->baseUrl . $endpoint, $formData);
+                ->post($url, $formData);
+
+            Log::info('DingConnect POST form response', [
+                'status' => $response->status(),
+                'body' => substr($response->body(), 0, 500),
+            ]);
 
             if ($response->successful()) {
-                return ['success' => true, 'data' => $response->json()];
+                $data = $response->json();
+                if (($data['ResultCode'] ?? 0) == 1) {
+                    return ['success' => true, 'data' => $data];
+                }
+                return ['success' => false, 'error' => $data['ErrorCodes'][0] ?? $data['Message'] ?? 'API error', 'raw' => $data];
             }
 
-            Log::error('DingConnect POST FORM failed', ['endpoint' => $endpoint, 'response' => $response->body()]);
-            return ['success' => false, 'error' => $response->json('Message', 'Request failed')];
-        } catch (\Throwable $e) {
-            Log::error('DingConnect POST FORM error', ['endpoint' => $endpoint, 'error' => $e->getMessage()]);
+            return ['success' => false, 'error' => 'HTTP ' . $response->status(), 'body' => substr($response->body(), 0, 200)];
+
+        } catch (\Exception $e) {
+            Log::error('DingConnect POST Error: ' . $e->getMessage());
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    protected function postJson(string $endpoint, array $jsonData = []): array
+    {
+        try {
+            $url = $this->baseUrl . $endpoint;
+
+            Log::info('DingConnect POST json', ['url' => $url, 'data' => $jsonData]);
+
+            $response = Http::timeout(90)
+                ->withHeaders(['api_key' => $this->apiKey])
+                ->withHeader('Content-Type', 'application/json')
+                ->post($url, $jsonData);
+
+            Log::info('DingConnect POST json response', ['status' => $response->status(), 'body' => substr($response->body(), 0, 500)]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                if (($data['ResultCode'] ?? 0) == 1) {
+                    return ['success' => true, 'data' => $data];
+                }
+                return ['success' => false, 'error' => $data['ErrorCodes'][0] ?? $data['Message'] ?? 'API error', 'raw' => $data];
+            }
+
+            return ['success' => false, 'error' => 'HTTP ' . $response->status(), 'body' => substr($response->body(), 0, 200)];
+
+        } catch (Exception $e) {
+            Log::error('DingConnect POST JSON Error: ' . $e->getMessage());
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
 
     // =========================================================================
-    // PROVIDER OPERATIONS
+    // PUBLIC API METHODS
     // =========================================================================
 
-    /**
-     * Get providers (operators) for a phone number
-     */
-    public function getProviders(string $accountNumber, ?string $countryIso = null): array
+    public function getCountries(): array
     {
-        $params = [
-            'accountNumber' => $accountNumber,
-        ];
+        return $this->get('/api/V1/GetCountries');
+    }
 
-        if ($countryIso) {
-            $params['countryIso'] = $countryIso;
-        }
-
+    public function getProviders(?string $countryIso = null, ?string $providerCodes = null, ?string $accountNumber = null): array
+    {
+        $params = [];
+        if ($countryIso)
+            $params['countryIsos'] = $countryIso;
+        if ($providerCodes)
+            $params['providerCodes'] = $providerCodes;
+        if ($accountNumber)
+            $params['accountNumber'] = $accountNumber;
         return $this->get('/api/V1/GetProviders', $params);
     }
 
     /**
-     * Get regions for a specific provider
+     * Get products filtered by country ISO and provider code.
+     * Uses GET with query params: countryIsos, providerCodes
+     * Optionally also passes accountNumber for phone-based filtering.
      */
-    public function getRegions(string $providerCode): array
+    public function getProducts(string $countryIso, string $providerCode, ?string $accountNumber = null): array
     {
-        return $this->get('/api/V1/GetRegions', [
-            'providerCode' => $providerCode,
-        ]);
-    }
-
-    /**
-     * Check if a provider is processing transfers (is live)
-     */
-    public function getProviderStatus(string $providerCode): array
-    {
-        return $this->get('/api/V1/GetProviderStatus', [
-            'providerCode' => $providerCode,
-        ]);
-    }
-
-    // =========================================================================
-    // PRODUCT OPERATIONS
-    // =========================================================================
-
-    /**
-     * Get all products (legacy v1.0 form-encoded endpoint)
-     * @param string $countryIso Country ISO code (e.g. 'GB', 'IN'). Pass '0' to get all countries.
-     */
-    public function getProducts(string $countryIso = '0', bool $includeProducts = true, bool $includePaymentOptions = true): array
-    {
-        return $this->postForm('/api/v1.0/Products/GetProducts', [
-            'CountryCode'            => $countryIso,
-            'IncludeProducts'        => $includeProducts ? 'true' : 'false',
-            'IncludePaymentOptions'  => $includePaymentOptions ? 'true' : 'false',
-        ]);
-    }
-
-    /**
-     * Get products filtered by account number, country, provider, and region.
-     * Uses V1 JSON endpoint which is required for the new flow with categorization.
-     */
-    public function getProductsByAccountNumber(
-        string $accountNumber,
-        ?string $countryIso = null,
-        ?string $providerCode = null,
-        ?string $regionCode = null
-    ): array {
-        $payload = [
-            'accountNumber' => $accountNumber,
+        $params = [
+            'countryIsos'   => $countryIso,
+            'providerCodes' => $providerCode,
         ];
 
-        if ($countryIso) {
-            $payload['countryIso'] = $countryIso;
-        }
-        if ($providerCode) {
-            $payload['providerCode'] = $providerCode;
-        }
-        if ($regionCode) {
-            $payload['regionCode'] = $regionCode;
+        if ($accountNumber) {
+            $params['accountNumber'] = $accountNumber;
         }
 
-        return $this->post('/api/V1/GetProducts', $payload);
+        return $this->get('/api/V1/GetProducts', $params);
     }
 
-    /**
-     * Get promotions for specific countries/providers
-     */
-    public function getPromotions(?array $params = []): array
+    public function getProviderStatus(?string $providerCodes = null): array
     {
+        $params = [];
+        if ($providerCodes)
+            $params['providerCodes'] = $providerCodes;
+        return $this->get('/api/V1/GetProviderStatus', $params);
+    }
+
+    public function getProductDescriptions(array $skuCodes, ?string $languageCode = 'en'): array
+    {
+        if (empty($skuCodes))
+            return ['success' => true, 'data' => []];
+        return $this->get('/api/V1/GetProductDescriptions', [
+            'languageCodes' => $languageCode,
+            'skuCodes' => implode(',', array_slice($skuCodes, 0, 50)),
+        ]);
+    }
+
+    public function getBalance(): array
+    {
+        return $this->get('/api/V1/GetBalance');
+    }
+
+    public function getPromotions(?string $countryIsos = null, ?string $providerCodes = null): array
+    {
+        $params = [];
+        if ($countryIsos)
+            $params['countryIsos'] = $countryIsos;
+        if ($providerCodes)
+            $params['providerCodes'] = $providerCodes;
         return $this->get('/api/V1/GetPromotions', $params);
     }
 
-    // =========================================================================
-    // PRICING
-    // =========================================================================
-
-    /**
-     * Estimate prices for free-range flow (Flow B)
-     */
-    public function estimatePrices(string $skuCode, float $sendValue, ?string $sendCurrencyIso = 'GBP'): array
+    public function getAccountLookup(string $accountNumber): array
     {
-        return $this->post('/api/V1/EstimatePrices', [
-            'skuCode'          => $skuCode,
-            'sendValue'        => (string) $sendValue,
-            'sendCurrencyIso'  => $sendCurrencyIso,
+        return $this->get('/api/V1/GetAccountLookup', [
+            'accountNumber' => $accountNumber,
         ]);
     }
 
-    // =========================================================================
-    // TRANSFER / RECHARGE
-    // =========================================================================
-
-    /**
-     * Send a transfer (recharge) using the free-range SKU flow
-     * This is the primary method used by ProcessRechargeJob
-     */
-    public function sendTransfer(
-        string $skuCode,
-        float $sendValue,
-        string $accountNumber,
-        string $distributorRef,
-        bool $validateOnly = false,
-        ?string $sendCurrencyIso = 'GBP',
-        ?array $settings = [],
-        ?string $senderNumber = null,
-        ?string $description = null,
-    ): array {
-        $payload = [
-            'skuCode'         => $skuCode,
-            'sendValue'       => (string) $sendValue,
-            'accountNumber'   => $accountNumber,
-            'distributorRef'  => $distributorRef,
-            'validateOnly'    => $validateOnly ? 'true' : 'false',
-            'sendCurrencyIso' => $sendCurrencyIso,
-            'settings'        => $settings,
+    public function estimatePrices(string $skuCode, float $sendValue, ?string $sendCurrencyIso = null, ?float $receiveValue = null): array
+    {
+        $data = [
+            'SkuCode' => $skuCode,
+            'SendValue' => $sendValue,
         ];
-
-        if ($senderNumber) {
-            $payload['senderNumber'] = $senderNumber;
-        }
-        if ($description) {
-            $payload['description'] = $description;
-        }
-
-        return $this->post('/api/V1/SendTransfer', $payload);
+        if ($sendCurrencyIso)
+            $data['SendCurrencyIso'] = $sendCurrencyIso;
+        if ($receiveValue)
+            $data['ReceiveValue'] = $receiveValue;
+        return $this->postJson('/api/V1/EstimatePrices', $data);
     }
 
     /**
-     * Legacy: Send a top-up using ProductCode/CountryCode flow (form-encoded body)
+     * SendTransfer - Send a top-up / recharge
+     * POST /api/V1/SendTransfer
+     */
+    public function sendTransfer(string $skuCode, float $sendValue, string $accountNumber, string $distributorRef, bool $validateOnly = false, ?string $sendCurrencyIso = null, ?array $settings = null): array
+    {
+        $payload = [
+            'SkuCode'         => $skuCode,
+            'SendValue'       => (float) $sendValue,
+            'AccountNumber'   => $accountNumber,
+            'DistributorRef'  => $distributorRef,
+            'ValidateOnly'    => $validateOnly ? 'true' : 'false',
+        ];
+
+        if ($sendCurrencyIso) {
+            $payload['SendCurrencyIso'] = $sendCurrencyIso;
+        }
+
+        if ($settings && count($settings) > 0) {
+            $payload['Settings'] = $settings;
+        }
+
+        return $this->postJson('/api/V1/SendTransfer', $payload);
+    }
+
+    /**
+     * ListTransferRecords - Query transfer status
+     * POST /api/V1/ListTransferRecords (JSON body)
+     */
+    public function listTransferRecords(?string $transferRef = null, ?string $distributorRef = null, ?string $accountNumber = null, int $take = 10, int $skip = 0): array
+    {
+        $payload = [
+            'Take' => $take,
+            'Skip' => $skip,
+        ];
+        if ($transferRef)
+            $payload['TransferRef'] = $transferRef;
+        if ($distributorRef)
+            $payload['DistributorRef'] = $distributorRef;
+        if ($accountNumber)
+            $payload['AccountNumber'] = $accountNumber;
+
+        return $this->postJson('/api/V1/ListTransferRecords', $payload);
+    }
+
+    /**
+     * CancelTransfers - Cancel a transfer
+     * POST /api/V1/CancelTransfers (JSON body)
+     */
+    public function cancelTransfers(string $transferRef, string $distributorRef): array
+    {
+        $payload = [
+            'TransferId' => json_encode(['TransferRef' => $transferRef, 'DistributorRef' => $distributorRef]),
+        ];
+        return $this->postJson('/api/V1/CancelTransfers', $payload);
+    }
+
+    /**
+     * Check transaction status (legacy - use listTransferRecords instead)
+     * GET /api/V1/Transfer/{id}
+     */
+    public function checkStatus(string $dingTransactionId): array
+    {
+        return $this->get('/api/V1/Transfer/' . $dingTransactionId);
+    }
+
+    /**
+     * Legacy sendTopUp - delegates to sendTransfer
      */
     public function sendTopUp(array $params): array
     {
-        $payload = [
-            'ProductCode'         => $params['operatorCode'],
-            'CountryCode'         => $params['countryIso'],
-            'RecipientNumber'     => $params['mobileNumber'],
-            'SendValue'           => (string) (float) $params['amount'],
-            'SenderNumber'        => $this->defaultAgent,
-            'SendCurrency'        => 'GBP',
-            'InvoiceReference'    => $params['invoiceReference'] ?? 'TXN-' . time() . '-' . random_int(1000, 9999),
-            'RetailerCustomerRef' => $params['retailerRef'] ?? (string) now()->timestamp,
-        ];
-
-        return $this->postForm('/api/v1.0/Transactions/SendTransaction', $payload);
+        return $this->sendTransfer(
+            skuCode: $params['countryIso'] . '-' . ($params['operatorCode'] ?? 'default'),
+            sendValue: (float) $params['amount'],
+            accountNumber: preg_replace('/[^0-9]/', '', $params['mobileNumber'] ?? ''),
+            distributorRef: 'ORD-' . uniqid(),
+            validateOnly: false,
+        );
     }
 
     // =========================================================================
-    // ACCOUNT
+    // CALLBACK PROCESSING
     // =========================================================================
 
-    /**
-     * Get DingConnect account details (balance, etc.)
-     */
-    public function getBalance(): array
+    public function processCallback(array $payload): Transaction
     {
-        return $this->get('/api/v1.0/Accounts/GetAccount');
-    }
+        $dingTransactionId = $payload['TransferId']['TransferRef'] ?? null;
 
-    // =========================================================================
-    // WEBHOOK PROCESSING
-    // =========================================================================
-
-    /**
-     * Process a webhook payload from DingConnect.
-     */
-    public function processWebhook(array $payload): void
-    {
-        $transactionId = $payload['TransactionId'] ?? null;
-        if (!$transactionId) {
-            return;
+        if (!$dingTransactionId) {
+            throw new \InvalidArgumentException('Missing TransferID in callback');
         }
 
-        $transaction = Transaction::where('ding_transaction_id', $transactionId)->first();
+        $transaction = Transaction::where('ding_transaction_id', $dingTransactionId)->first();
+
         if (!$transaction) {
-            Log::warning('Webhook for unknown transaction', ['transaction_id' => $transactionId]);
-            return;
+            Log::warning("Ding callback for unknown transaction: {$dingTransactionId}");
+            throw new \Exception("Transaction not found: {$dingTransactionId}");
         }
 
-        $previousStatus = $transaction->status;
-
+        $status = $payload['Status'] ?? 'Unknown';
         $statusMap = [
-            'SUCCESSFUL'  => 'success',
-            'FAILED'      => 'failed',
-            'PENDING'     => 'processing',
-            'CANCELLED'   => 'cancelled',
-            'PROCESSING'  => 'processing',
+            'Successful' => 'success',
+            'Success' => 'success',
+            'Failed' => 'failed',
+            'Failure' => 'failed',
+            'Pending' => 'processing',
+            'Cancelled' => 'cancelled',
         ];
 
-        $newStatus = $statusMap[strtoupper($payload['Status'] ?? '')] ?? $transaction->status;
-        $failureReason = $payload['FailureReason'] ?? null;
+        $newStatus = $statusMap[$status] ?? 'failed';
 
         $transaction->update([
             'status'               => $newStatus,
-            'failure_reason'       => $failureReason,
             'callback_received'    => true,
             'callback_received_at' => now(),
-            'ding_response'        => json_encode($payload),
+            'ding_response'        => $payload,
         ]);
 
-        // Record commission if transaction just became successful
-        if ($newStatus === 'success' && $previousStatus !== 'success') {
-            $this->recordCommission($transaction);
-        }
-    }
-
-    /**
-     * Process a callback response from DingConnect (same as webhook but for internal use)
-     */
-    public function processCallback(array $record): void
-    {
-        $status = strtoupper($record['ProcessingState'] ?? $record['Status'] ?? '');
-
-        $statusMap = [
-            'COMPLETED'   => 'success',
-            'SUCCESSFUL'  => 'success',
-            'FAILED'      => 'failed',
-            'FAILURE'     => 'failed',
-            'PENDING'     => 'processing',
-            'CANCELLED'   => 'cancelled',
-            'PROCESSING'  => 'processing',
-        ];
-
-        $newStatus = $statusMap[$status] ?? 'processing';
-
-        if (!empty($record['TransferId']['TransferRef'])) {
-            $transaction = Transaction::where('ding_transaction_id', $record['TransferId']['TransferRef'])->first();
-            if ($transaction) {
-                $previousStatus = $transaction->status;
-                $transaction->update([
-                    'status'            => $newStatus,
-                    'ding_response'     => json_encode($record),
-                    'failure_reason'    => $record['ErrorCodes'][0] ?? $record['Message'] ?? null,
-                ]);
-
-                if ($newStatus === 'success' && $previousStatus !== 'success') {
-                    $this->recordCommission($transaction);
-                }
-            }
-        }
-    }
-
-    protected function recordCommission(Transaction $transaction): void
-    {
-        // Try DB-backed setting first
-        $commissionRate = 2.5;
-        try {
-            $setting = \App\Models\Setting::where('key', 'platform_commission_default')->first();
-            if ($setting && $setting->value !== null) {
-                $commissionRate = is_numeric($setting->value) ? (float) $setting->value : (float) (is_array($setting->value) ? ($setting->value['value'] ?? 2.5) : 2.5);
-            }
-        } catch (\Throwable $e) {
-            // table may not exist yet
-        }
-
-        $commissionAmount = ($transaction->amount * $commissionRate) / 100;
-
-        if ($commissionAmount > 0) {
-            try {
-                DB::table('transaction_commissions')->updateOrInsert(
-                    ['transaction_id' => $transaction->id],
-                    [
-                        'user_id'           => $transaction->user_id,
-                        'operator_id'       => $transaction->operator_id,
-                        'amount'            => $transaction->amount,
-                        'commission_rate'   => $commissionRate,
-                        'commission_amount' => $commissionAmount,
-                        'created_at'        => now(),
-                        'updated_at'        => now(),
-                    ]
-                );
-            } catch (\Throwable $e) {
-                // table may not exist yet — skip silently
-            }
-        }
+        return $transaction->fresh();
     }
 }

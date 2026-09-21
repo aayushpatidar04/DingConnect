@@ -10,7 +10,7 @@ const props = defineProps({
 const categoryConfig = {
     TopUp: {
         icon: '📱',
-        label: 'Top Up',
+        label: 'TopUp',
         color: 'blue',
         bgClass: 'bg-blue-500/10 border-blue-500/30',
         iconBg: 'bg-blue-500/20',
@@ -208,9 +208,9 @@ function formatValidity(iso) {
                         <span class="text-xl font-bold text-white">
                             £{{ product.send_value.toFixed(2) }}
                         </span>
-                        <span v-if="product.receive_value && product.receive_value !== product.send_value" class="text-sm text-green-400">
+                        <!-- <span v-if="product.receive_value && product.receive_value !== product.send_value" class="text-sm text-green-400">
                             → £{{ product.receive_value.toFixed(2) }}
-                        </span>
+                        </span> -->
                     </div>
 
                     <!-- Validity Period -->

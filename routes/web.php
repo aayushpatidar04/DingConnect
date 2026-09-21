@@ -90,7 +90,6 @@ Route::prefix('retailer')->name('retailer.')->middleware(['auth', 'retailer'])->
     Route::get('/recharge', [RechargeController::class, 'index'])->name('recharge.index');
     Route::post('/recharge', [RechargeController::class, 'initiate'])->name('recharge.initiate');
     Route::get('/recharge/operators', [RechargeController::class, 'getOperators'])->name('recharge.operators');
-    Route::get('/recharge/regions', [RechargeController::class, 'getRegions'])->name('recharge.regions');
     Route::get('/recharge/provider-status', [RechargeController::class, 'getProviderStatus'])->name('recharge.provider-status');
     Route::get('/recharge/products', [RechargeController::class, 'getProducts'])->name('recharge.products');
     Route::get('/recharge/promotions', [RechargeController::class, 'getPromotions'])->name('recharge.promotions');

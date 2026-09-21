@@ -38,131 +38,73 @@ class RechargeController extends Controller
     // =========================================================================
 
     /**
-     * Get operators for a phone number using DingConnect GetProviders API
-     * This identifies which operator the phone number belongs to
+     * Get operators for a phone number using DingConnect GetProviders API.
+     * GET /api/V1/GetProviders?countryIsos=<>&accountNumber=<>
      */
     public function getOperators(Request $request, DingConnectService $dingService): JsonResponse
     {
         $request->validate([
             'phone_number' => 'required|string|min:7|max:20',
+            'country_iso'  => 'nullable|string|size:2',
         ]);
 
         $accountNumber = preg_replace('/[^0-9]/', '', $request->phone_number);
+        $countryIso = $request->country_iso ?? $this->detectCountryFromPhone($accountNumber);
 
-        // Detect country from phone number
-        $countryIso = $this->detectCountryFromPhone($accountNumber);
-
-        // Call DingConnect GetProviders with accountNumber + countryIso
-        $result = $dingService->getProviders($accountNumber, $countryIso);
+        $result = $dingService->getProviders($countryIso, null, $accountNumber);
 
         if (!$result['success']) {
             return response()->json(['success' => false, 'error' => $result['error']], 400);
         }
 
-        $providers = collect($result['data']['ProviderDetails'] ?? $result['data']['Items'] ?? [])->map(function ($item) {
+        $providers = collect($result['data']['Items'] ?? $result['data']['Providers'] ?? [])->map(function ($item) {
             return [
-                'provider_code' => $item['ProviderCode'] ?? $item['Code'],
-                'name' => $item['Name'] ?? $item['Description'],
+                'provider_code' => $item['ProviderCode'] ?? $item['Code'] ?? '',
+                'name' => $item['Name'] ?? $item['ShortName'] ?? '',
                 'is_premium' => $item['IsPremium'] ?? false,
+                'region_codes' => $item['RegionCodes'] ?? [],
+                'payment_types' => $item['PaymentTypes'] ?? [],
             ];
-        })->values();
+        })->filter(fn($p) => !empty($p['provider_code']))->values();
 
         return response()->json([
-            'success' => true,
+            'success'     => true,
             'country_iso' => $countryIso,
-            'providers' => $providers,
+            'providers'   => $providers,
         ]);
     }
 
     /**
-     * Get regions for a provider
-     */
-    public function getRegions(Request $request, DingConnectService $dingService): JsonResponse
-    {
-        $request->validate([
-            'provider_code' => 'required|string',
-        ]);
-
-        $result = $dingService->getRegions($request->provider_code);
-
-        if (!$result['success']) {
-            return response()->json(['success' => false, 'error' => $result['error']], 400);
-        }
-
-        $regions = collect($result['data']['Items'] ?? $result['data']['Regions'] ?? [])->map(function ($item) {
-            return [
-                'region_code' => $item['RegionCode'] ?? $item['Code'] ?? null,
-                'name'        => $item['RegionName'] ?? $item['Name'] ?? $item['Description'] ?? null,
-            ];
-        })->filter(fn($r) => !empty($r['region_code']))->values();
-
-        return response()->json(['success' => true, 'regions' => $regions]);
-    }
-
-    /**
-     * Check provider status (isProcessingTransfers)
-     */
-    public function getProviderStatus(Request $request, DingConnectService $dingService): JsonResponse
-    {
-        $request->validate([
-            'provider_code' => 'required|string',
-        ]);
-
-        $result = $dingService->getProviderStatus($request->provider_code);
-
-        if (!$result['success']) {
-            return response()->json(['success' => false, 'error' => $result['error']], 400);
-        }
-
-        $statuses = collect($result['data']['Statuses'] ?? $result['data']['Items'] ?? [])->map(function ($item) {
-            return [
-                'provider_code' => $item['ProviderCode'] ?? $item['Code'],
-                'is_processing_transfers' => $item['IsProcessingTransfers'] ?? true,
-            ];
-        })->values();
-
-        $isLive = $statuses->first()['is_processing_transfers'] ?? true;
-
-        return response()->json([
-            'success' => true,
-            'is_live' => $isLive,
-            'statuses' => $statuses,
-        ]);
-    }
-
-    /**
-     * Get products by account number (new flow)
-     * Filters products available for the given phone number + countryIso
+     * Get products for selected operator.
+     * GET /api/V1/GetProducts?countryIsos=<>&providerCodes=<>&accountNumber=<>
      */
     public function getProducts(Request $request, DingConnectService $dingService): JsonResponse
     {
         $request->validate([
-            'account_number' => 'required|string',
-            'country_iso'    => 'nullable|string|size:2',
-            'provider_code'  => 'nullable|string',
-            'region_code'    => 'nullable|string',
+            'country_iso'    => 'required|string|size:2',
+            'provider_code'  => 'required|string',
+            'account_number' => 'nullable|string',
         ]);
 
-        $result = $dingService->getProductsByAccountNumber(
-            $request->account_number,
+        $result = $dingService->getProducts(
             $request->country_iso,
             $request->provider_code,
-            $request->region_code
+            $request->account_number
         );
 
         if (!$result['success']) {
             return response()->json(['success' => false, 'error' => $result['error']], 400);
         }
-
         $products = collect($result['data']['Items'] ?? [])->map(function ($item) {
             return $this->transformProduct($item);
         })->values();
-
+        \Log::info($products);
         return response()->json(['success' => true, 'products' => $products]);
     }
 
     /**
      * Get promotions
+     * GET /api/V1/GetPromotions?countryIsos=<>&providerCodes=<>
      */
     public function getPromotions(Request $request, DingConnectService $dingService): JsonResponse
     {
@@ -171,11 +113,7 @@ class RechargeController extends Controller
             'provider_codes' => 'nullable|string',
         ]);
 
-        $params = [];
-        if ($request->country_isos) $params['countryIsos'] = $request->country_isos;
-        if ($request->provider_codes) $params['providerCodes'] = $request->provider_codes;
-
-        $result = $dingService->get('/api/V1/GetPromotions', $params);
+        $result = $dingService->getPromotions($request->country_isos, $request->provider_codes);
 
         if (!$result['success']) {
             return response()->json(['success' => true, 'promotions' => []]);
@@ -227,6 +165,24 @@ class RechargeController extends Controller
         })->first();
 
         return response()->json(['success' => true, 'pricing' => $pricing]);
+    }
+
+    /**
+     * Get provider status for a selected provider.
+     */
+    public function getProviderStatus(Request $request, DingConnectService $dingService): JsonResponse
+    {
+        $request->validate([
+            'provider_code' => 'required|string',
+        ]);
+
+        $result = $dingService->getProviderStatus($request->provider_code);
+
+        if (!$result['success']) {
+            return response()->json(['success' => false, 'error' => $result['error']], 400);
+        }
+
+        return response()->json(['success' => true, 'data' => $result['data']]);
     }
 
     /**
