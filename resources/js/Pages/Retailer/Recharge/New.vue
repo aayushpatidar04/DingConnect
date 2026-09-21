@@ -98,6 +98,7 @@ function formatValidity(iso) {
 
 function selectCountry(country) {
     selectedCountry.value = country;
+    countryIso.value = country?.iso_code || '';
     currentStep.value = 2;
     phoneError.value = '';
     errorMessage.value = '';
@@ -136,6 +137,7 @@ function validatePhone() {
 
 async function proceedToProviders() {
     if (!validatePhone()) return;
+    // Don't skip step 3 — always show providers
     currentStep.value = 3;
     await loadProviders();
 }
@@ -173,9 +175,22 @@ async function loadProviders() {
 async function selectProvider(provider) {
     selectedProvider.value = provider;
     errorMessage.value = '';
+    // Don't auto-advance — let user click Continue
+}
+
+async function proceedFromProviders() {
+    if (!selectedProvider.value) return;
+    errorMessage.value = '';
     await checkProviderStatus();
+    if (!providerLive.value) return;
     await loadRegions();
     await loadProducts();
+    // After products load, advance to step 5 (or 4 if multiple regions)
+    if (regions.value.length > 1) {
+        currentStep.value = 4;
+    } else {
+        currentStep.value = 5;
+    }
 }
 
 async function checkProviderStatus() {
@@ -208,15 +223,10 @@ async function loadRegions() {
             regions.value = data.regions || [];
             if (regions.value.length === 1) {
                 selectedRegion.value = regions.value[0];
-                currentStep.value = 5;
-            } else if (regions.value.length > 1) {
-                currentStep.value = 4;
-            } else {
-                currentStep.value = 5;
             }
         }
     } catch (e) {
-        currentStep.value = 5;
+        regions.value = [];
     }
 }
 
@@ -235,6 +245,7 @@ async function loadProducts() {
     try {
         const params = new URLSearchParams();
         params.append('account_number', cleanedPhone.value);
+        params.append('country_iso', currentCountryIso.value);
         if (selectedProvider.value) params.append('provider_code', selectedProvider.value.provider_code);
         if (selectedRegion.value) params.append('region_code', selectedRegion.value.region_code);
 
@@ -579,23 +590,45 @@ onMounted(() => {
                 <p class="mt-4 text-dark-300">Detecting operator...</p>
             </div>
 
-            <div
-                v-else-if="providers.length === 1"
-                class="bg-dark-800 border border-primary/30 rounded-2xl p-6 text-center"
-            >
-                <div class="text-dark-300 text-sm mb-2">Detected operator:</div>
-                <div class="text-2xl font-bold text-white">{{ providers[0].name }}</div>
+            <div v-else-if="providers.length === 0" class="text-center py-16">
+                <p class="text-dark-300 text-lg">No operators available for this phone number.</p>
+                <button @click="backToStep(2)" class="mt-4 text-primary hover:text-white">← Try a different number</button>
             </div>
 
-            <div v-else-if="providers.length > 1" class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <button
-                    v-for="provider in providers"
-                    :key="provider.provider_code"
-                    @click="selectProvider(provider)"
-                    class="bg-dark-800 hover:bg-dark-700 border border-dark-600 hover:border-primary rounded-2xl p-5 transition"
+            <div v-else>
+                <p class="text-sm text-dark-300 mb-4">Available operators for +{{ cleanedPhone }}:</p>
+                <div
+                    :class="[
+                        'grid gap-4',
+                        providers.length === 1 ? 'grid-cols-1 max-w-md' : 'grid-cols-2 md:grid-cols-3'
+                    ]"
                 >
-                    <div class="text-lg font-semibold text-white">{{ provider.name }}</div>
-                    <div class="text-xs text-dark-400 mt-1">{{ provider.provider_code }}</div>
+                    <button
+                        v-for="provider in providers"
+                        :key="provider.provider_code"
+                        @click="selectProvider(provider)"
+                        :class="[
+                            'rounded-2xl p-5 text-left transition',
+                            selectedProvider?.provider_code === provider.provider_code
+                                ? 'bg-primary/20 border-2 border-primary'
+                                : 'bg-dark-800 border border-dark-600 hover:border-primary/50',
+                        ]"
+                    >
+                        <div class="text-lg font-semibold text-white">{{ provider.name }}</div>
+                        <div class="text-xs text-dark-400 mt-1">{{ provider.provider_code }}</div>
+                        <div v-if="selectedProvider?.provider_code === provider.provider_code" class="text-xs text-primary mt-2 font-medium">
+                            ✓ Selected
+                        </div>
+                    </button>
+                </div>
+
+                <button
+                    v-if="providers.length > 0"
+                    @click="proceedFromProviders"
+                    :disabled="!selectedProvider"
+                    class="mt-6 w-full btn-primary text-white py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    Continue →
                 </button>
             </div>
         </div>

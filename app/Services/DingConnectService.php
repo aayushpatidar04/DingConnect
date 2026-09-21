@@ -22,6 +22,17 @@ class DingConnectService
         $this->defaultAgent = config('ding.default_agent', '');
     }
 
+    protected function httpClient()
+    {
+        $timeout = config('ding.timeout', 30);
+        $retries = config('ding.retry_attempts', 2);
+        $retryDelay = config('ding.retry_delay', 10);
+
+        return Http::withHeaders($this->headers())
+            ->timeout($timeout)
+            ->retry($retries, $retryDelay);
+    }
+
     // ========================================================================
     // GENERIC HELPERS
     // =========================================================================
@@ -29,15 +40,14 @@ class DingConnectService
     protected function headers(): array
     {
         return [
-            'Authorization' => 'Bearer ' . $this->apiKey,
-            'Content-Type'  => 'application/json',
+            'api_key' => $this->apiKey,
         ];
     }
 
     public function get(string $endpoint, array $params = []): array
     {
         try {
-            $response = Http::withHeaders($this->headers())->get($this->baseUrl . $endpoint, $params);
+            $response = $this->httpClient()->get($this->baseUrl . $endpoint, $params);
 
             if ($response->successful()) {
                 return ['success' => true, 'data' => $response->json()];
@@ -51,19 +61,46 @@ class DingConnectService
         }
     }
 
+    /**
+     * POST with JSON body (for newer V1 endpoints like SendTransfer, EstimatePrices)
+     */
     public function post(string $endpoint, array $payload): array
     {
         try {
-            $response = Http::withHeaders($this->headers())->post($this->baseUrl . $endpoint, $payload);
+            $response = $this->httpClient()
+                ->withHeader('Content-Type', 'application/json')
+                ->post($this->baseUrl . $endpoint, $payload);
 
             if ($response->successful()) {
                 return ['success' => true, 'data' => $response->json()];
             }
 
-            Log::error('DingConnect POST failed', ['endpoint' => $endpoint, 'response' => $response->body()]);
+            Log::error('DingConnect POST JSON failed', ['endpoint' => $endpoint, 'response' => $response->body()]);
             return ['success' => false, 'error' => $response->json('Message', 'Request failed')];
         } catch (\Throwable $e) {
-            Log::error('DingConnect POST error', ['endpoint' => $endpoint, 'error' => $e->getMessage()]);
+            Log::error('DingConnect POST JSON error', ['endpoint' => $endpoint, 'error' => $e->getMessage()]);
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * POST with form-encoded body (for legacy v1.0 endpoints like SendTransaction, GetProducts with CountryCode)
+     */
+    public function postForm(string $endpoint, array $formData): array
+    {
+        try {
+            $response = $this->httpClient()
+                ->asForm()
+                ->post($this->baseUrl . $endpoint, $formData);
+
+            if ($response->successful()) {
+                return ['success' => true, 'data' => $response->json()];
+            }
+
+            Log::error('DingConnect POST FORM failed', ['endpoint' => $endpoint, 'response' => $response->body()]);
+            return ['success' => false, 'error' => $response->json('Message', 'Request failed')];
+        } catch (\Throwable $e) {
+            Log::error('DingConnect POST FORM error', ['endpoint' => $endpoint, 'error' => $e->getMessage()]);
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
@@ -75,11 +112,17 @@ class DingConnectService
     /**
      * Get providers (operators) for a phone number
      */
-    public function getProviders(string $accountNumber): array
+    public function getProviders(string $accountNumber, ?string $countryIso = null): array
     {
-        return $this->get('/api/V1/GetProviders', [
+        $params = [
             'accountNumber' => $accountNumber,
-        ]);
+        ];
+
+        if ($countryIso) {
+            $params['countryIso'] = $countryIso;
+        }
+
+        return $this->get('/api/V1/GetProviders', $params);
     }
 
     /**
@@ -107,38 +150,43 @@ class DingConnectService
     // =========================================================================
 
     /**
-     * Get all products
+     * Get all products (legacy v1.0 form-encoded endpoint)
+     * @param string $countryIso Country ISO code (e.g. 'GB', 'IN'). Pass '0' to get all countries.
      */
-    public function getProducts(): array
+    public function getProducts(string $countryIso = '0', bool $includeProducts = true, bool $includePaymentOptions = true): array
     {
-        try {
-            $response = Http::withHeaders($this->headers())
-                ->post($this->baseUrl . '/api/v1.0/Products/GetProducts', [
-                    'CountryCode'       => '0',
-                    'IncludeProducts'   => true,
-                    'IncludePaymentOptions' => true,
-                ]);
-
-            if ($response->successful()) {
-                return ['success' => true, 'data' => $response->json('Products', [])];
-            }
-
-            return ['success' => false, 'error' => 'Failed to fetch products'];
-        } catch (\Throwable $e) {
-            return ['success' => false, 'error' => $e->getMessage()];
-        }
+        return $this->postForm('/api/v1.0/Products/GetProducts', [
+            'CountryCode'            => $countryIso,
+            'IncludeProducts'        => $includeProducts ? 'true' : 'false',
+            'IncludePaymentOptions'  => $includePaymentOptions ? 'true' : 'false',
+        ]);
     }
 
     /**
-     * Get products filtered by account number, provider, and region
+     * Get products filtered by account number, country, provider, and region.
+     * Uses V1 JSON endpoint which is required for the new flow with categorization.
      */
-    public function getProductsByAccountNumber(string $accountNumber, ?string $providerCode = null, ?string $regionCode = null): array
-    {
-        $params = ['accountNumber' => $accountNumber];
-        if ($providerCode) $params['providerCode'] = $providerCode;
-        if ($regionCode) $params['regionCode'] = $regionCode;
+    public function getProductsByAccountNumber(
+        string $accountNumber,
+        ?string $countryIso = null,
+        ?string $providerCode = null,
+        ?string $regionCode = null
+    ): array {
+        $payload = [
+            'accountNumber' => $accountNumber,
+        ];
 
-        return $this->get('/api/V1/GetProducts', $params);
+        if ($countryIso) {
+            $payload['countryIso'] = $countryIso;
+        }
+        if ($providerCode) {
+            $payload['providerCode'] = $providerCode;
+        }
+        if ($regionCode) {
+            $payload['regionCode'] = $regionCode;
+        }
+
+        return $this->post('/api/V1/GetProducts', $payload);
     }
 
     /**
@@ -205,7 +253,7 @@ class DingConnectService
     }
 
     /**
-     * Legacy: Send a top-up using ProductCode/CountryCode flow
+     * Legacy: Send a top-up using ProductCode/CountryCode flow (form-encoded body)
      */
     public function sendTopUp(array $params): array
     {
@@ -220,7 +268,7 @@ class DingConnectService
             'RetailerCustomerRef' => $params['retailerRef'] ?? (string) now()->timestamp,
         ];
 
-        return $this->post('/api/v1.0/Transactions/SendTransaction', $payload);
+        return $this->postForm('/api/v1.0/Transactions/SendTransaction', $payload);
     }
 
     // =========================================================================

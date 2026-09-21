@@ -115,7 +115,7 @@ const props = defineProps({
                         </div>
                     </div>
                     <div
-                        v-if="topRetailers.length === 0"
+                        v-if="topRetailers && topRetailers.length === 0"
                         class="p-6 text-center text-dark-400"
                     >
                         No data yet
@@ -139,42 +139,44 @@ const props = defineProps({
                     >
                 </div>
                 <div class="divide-y divide-dark-600">
-                    <div
-                        v-for="txn in recentTransactions.slice(0, 8)"
-                        :key="txn.id"
-                        class="p-4 flex items-center justify-between hover:bg-dark-700 transition"
-                    >
-                        <div class="flex items-center space-x-3">
-                            <div
-                                class="w-8 h-8 bg-dark-700 rounded-lg flex items-center justify-center text-sm font-semibold text-primary-light"
-                            >
-                                {{ txn.operator?.name?.charAt(0) || "?" }}
+                    <div v-if="recentTransactions">
+                        <div
+                            v-for="txn in recentTransactions.slice(0, 8)"
+                            :key="txn.id"
+                            class="p-4 flex items-center justify-between hover:bg-dark-700 transition"
+                        >
+                            <div class="flex items-center space-x-3">
+                                <div
+                                    class="w-8 h-8 bg-dark-700 rounded-lg flex items-center justify-center text-sm font-semibold text-primary-light"
+                                >
+                                    {{ txn.operator?.name?.charAt(0) || "?" }}
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-white">
+                                        {{ txn.mobile_number }}
+                                    </div>
+                                    <div class="text-xs text-dark-400">
+                                        {{ txn.user?.name || "Unknown" }}
+                                    </div>
+                                </div>
                             </div>
-                            <div>
+                            <div class="text-right">
                                 <div class="text-sm font-medium text-white">
-                                    {{ txn.mobile_number }}
+                                    £ {{ txn.amount.toFixed(2) }}
                                 </div>
-                                <div class="text-xs text-dark-400">
-                                    {{ txn.user?.name || "Unknown" }}
-                                </div>
+                                <span
+                                    :class="[
+                                        'px-2 py-0.5 text-xs rounded-full',
+                                        txn.status === 'success'
+                                            ? 'bg-accent/20 text-accent-light'
+                                            : txn.status === 'failed'
+                                              ? 'bg-red-500/20 text-red-400'
+                                              : 'bg-yellow-500/20 text-yellow-400',
+                                    ]"
+                                >
+                                    {{ txn.status }}
+                                </span>
                             </div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-sm font-medium text-white">
-                                £ {{ txn.amount.toFixed(2) }}
-                            </div>
-                            <span
-                                :class="[
-                                    'px-2 py-0.5 text-xs rounded-full',
-                                    txn.status === 'success'
-                                        ? 'bg-accent/20 text-accent-light'
-                                        : txn.status === 'failed'
-                                          ? 'bg-red-500/20 text-red-400'
-                                          : 'bg-yellow-500/20 text-yellow-400',
-                                ]"
-                            >
-                                {{ txn.status }}
-                            </span>
                         </div>
                     </div>
                 </div>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Retailer;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\ProcessRechargeJob;
 use App\Models\Country;
 use App\Models\Operator;
 use App\Models\Transaction;
@@ -51,10 +52,8 @@ class RechargeController extends Controller
         // Detect country from phone number
         $countryIso = $this->detectCountryFromPhone($accountNumber);
 
-        // Call DingConnect GetProviders with accountNumber filter
-        $result = $dingService->get('/api/V1/GetProviders', [
-            'accountNumber' => $accountNumber,
-        ]);
+        // Call DingConnect GetProviders with accountNumber + countryIso
+        $result = $dingService->getProviders($accountNumber, $countryIso);
 
         if (!$result['success']) {
             return response()->json(['success' => false, 'error' => $result['error']], 400);
@@ -90,12 +89,12 @@ class RechargeController extends Controller
             return response()->json(['success' => false, 'error' => $result['error']], 400);
         }
 
-        $regions = collect($result['data']['RegionDetails'] ?? $result['data']['Items'] ?? [])->map(function ($item) {
+        $regions = collect($result['data']['Items'] ?? $result['data']['Regions'] ?? [])->map(function ($item) {
             return [
-                'region_code' => $item['RegionCode'] ?? $item['Code'],
-                'name' => $item['Name'] ?? $item['Description'],
+                'region_code' => $item['RegionCode'] ?? $item['Code'] ?? null,
+                'name'        => $item['RegionName'] ?? $item['Name'] ?? $item['Description'] ?? null,
             ];
-        })->values();
+        })->filter(fn($r) => !empty($r['region_code']))->values();
 
         return response()->json(['success' => true, 'regions' => $regions]);
     }
@@ -133,18 +132,20 @@ class RechargeController extends Controller
 
     /**
      * Get products by account number (new flow)
-     * Filters products available for the given phone number
+     * Filters products available for the given phone number + countryIso
      */
     public function getProducts(Request $request, DingConnectService $dingService): JsonResponse
     {
         $request->validate([
             'account_number' => 'required|string',
-            'provider_code' => 'nullable|string',
-            'region_code' => 'nullable|string',
+            'country_iso'    => 'nullable|string|size:2',
+            'provider_code'  => 'nullable|string',
+            'region_code'    => 'nullable|string',
         ]);
 
         $result = $dingService->getProductsByAccountNumber(
             $request->account_number,
+            $request->country_iso,
             $request->provider_code,
             $request->region_code
         );
