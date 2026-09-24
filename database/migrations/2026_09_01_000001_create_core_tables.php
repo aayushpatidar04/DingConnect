@@ -99,8 +99,8 @@ return new class extends Migration {
             $table->decimal('amount', 12, 2);
             $table->decimal('balance_before', 12, 2);
             $table->decimal('balance_after', 12, 2);
-            $table->string('reference_type')->nullable();
-            $table->unsignedBigInteger('reference_id')->nullable();
+            $table->unsignedBigInteger('ip_address')->nullable();
+            $table->string('user_agent')->nullable();
             $table->text('description')->nullable();
             $table->timestamp('created_at');
             $table->index(['wallet_id', 'transaction_id']);

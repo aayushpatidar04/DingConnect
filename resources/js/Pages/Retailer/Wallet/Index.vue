@@ -72,8 +72,8 @@ const props = defineProps({
                     <span
                         :class="[
                             'px-3 py-1 text-xs rounded-full font-medium',
-                            topup.status === 'success'
-                                ? 'bg-accent/20 text-accent-light'
+                            topup.status === 'completed'
+                                ? 'bg-green-500/20 text-accent-light'
                                 : topup.status === 'failed'
                                   ? 'bg-red-500/20 text-red-400'
                                   : 'bg-yellow-500/20 text-yellow-400',

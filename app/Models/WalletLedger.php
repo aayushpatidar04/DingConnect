@@ -14,8 +14,8 @@ class WalletLedger extends Model
         'amount',
         'balance_before',
         'balance_after',
-        'reference_type',
-        'reference_id',
+        'ip_address',
+        'user_agent',
         'description',
         'created_at',
     ];

@@ -102,11 +102,9 @@ class PaymentService
 
                 // Credit the wallet
                 $walletService = app(WalletService::class);
-                $wallet = $topup->user->wallet ?? $walletService->getWallet($topup->user);
                 $walletService->credit(
-                    $wallet,
+                    $topup->user_id,
                     $topup->amount,
-                    'topup',
                     $topup->id,
                     "Wallet top-up via Stripe"
                 );

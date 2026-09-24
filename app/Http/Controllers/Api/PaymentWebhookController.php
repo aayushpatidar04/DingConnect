@@ -17,11 +17,18 @@ class PaymentWebhookController extends Controller
     {
         $payload = $request->all();
         $signature = $request->header('Stripe-Signature');
+        $rawBody = $request->getContent();
 
         Log::info('Stripe webhook received', [
             'type' => $payload['type'] ?? 'unknown',
-            'sig' => substr($signature ?? '', 0, 20),
+            'sig' => substr($signature ?? '', 0, 30),
+            'has_raw_body' => !empty($rawBody),
+            'raw_body_preview' => substr($rawBody, 0, 200),
         ]);
+
+        if (empty($signature)) {
+            Log::warning('Stripe webhook has NO signature header');
+        }
 
         $topup = $this->paymentService->processWebhook($payload);
 

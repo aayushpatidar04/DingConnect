@@ -24,7 +24,7 @@ class WalletService
 
     public function getWallet($user): ?Wallet
     {
-        if ($user instanceof \App\Models\User) {
+        if ($user instanceof User) {
             return Wallet::firstOrCreate(['user_id' => $user->id], [
                 'balance' => 0,
                 'currency' => config('platform.wallet.currency', 'GBP'),
@@ -122,7 +122,6 @@ class WalletService
     {
         DB::table('wallet_ledgers')->insert([
             'wallet_id'      => $info['walletId'],
-            'user_id'        => $info['userId'],
             'transaction_id' => $referenceId,
             'type'           => $type,
             'amount'         => $amount,
