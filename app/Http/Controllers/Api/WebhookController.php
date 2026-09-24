@@ -39,9 +39,4 @@ class WebhookController extends Controller
             return response()->json(['message' => 'Error processing webhook'], 500);
         }
     }
-
-    public function razorpayCallback(Request $request, RazorpayController $razorpay): JsonResponse
-    {
-        return $razorpay->handleWebhook($request);
-    }
 }

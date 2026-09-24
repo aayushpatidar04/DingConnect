@@ -21,6 +21,7 @@ class WalletTopup extends Model
         'payment_response',
         'status',
         'receipt_number',
+        'stripe_payment_intent_id',
     ];
 
     protected $casts = [

@@ -16,19 +16,13 @@ Route::get('/countries', [CountryController::class, 'index']);
 Route::get('/countries/{iso}/operators', [OperatorController::class, 'byCountry']);
 Route::get('/operators/search', [OperatorController::class, 'search']);
 
-Route::post('/webhooks/ding',      [WebhookController::class, 'dingCallback']);
-Route::post('/webhooks/razorpay',  [WebhookController::class, 'razorpayCallback']);
+Route::post('/webhooks/ding',    [WebhookController::class, 'dingCallback']);
+Route::post('/webhooks/stripe',  [App\Http\Controllers\Api\PaymentWebhookController::class, 'webhook'])->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
 
 // Authenticated routes
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me',      [AuthController::class, 'me']);
-
-    Route::prefix('wallet')->group(function () {
-        Route::get('/balance',  [WalletController::class, 'balance']);
-        Route::get('/ledger',   [WalletController::class, 'ledger']);
-        Route::post('/topup',   [WalletController::class, 'topUp']);
-    });
 
     Route::prefix('transactions')->group(function () {
         Route::post('/topup',     [TransactionController::class, 'topUp']);

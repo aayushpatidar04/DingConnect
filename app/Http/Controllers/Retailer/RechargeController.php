@@ -98,7 +98,6 @@ class RechargeController extends Controller
         $products = collect($result['data']['Items'] ?? [])->map(function ($item) {
             return $this->transformProduct($item);
         })->values();
-        \Log::info($products);
         return response()->json(['success' => true, 'products' => $products]);
     }
 
@@ -304,7 +303,7 @@ class RechargeController extends Controller
         $sendCurrency = $max['SendCurrencyIso'] ?? $min['SendCurrencyIso'] ?? 'GBP';
         $receiveCurrency = $max['ReceiveCurrencyIso'] ?? $min['ReceiveCurrencyIso'] ?? 'GBP';
 
-        $redemptionType = $item['RedemptionType'] ?? 'Immediate';
+        $redemptionType = $item['RedemptionMechanism'] ?? 'Immediate';
         $productType = $item['ProductType'] ?? '';
         $benefits = $item['Benefits'] ?? [];
 

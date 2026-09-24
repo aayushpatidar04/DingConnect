@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed } from "vue";
 
 const props = defineProps({
     products: Array,
@@ -9,85 +9,155 @@ const props = defineProps({
 // Category icons and colors
 const categoryConfig = {
     TopUp: {
-        icon: '📱',
-        label: 'TopUp',
-        color: 'blue',
-        bgClass: 'bg-blue-500/10 border-blue-500/30',
-        iconBg: 'bg-blue-500/20',
-        textColor: 'text-blue-400',
-        checkBenefits: (b) => b.includes('Mobile') || b.includes('Minutes'),
-        checkType: (t) => t === 'TopUp',
+        icon: "📱",
+        label: "TopUp",
+        color: "blue",
+        bgClass: "bg-blue-500/10 border-blue-500/30",
+        iconBg: "bg-blue-500/20",
+        textColor: "text-blue-400",
+        checkBenefits: (b, r, t) =>
+            t === "TopUp" &&
+            r === "Immediate" &&
+            b.includes("Mobile") &&
+            b.includes("Minutes") &&
+            !b.includes("Data"),
     },
     Data: {
-        icon: '📶',
-        label: 'Data',
-        color: 'green',
-        bgClass: 'bg-green-500/10 border-green-500/30',
-        iconBg: 'bg-green-500/20',
-        textColor: 'text-green-400',
-        checkBenefits: (b) => b.includes('Data') && !b.includes('Mobile') && !b.includes('Minutes'),
-        checkType: (t) => t === 'Data',
+        icon: "📶",
+        label: "Data",
+        color: "green",
+        bgClass: "bg-green-500/10 border-green-500/30",
+        iconBg: "bg-green-500/20",
+        textColor: "text-green-400",
+        checkBenefits: (b, r, t) =>
+            t === "Data" &&
+            r === "Immediate" &&
+            b.includes("Mobile") &&
+            b.includes("Data") &&
+            !b.includes("Minutes"),
     },
     Bundle: {
-        icon: '📦',
-        label: 'Bundle',
-        color: 'purple',
-        bgClass: 'bg-purple-500/10 border-purple-500/30',
-        iconBg: 'bg-purple-500/20',
-        textColor: 'text-purple-400',
-        checkBenefits: (b) => b.includes('Mobile') && b.includes('Minutes') && b.includes('Data'),
-        checkType: (t) => t === 'Bundle',
+        icon: "📦",
+        label: "Bundle",
+        color: "purple",
+        bgClass: "bg-purple-500/10 border-purple-500/30",
+        iconBg: "bg-purple-500/20",
+        textColor: "text-purple-400",
+        checkBenefits: (b, r, t) =>
+            t === "Bundle" &&
+            r === "Immediate" &&
+            b.includes("Mobile") &&
+            b.includes("Minutes") &&
+            b.includes("Data"),
     },
     PIN: {
-        icon: '🔢',
-        label: 'PIN',
-        color: 'orange',
-        bgClass: 'bg-orange-500/10 border-orange-500/30',
-        iconBg: 'bg-orange-500/20',
-        textColor: 'text-orange-400',
-        checkBenefits: (b) => ['Mobile', 'Minutes', 'Data'].some(item => b.includes(item)),
-        checkType: (t) => t === 'PIN',
-        checkRedemption: (r) => r === 'ReadReceipt',
+        icon: "🔢",
+        label: "PIN",
+        color: "orange",
+        bgClass: "bg-orange-500/10 border-orange-500/30",
+        iconBg: "bg-orange-500/20",
+        textColor: "text-orange-400",
+        checkBenefits: (b, r, t) =>
+            t === "PIN" &&
+            r === "ReadReceipt" &&
+            b.includes("Mobile") &&
+            b.includes("Minutes") &&
+            b.includes("Data"),
     },
     LDI: {
-        icon: '📞',
-        label: 'LDI',
-        color: 'cyan',
-        bgClass: 'bg-cyan-500/10 border-cyan-500/30',
-        iconBg: 'bg-cyan-500/20',
-        textColor: 'text-cyan-400',
-        checkBenefits: (b) => b.includes('LongDistance') || b.includes('Minutes'),
-        checkType: (t) => t === 'LDI',
-        checkRedemption: (r) => r === 'ReadReceipt',
+        icon: "📞",
+        label: "LDI",
+        color: "cyan",
+        bgClass: "bg-cyan-500/10 border-cyan-500/30",
+        iconBg: "bg-cyan-500/20",
+        textColor: "text-cyan-400",
+        checkBenefits: (b, r, t) =>
+            t === "LDI" &&
+            r === "ReadReceipt" &&
+            (b.includes("LongDistance") || b.includes("Minutes")),
     },
     Voucher: {
-        icon: '🎫',
-        label: 'Voucher',
-        color: 'pink',
-        bgClass: 'bg-pink-500/10 border-pink-500/30',
-        iconBg: 'bg-pink-500/20',
-        textColor: 'text-pink-400',
-        checkBenefits: (b) => b.includes('Digital Product'),
-        checkType: (t) => t === 'Voucher',
-        checkRedemption: (r) => r === 'ReadReceipt',
+        icon: "🎫",
+        label: "Voucher",
+        color: "pink",
+        bgClass: "bg-pink-500/10 border-pink-500/30",
+        iconBg: "bg-pink-500/20",
+        textColor: "text-pink-400",
+        checkBenefits: (b, r, t) =>
+            t === "Voucher" &&
+            r === "ReadReceipt" &&
+            b.includes("Digital Product"),
     },
     DTH: {
-        icon: '📺',
-        label: 'DTH',
-        color: 'yellow',
-        bgClass: 'bg-yellow-500/10 border-yellow-500/30',
-        iconBg: 'bg-yellow-500/20',
-        textColor: 'text-yellow-400',
-        checkBenefits: (b) => b.includes('TV') || b.includes('Utility'),
-        checkType: (t) => t === 'DTH',
+        icon: "📺",
+        label: "DTH",
+        color: "yellow",
+        bgClass: "bg-yellow-500/10 border-yellow-500/30",
+        iconBg: "bg-yellow-500/20",
+        textColor: "text-yellow-400",
+        checkBenefits: (b, r, t) =>
+            t === "DTH" &&
+            r === "Immediate" &&
+            (b.includes("TV") || b.includes("Utility")),
     },
 };
 
+function determineTransferType(product) {
+    const { benefits = [], redemption_type } = product;
+
+    // Normalize benefits for consistent matching
+    const b = benefits.map((v) => v.toLowerCase());
+
+    if (redemption_type === "Immediate") {
+        if (
+            b.includes("mobile") &&
+            b.includes("minutes") &&
+            !b.includes("data")
+        ) {
+            return "TopUp";
+        }
+        if (
+            b.includes("mobile") &&
+            b.includes("data") &&
+            !b.includes("minutes")
+        ) {
+            return "Data";
+        }
+        if (
+            b.includes("mobile") &&
+            b.includes("minutes") &&
+            b.includes("data")
+        ) {
+            return "Bundle";
+        }
+        if (b.includes("tv") || b.includes("utility")) {
+            return "DTH";
+        }
+    }
+
+    if (redemption_type === "ReadReceipt") {
+        if (
+            b.includes("mobile") &&
+            b.includes("minutes") &&
+            b.includes("data")
+        ) {
+            return "PIN";
+        }
+        if (b.includes("longdistance") || b.includes("minutes")) {
+            return "LDI";
+        }
+        if (b.includes("digital product")) {
+            return "Voucher";
+        }
+    }
+
+    return "TopUp"; // fallback
+}
+
 function categorizeProduct(product) {
-    const type = categoryConfig[product.product_type] || categoryConfig.TopUp;
-    if (type.checkType && type.checkType(product.product_type)) return type;
-    if (type.checkBenefits && type.checkBenefits(product.benefits)) return type;
-    return categoryConfig.TopUp;
+    const transferType = determineTransferType(product);
+    const category = categoryConfig[transferType];
+    return category || categoryConfig.TopUp;
 }
 
 const categorizedProducts = computed(() => {
@@ -108,30 +178,42 @@ const categorizedProducts = computed(() => {
     return categories;
 });
 
-const categoryOrder = ['TopUp', 'Data', 'Bundle', 'PIN', 'LDI', 'Voucher', 'DTH'];
+const categoryOrder = [
+    "TopUp",
+    "Data",
+    "Bundle",
+    "PIN",
+    "LDI",
+    "Voucher",
+    "DTH",
+];
 const activeCategories = computed(() => {
-    return categoryOrder.filter(cat => categorizedProducts.value[cat]);
+    return categoryOrder.filter((cat) => categorizedProducts.value[cat]);
 });
 
-const emit = defineEmits(['select-product']);
+const emit = defineEmits(["select-product"]);
 
 function selectProduct(product) {
-    emit('select-product', product);
+    emit("select-product", product);
 }
 
 function formatValidity(iso) {
-    if (!iso || iso.trim() === '') return null;
+    if (!iso || iso.trim() === "") return null;
     const match = iso.match(/P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?/);
     if (!match) return null;
 
     const parts = [];
-    if (match[1]) parts.push(match[1] + ' year' + (parseInt(match[1]) > 1 ? 's' : ''));
-    if (match[2]) parts.push(match[2] + ' month' + (parseInt(match[2]) > 1 ? 's' : ''));
-    if (match[3]) parts.push(match[3] + ' week' + (parseInt(match[3]) > 1 ? 's' : ''));
-    if (match[4]) parts.push(match[4] + ' day' + (parseInt(match[4]) > 1 ? 's' : ''));
+    if (match[1])
+        parts.push(match[1] + " year" + (parseInt(match[1]) > 1 ? "s" : ""));
+    if (match[2])
+        parts.push(match[2] + " month" + (parseInt(match[2]) > 1 ? "s" : ""));
+    if (match[3])
+        parts.push(match[3] + " week" + (parseInt(match[3]) > 1 ? "s" : ""));
+    if (match[4])
+        parts.push(match[4] + " day" + (parseInt(match[4]) > 1 ? "s" : ""));
 
     if (parts.length === 0) return null;
-    return 'Valid for ' + parts.join(', ');
+    return "Valid for " + parts.join(", ");
 }
 </script>
 
@@ -145,7 +227,8 @@ function formatValidity(iso) {
                 @click=""
                 :class="[
                     'px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2 border',
-                    categoryConfig[category]?.bgClass || 'bg-dark-700 border-dark-600',
+                    categoryConfig[category]?.bgClass ||
+                        'bg-dark-700 border-dark-600',
                     categoryConfig[category]?.textColor || 'text-white',
                 ]"
             >
@@ -160,10 +243,22 @@ function formatValidity(iso) {
         <!-- Products Grid by Category -->
         <div v-for="category in activeCategories" :key="category" class="mb-8">
             <div class="flex items-center gap-3 mb-4">
-                <div :class="['w-8 h-8 rounded-lg flex items-center justify-center', categoryConfig[category]?.iconBg]">
-                    <span class="text-lg">{{ categoryConfig[category]?.icon }}</span>
+                <div
+                    :class="[
+                        'w-8 h-8 rounded-lg flex items-center justify-center',
+                        categoryConfig[category]?.iconBg,
+                    ]"
+                >
+                    <span class="text-lg">{{
+                        categoryConfig[category]?.icon
+                    }}</span>
                 </div>
-                <h3 :class="['text-lg font-semibold', categoryConfig[category]?.textColor]">
+                <h3
+                    :class="[
+                        'text-lg font-semibold',
+                        categoryConfig[category]?.textColor,
+                    ]"
+                >
                     {{ category }}
                 </h3>
             </div>
@@ -181,8 +276,13 @@ function formatValidity(iso) {
                     ]"
                 >
                     <!-- Free Range Badge -->
-                    <div v-if="!product.is_denomination" class="absolute top-3 right-3">
-                        <span class="bg-primary/20 text-primary-light text-xs px-2 py-1 rounded-full font-medium">
+                    <div
+                        v-if="!product.is_denomination"
+                        class="absolute top-3 right-3"
+                    >
+                        <span
+                            class="bg-primary/20 text-primary-light text-xs px-2 py-1 rounded-full font-medium"
+                        >
                             Free Range
                         </span>
                     </div>
@@ -193,7 +293,10 @@ function formatValidity(iso) {
                     </div>
 
                     <!-- Benefits Tags -->
-                    <div v-if="product.benefits && product.benefits.length" class="flex flex-wrap gap-1 mb-3">
+                    <div
+                        v-if="product.benefits && product.benefits.length"
+                        class="flex flex-wrap gap-1 mb-3"
+                    >
                         <span
                             v-for="benefit in product.benefits"
                             :key="benefit"
@@ -214,19 +317,30 @@ function formatValidity(iso) {
                     </div>
 
                     <!-- Validity Period -->
-                    <div v-if="product.validity_period" class="text-xs text-dark-400">
+                    <div
+                        v-if="product.validity_period"
+                        class="text-xs text-dark-400"
+                    >
                         {{ formatValidity(product.validity_period) }}
                     </div>
 
                     <!-- Redemption Type Badge -->
-                    <div v-if="product.redemption_type === 'ReadReceipt'" class="mt-2">
-                        <span class="text-xs bg-yellow-500/10 text-yellow-300 px-2 py-1 rounded-full">
+                    <div
+                        v-if="product.redemption_type === 'ReadReceipt'"
+                        class="mt-2"
+                    >
+                        <span
+                            class="text-xs bg-yellow-500/10 text-yellow-300 px-2 py-1 rounded-full"
+                        >
                             📋 PIN/Voucher required
                         </span>
                     </div>
 
                     <!-- Product Type -->
-                    <div v-if="product.product_type" class="text-xs text-dark-500 mt-1">
+                    <div
+                        v-if="product.product_type"
+                        class="text-xs text-dark-500 mt-1"
+                    >
                         {{ product.product_type }}
                     </div>
                 </button>
@@ -236,7 +350,9 @@ function formatValidity(iso) {
 
     <!-- Loading State -->
     <div v-else-if="loading" class="text-center py-12">
-        <div class="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <div
+            class="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"
+        ></div>
         <p class="mt-4 text-dark-300">Loading products...</p>
     </div>
 

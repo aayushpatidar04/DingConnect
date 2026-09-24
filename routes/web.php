@@ -12,8 +12,7 @@ use App\Http\Controllers\Api\{
     OperatorController as ApiOperatorController,
     TransactionController as ApiTransactionController,
     WalletController as ApiWalletController,
-    WebhookController,
-    RazorpayController
+    WebhookController
 };
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LandingController;
@@ -121,12 +120,7 @@ Route::prefix('api')->name('api.')->group(function () {
     Route::get('/transactions', [ApiTransactionController::class, 'history'])->middleware('auth:sanctum');
     Route::get('/transactions/{id}', [ApiTransactionController::class, 'show'])->middleware('auth:sanctum');
     Route::get('/transactions/{id}/status', [ApiTransactionController::class, 'status'])->middleware('auth:sanctum');
-    Route::get('/wallet/balance', [ApiWalletController::class, 'balance'])->middleware('auth:sanctum');
-    Route::get('/wallet/ledger', [ApiWalletController::class, 'ledger'])->middleware('auth:sanctum');
-    Route::post('/wallet/topup', [ApiWalletController::class, 'topUp'])->middleware('auth:sanctum');
-
     Route::post('/webhooks/ding', [WebhookController::class, 'dingCallback']);
-    Route::post('/webhooks/razorpay', [RazorpayController::class, 'handleWebhook']);
 });
 
 // ==========================================================================
