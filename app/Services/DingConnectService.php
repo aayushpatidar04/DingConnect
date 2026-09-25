@@ -87,7 +87,7 @@ class DingConnectService
 
             return ['success' => false, 'error' => 'HTTP ' . $response->status(), 'body' => substr($response->body(), 0, 200)];
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('DingConnect POST Error: ' . $e->getMessage());
             return ['success' => false, 'error' => $e->getMessage()];
         }
@@ -220,28 +220,32 @@ class DingConnectService
      * SendTransfer - Send a top-up / recharge
      * POST /api/V1/SendTransfer
      */
-    public function sendTransfer(string $skuCode, float $sendValue, string $accountNumber, string $distributorRef, bool $validateOnly = false, ?string $sendCurrencyIso = null, ?array $settings = null): array
+    public function sendTransfer(string $skuCode, float $sendValue, string $accountNumber, string $distributorRef, bool $validateOnly = false, ?string $sendCurrencyIso = null, ?array $settings = null, ?string $billRef = null): array
     {
-        $payload = [
-            'SkuCode'         => $skuCode,
-            'SendValue'       => (float) $sendValue,
-            'AccountNumber'   => $accountNumber,
-            'DistributorRef'  => $distributorRef,
-            'ValidateOnly'    => $validateOnly ? 'true' : 'false',
+        $formData = [
+            'SkuCode'        => $skuCode,
+            'SendValue'      => (float) $sendValue,
+            'AccountNumber'  => $accountNumber,
+            'DistributorRef' => $distributorRef,
+            'ValidateOnly'   => $validateOnly ? 'true' : 'false',
         ];
 
         if ($sendCurrencyIso) {
-            $payload['SendCurrencyIso'] = $sendCurrencyIso;
+            $formData['SendCurrencyIso'] = $sendCurrencyIso;
         }
 
         if ($settings && count($settings) > 0) {
-            $payload['Settings'] = collect($settings)
-                ->map(fn($v, $k) => ['Key' => $k, 'Value' => $v])
+            $formData['Settings'] = collect($settings)
+                ->map(fn($v, $k) => ['Name' => $k, 'Value' => $v])
                 ->values()
                 ->all();
         }
 
-        return $this->postJson('/api/V1/SendTransfer', $payload);
+        if ($billRef) {
+            $formData['BillRef'] = $billRef;
+        }
+
+        return $this->postJson('/api/V1/SendTransfer', $formData);
     }
 
     /**
