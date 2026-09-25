@@ -11,9 +11,9 @@ use App\Services\DingConnectService;
 use App\Services\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -361,7 +361,8 @@ class RechargeController extends Controller
 
     /**
      * Fetch product description from DingConnect and update DB if missing.
-     * Only fetches when BOTH description_markdown and readmore_markdown are null.
+     * Only fetches when BOTH description_markdown and readmore_markdown are empty/null.
+     * Returns both fields separately.
      * GET /retailer/recharge/product-description?sku_code=xxx
      */
     public function productDescription(Request $request, DingConnectService $dingService): \Illuminate\Http\JsonResponse
@@ -377,32 +378,78 @@ class RechargeController extends Controller
             ->orderByDesc('created_at')
             ->first();
 
-        // If DB already has at least one description field, return from DB without calling DingConnect
-        if ($transaction && ($transaction->description_markdown || $transaction->readmore_markdown)) {
-            $desc = $transaction->readmore_markdown ?: $transaction->description_markdown;
-            return response()->json(['success' => true, 'description' => $desc, 'source' => 'db']);
-        }
+        $isEmpty = fn($v) => $v === null || $v === '';
 
-        // Fetch from DingConnect
-        $result = $dingService->getProductDescriptions([$request->sku_code]);
-
-        if (!$result['success'] || empty($result['data'])) {
-            return response()->json(['success' => false, 'description' => null], 404);
-        }
-
-        $items = is_array($result['data']) ? $result['data'] : [];
-        $item = $items[0] ?? [];
-
-        $desc = $item['ReadMoreMarkdown'] ?? $item['DescriptionMarkdown'] ?? null;
-
-        if ($desc && $transaction) {
-            $transaction->update([
-                'description_markdown' => $item['DescriptionMarkdown'] ?? $transaction->description_markdown,
-                'readmore_markdown'    => $item['ReadMoreMarkdown'] ?? $transaction->readmore_markdown,
+        // If DB has at least one non-empty field, return from DB
+        if ($transaction && (!$isEmpty($transaction->description_markdown) || !$isEmpty($transaction->readmore_markdown))) {
+            return response()->json([
+                'success'             => true,
+                'description_markdown' => $transaction->description_markdown,
+                'readmore_markdown'    => $transaction->readmore_markdown,
+                'source'              => 'db',
             ]);
         }
 
-        return response()->json(['success' => true, 'description' => $desc, 'source' => 'api']);
+        // Both empty — fetch from DingConnect
+        Log::info('productDescription: fetching from DingConnect', ['sku_code' => $request->sku_code]);
+
+        $result = $dingService->getProductDescriptions([$request->sku_code]);
+
+        Log::info('productDescription: DingConnect raw result', ['result' => $result]);
+
+        if (!$result['success'] || empty($result['data'])) {
+            Log::warning('productDescription: DingConnect returned empty or failed');
+            return response()->json(['success' => false, 'description_markdown' => null, 'readmore_markdown' => null], 404);
+        }
+
+        // DingConnect returns {ResultCode, Items: [...]}
+        $rawData = $result['data'];
+        if (isset($rawData['Items'])) {
+            $items = $rawData['Items'];
+        } elseif (is_array($rawData)) {
+            $items = $rawData;
+        } else {
+            $items = [];
+        }
+
+        Log::info('productDescription: parsed items', ['items' => $items]);
+
+        $item = $items[0] ?? [];
+
+        $descriptionMarkdown = $item['DescriptionMarkdown'] ?? '';
+        $readmoreMarkdown = $item['ReadMoreMarkdown'] ?? '';
+
+        Log::info('productDescription: extracted fields', [
+            'descriptionMarkdown' => $descriptionMarkdown,
+            'readmoreMarkdown' => $readmoreMarkdown,
+            'isEmptyDesc' => $isEmpty($descriptionMarkdown),
+            'isEmptyReadmore' => $isEmpty($readmoreMarkdown),
+            'transaction_id' => $transaction?->id,
+        ]);
+
+        // Save to DB if we found a transaction
+        if ($transaction) {
+            $update = [];
+            if (!$isEmpty($descriptionMarkdown)) {
+                $update['description_markdown'] = $descriptionMarkdown;
+            }
+            if (!$isEmpty($readmoreMarkdown)) {
+                $update['readmore_markdown'] = $readmoreMarkdown;
+            }
+            if (!empty($update)) {
+                $saved = $transaction->update($update);
+                Log::info('productDescription: saved to DB', ['updated' => $saved, 'fields' => array_keys($update), 'transaction_id' => $transaction->id]);
+            } else {
+                Log::info('productDescription: nothing to save, both fields empty');
+            }
+        }
+
+        return response()->json([
+            'success'              => true,
+            'description_markdown' => $descriptionMarkdown ?: null,
+            'readmore_markdown'    => $readmoreMarkdown ?: null,
+            'source'               => 'api',
+        ]);
     }
 
     /**

@@ -73,15 +73,34 @@ const canRetry = computed(
 
 const loading = ref(false);
 const loadingProductDesc = ref(false);
-const productDescription = ref("");
+const fetchedProductDesc = ref(false);
+const fetchedDescriptionMarkdown = ref("");
+const fetchedReadmoreMarkdown = ref("");
 
 const showProductDesc = computed(
     () =>
         props.transaction.status === "success" &&
-        (productDescription.value ||
+        (fetchedDescriptionMarkdown.value ||
+            fetchedReadmoreMarkdown.value ||
             props.transaction.description_markdown ||
             props.transaction.readmore_markdown),
 );
+
+const displayDescription = computed(() => {
+    return (
+        fetchedDescriptionMarkdown.value ||
+        props.transaction.description_markdown ||
+        ""
+    );
+});
+
+const displayReadmore = computed(() => {
+    return (
+        fetchedReadmoreMarkdown.value ||
+        props.transaction.readmore_markdown ||
+        ""
+    );
+});
 
 async function refreshTransaction() {
     loading.value = true;
@@ -103,23 +122,27 @@ async function refreshTransaction() {
 
 async function fetchProductDescription() {
     const sku = props.transaction.sku_code;
-    if (!sku || loadingProductDesc.value) return;
+    if (!sku || loadingProductDesc.value || fetchedProductDesc.value) return;
 
-    // Skip if DB already has at least one description field
+    // Skip if DB already has at least one non-empty description
     if (
         props.transaction.description_markdown ||
         props.transaction.readmore_markdown
-    )
+    ) {
+        fetchedProductDesc.value = true;
         return;
+    }
 
+    fetchedProductDesc.value = true;
     loadingProductDesc.value = true;
     try {
         const res = await fetch(
             `/retailer/recharge/product-description?sku_code=${sku}`,
         );
         const data = await res.json();
-        if (data.success && data.description) {
-            productDescription.value = data.description;
+        if (data.success) {
+            fetchedDescriptionMarkdown.value = data.description_markdown || "";
+            fetchedReadmoreMarkdown.value = data.readmore_markdown || "";
         }
     } catch (e) {
         console.error("Failed to fetch product description", e);
@@ -133,6 +156,16 @@ function downloadReceipt() {
         `/retailer/transactions/${props.transaction.id}/receipt`,
         "_blank",
     );
+}
+
+function fullLogoUrl(url) {
+    if (!url) return "";
+    if (url.startsWith("http")) return url;
+    return "https://" + url.replace(/^\/+/, "");
+}
+
+function onLogoError(e) {
+    e.target.style.display = "none";
 }
 
 onMounted(async () => {
@@ -219,12 +252,13 @@ onMounted(async () => {
                 </div>
                 <div class="flex items-center gap-3">
                     <div
-                        class="w-10 h-10 bg-white rounded-lg flex items-center justify-center overflow-hidden"
+                        class="w-10 h-10 bg-white rounded-lg flex items-center justify-center overflow-hidden border border-dark-600"
                     >
                         <img
                             v-if="transaction.operator?.logo_url"
-                            :src="transaction.operator.logo_url"
+                            :src="fullLogoUrl(transaction.operator.logo_url)"
                             class="w-full h-full object-contain p-1"
+                            @error="onLogoError"
                         />
                         <span v-else>📱</span>
                     </div>
@@ -267,8 +301,7 @@ onMounted(async () => {
                 >
                     <p class="text-yellow-300 text-sm">
                         📋 <strong>PIN-based recharge</strong> — share the
-                        voucher code below with your customer. Any SIM of this
-                        provider can redeem it.
+                        voucher code below with your customer.
                     </p>
                 </div>
             </div>
@@ -377,15 +410,18 @@ onMounted(async () => {
                 >
                     Loading product details...
                 </div>
-                <div
-                    v-else
-                    class="bg-dark-700 rounded-xl p-4 text-sm text-dark-200 prose prose-invert max-w-none"
-                    v-html="
-                        productDescription ||
-                        transaction.readmore_markdown ||
-                        transaction.description_markdown
-                    "
-                ></div>
+                <template v-else>
+                    <div
+                        v-if="displayDescription"
+                        class="bg-dark-700 rounded-xl p-4 text-sm text-dark-200 prose prose-invert max-w-none mb-2"
+                        v-html="displayDescription"
+                    ></div>
+                    <div
+                        v-if="displayReadmore"
+                        class="bg-dark-700/50 rounded-xl p-4 text-sm text-dark-300 prose prose-invert max-w-none"
+                        v-html="displayReadmore"
+                    ></div>
+                </template>
             </div>
 
             <!-- DingConnect Reference -->
@@ -494,9 +530,7 @@ onMounted(async () => {
                 >
                     <p class="text-yellow-300 text-xs">
                         <strong>Note:</strong> This is a ReadReceipt product.
-                        Any SIM card of this operator can redeem this PIN.
-                        Customer dials the operator's USSD or SMS the code to
-                        activate.
+                        Customer dials the operator's USSD or follow the redeem instructions given above.
                     </p>
                 </div>
             </div>
