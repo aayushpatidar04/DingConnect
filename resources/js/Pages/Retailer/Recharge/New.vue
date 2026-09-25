@@ -44,6 +44,7 @@ const reviewReference = ref("");
 const form = useForm({
     mobile_number: "",
     country_id: "",
+    operator_id: null,
     sku_code: "",
     send_value: 0,
     receive_value: 0,
@@ -184,6 +185,8 @@ async function loadProviders() {
 
 async function selectProvider(provider) {
     selectedProvider.value = provider;
+    form.operator_id = provider.id;
+    form.provider_code = provider.provider_code;
     errorMessage.value = "";
 }
 
@@ -417,6 +420,11 @@ function doSubmit() {
     form.mobile_number = cleanedPhone.value;
     form.country_id = selectedCountry.value.id;
 
+    if (selectedProvider.value) {
+        form.operator_id = selectedProvider.value.id;
+        form.provider_code = selectedProvider.value.provider_code;
+    }
+
     form.post("/retailer/recharge", {
         onSuccess: () => {
             showReviewModal.value = false;
@@ -573,7 +581,7 @@ onMounted(() => {
                     class="bg-dark-800 hover:bg-dark-700 border border-dark-600 hover:border-primary rounded-2xl p-5 text-left transition"
                 >
                     <div class="flex items-center gap-3">
-                        <span class="text-3xl">{{
+                        <span class="text-3xl text-primary">{{
                             country.flag_emoji || "🌍"
                         }}</span>
                         <div>
@@ -712,11 +720,21 @@ onMounted(() => {
                                 : 'bg-dark-800 border border-dark-600 hover:border-primary/50',
                         ]"
                     >
-                        <div class="text-lg font-semibold text-white">
-                            {{ provider.name }}
-                        </div>
-                        <div class="text-xs text-dark-400 mt-1">
-                            {{ provider.provider_code }}
+                        <div class="flex items-center gap-3">
+                            <img
+                                v-if="provider.logo_url"
+                                :src="provider.logo_url"
+                                :alt="provider.name"
+                                class="w-12 h-12 rounded-lg object-contain bg-white p-1"
+                            />
+                            <div>
+                                <div class="text-lg font-semibold text-white">
+                                    {{ provider.name }}
+                                </div>
+                                <div class="text-xs text-dark-400 mt-1">
+                                    {{ provider.provider_code }}
+                                </div>
+                            </div>
                         </div>
                         <div
                             v-if="

@@ -100,11 +100,6 @@ const props = defineProps({ transactions: Object });
                             <th
                                 class="px-4 py-3 text-left text-xs font-medium text-dark-200 uppercase"
                             >
-                                Type
-                            </th>
-                            <th
-                                class="px-4 py-3 text-left text-xs font-medium text-dark-200 uppercase"
-                            >
                                 Status
                             </th>
                         </tr>

@@ -45,7 +45,7 @@ class RechargeController extends Controller
     {
         $request->validate([
             'phone_number' => 'required|string|min:7|max:20',
-            'country_iso'  => 'nullable|string|size:2',
+            'country_iso' => 'nullable|string|size:2',
         ]);
 
         $accountNumber = preg_replace('/[^0-9]/', '', $request->phone_number);
@@ -57,20 +57,41 @@ class RechargeController extends Controller
             return response()->json(['success' => false, 'error' => $result['error']], 400);
         }
 
-        $providers = collect($result['data']['Items'] ?? $result['data']['Providers'] ?? [])->map(function ($item) {
+        $country = Country::where('iso_code', $countryIso)->first();
+
+        $providers = collect($result['data']['Items'] ?? $result['data']['Providers'] ?? [])->map(function ($item) use ($country) {
+            $operator = Operator::updateOrCreate(
+                [
+                    'provider_code' => $item['ProviderCode'],
+                ],
+                [
+                    'name' => $item['Name'] ?? '',
+                    'slug' => Str::slug($item['Name'] ?? $item['ProviderCode']),
+                    'country_id' => $country?->id,
+                    'logo_url' => $item['LogoUrl'] ?? null,
+                    'region_codes' => json_encode($item['RegionCodes'] ?? []),
+                    'payment_types' => json_encode($item['PaymentTypes'] ?? []),
+                    'validation_regex' => $item['ValidationRegex'] ?? null,
+                    'is_premium' => $item['IsPremium'] ?? false,
+                    'is_active' => true,
+                ]
+            );
+
             return [
-                'provider_code' => $item['ProviderCode'] ?? $item['Code'] ?? '',
-                'name' => $item['Name'] ?? $item['ShortName'] ?? '',
-                'is_premium' => $item['IsPremium'] ?? false,
+                'id' => $operator->id,
+                'provider_code' => $operator->provider_code,
+                'name' => $operator->name,
+                'logo_url' => $operator->logo_url,
+                'is_premium' => $operator->is_premium,
                 'region_codes' => $item['RegionCodes'] ?? [],
                 'payment_types' => $item['PaymentTypes'] ?? [],
             ];
         })->filter(fn($p) => !empty($p['provider_code']))->values();
 
         return response()->json([
-            'success'     => true,
+            'success' => true,
             'country_iso' => $countryIso,
-            'providers'   => $providers,
+            'providers' => $providers,
         ]);
     }
 
@@ -81,8 +102,8 @@ class RechargeController extends Controller
     public function getProducts(Request $request, DingConnectService $dingService): JsonResponse
     {
         $request->validate([
-            'country_iso'    => 'required|string|size:2',
-            'provider_code'  => 'required|string',
+            'country_iso' => 'required|string|size:2',
+            'provider_code' => 'required|string',
             'account_number' => 'nullable|string',
         ]);
 
@@ -191,7 +212,7 @@ class RechargeController extends Controller
     {
         $request->validate([
             'mobile_number' => ['required', 'string', 'min:7', 'max:20'],
-            'operator_id' => 'nullable|exists:operators,id',
+            'operator_id' => 'required|exists:operators,id',
             'country_id' => 'required|exists:countries,id',
             'sku_code' => ['required', 'string'],
             'send_value' => ['required', 'numeric', 'min:1'],
@@ -217,7 +238,7 @@ class RechargeController extends Controller
         $wallet = $walletService->getWallet($user);
 
         $country = Country::findOrFail($request->country_id);
-        $operator = $request->operator_id ? Operator::findOrFail($request->operator_id) : null;
+        $operator = Operator::findOrFail($request->operator_id);
 
         $retailerCharged = (float) $request->send_value;
         $availableBalance = $walletService->getAvailableBalance($wallet);
@@ -245,7 +266,7 @@ class RechargeController extends Controller
             $transaction = Transaction::create([
                 'user_id' => $user->id,
                 'mobile_number' => $accountNumber,
-                'operator_id' => $operator?->id,
+                'operator_id' => $operator->id,
                 'country_id' => $country->id,
                 'amount' => $request->send_value,
                 'currency' => $request->send_currency ?? 'GBP',
@@ -276,7 +297,7 @@ class RechargeController extends Controller
 
             $walletService = app(WalletService::class);
             $wallet = $walletService->getWallet($user);
-            $walletService->hold($wallet, $retailerCharged, 'recharge', $transaction->id, "Hold for recharge - {$accountNumber}");
+            $walletService->hold($user->id, $retailerCharged, $transaction->id, "Hold for recharge - {$accountNumber}");
 
             return $transaction;
         });
