@@ -448,6 +448,10 @@ function closePinModal() {
     receiptNumber.value = "";
 }
 
+function copyPin() {
+    navigator.clipboard.writeText(receiptText.value);
+}
+
 function resetFlow() {
     currentStep.value = 1;
     selectedCountry.value = null;
@@ -476,9 +480,9 @@ onMounted(() => {
         window.Echo.private(`retailer.${props.auth.user.id}`).listen(
             ".RechargeSuccess",
             (e) => {
-                if (e.transaction?.receipt_text) {
-                    receiptText.value = e.transaction.receipt_text;
-                    receiptNumber.value = e.transaction.receipt_number || "";
+                if (e.receipt_text) {
+                    receiptText.value = e.receipt_text;
+                    receiptNumber.value = e.receipt_number || "";
                     showPinModal.value = true;
                 }
             },
@@ -1189,10 +1193,17 @@ onMounted(() => {
                     <div class="text-xs text-dark-400 mb-1">
                         PIN / Voucher Code
                     </div>
-                    <div
-                        class="bg-dark-900 rounded-lg p-3 border border-primary/30 text-primary-light font-bold text-center break-all"
-                    >
-                        {{ receiptText }}
+                    <div class="flex items-center gap-2">
+                        <div
+                            class="flex-1 bg-dark-900 rounded-lg p-3 border border-primary/30 text-primary-light font-bold break-all"
+                            v-html="receiptText.replace(/\n/g, '<br>')"
+                        ></div>
+                        <button
+                            @click="copyPin"
+                            class="text-xs bg-dark-700 px-3 py-2 rounded text-dark-300 hover:text-white transition whitespace-nowrap"
+                        >
+                            📋 Copy
+                        </button>
                     </div>
                 </div>
                 <button

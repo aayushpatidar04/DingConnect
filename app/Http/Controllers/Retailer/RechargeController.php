@@ -360,6 +360,52 @@ class RechargeController extends Controller
     }
 
     /**
+     * Fetch product description from DingConnect and update DB if missing.
+     * Only fetches when BOTH description_markdown and readmore_markdown are null.
+     * GET /retailer/recharge/product-description?sku_code=xxx
+     */
+    public function productDescription(Request $request, DingConnectService $dingService): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'sku_code' => 'required|string',
+        ]);
+
+        $user = $request->user();
+
+        $transaction = Transaction::where('user_id', $user->id)
+            ->where('sku_code', $request->sku_code)
+            ->orderByDesc('created_at')
+            ->first();
+
+        // If DB already has at least one description field, return from DB without calling DingConnect
+        if ($transaction && ($transaction->description_markdown || $transaction->readmore_markdown)) {
+            $desc = $transaction->readmore_markdown ?: $transaction->description_markdown;
+            return response()->json(['success' => true, 'description' => $desc, 'source' => 'db']);
+        }
+
+        // Fetch from DingConnect
+        $result = $dingService->getProductDescriptions([$request->sku_code]);
+
+        if (!$result['success'] || empty($result['data'])) {
+            return response()->json(['success' => false, 'description' => null], 404);
+        }
+
+        $items = is_array($result['data']) ? $result['data'] : [];
+        $item = $items[0] ?? [];
+
+        $desc = $item['ReadMoreMarkdown'] ?? $item['DescriptionMarkdown'] ?? null;
+
+        if ($desc && $transaction) {
+            $transaction->update([
+                'description_markdown' => $item['DescriptionMarkdown'] ?? $transaction->description_markdown,
+                'readmore_markdown'    => $item['ReadMoreMarkdown'] ?? $transaction->readmore_markdown,
+            ]);
+        }
+
+        return response()->json(['success' => true, 'description' => $desc, 'source' => 'api']);
+    }
+
+    /**
      * Detect country ISO from phone number
      */
     private function detectCountryFromPhone(string $phoneNumber): ?string

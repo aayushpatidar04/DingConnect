@@ -98,6 +98,7 @@ Route::prefix('retailer')->name('retailer.')->middleware(['auth', 'retailer'])->
     Route::get('/transactions/{transaction}', [RetailerTransactionController::class, 'show'])->name('transactions.show');
     Route::get('/transactions/{transaction}/poll', [RetailerTransactionController::class, 'poll'])->name('transactions.poll');
     Route::get('/transactions/{transaction}/receipt', [RetailerTransactionController::class, 'receipt'])->name('transactions.receipt');
+    Route::get('/recharge/product-description', [RechargeController::class, 'productDescription'])->name('recharge.productDescription');
 
     Route::get('/profile', [RetailerProfileController::class, 'index'])->name('profile.index');
     Route::put('/profile', [RetailerProfileController::class, 'update'])->name('profile.update');

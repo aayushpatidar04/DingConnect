@@ -34,10 +34,36 @@ const formatDate = (date) => {
     });
 };
 
-const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-    alert("Copied: " + text);
+const copied = ref(false);
+
+const copyToClipboard = async (text) => {
+    try {
+        await navigator.clipboard.writeText(text);
+        copied.value = true;
+        setTimeout(() => (copied.value = false), 1500);
+    } catch {
+        alert("Copied: " + text);
+    }
 };
+
+const isReadReceipt = computed(
+    () => props.transaction.redemption_type === "ReadReceipt",
+);
+
+const isImmediate = computed(
+    () =>
+        !props.transaction.redemption_type ||
+        props.transaction.redemption_type === "Immediate",
+);
+
+const hasReceipt = computed(
+    () =>
+        props.transaction.status === "success" && props.transaction.receipt_text,
+);
+
+const canDownloadReceipt = computed(
+    () => props.transaction.status === "success",
+);
 
 const canRetry = computed(
     () =>
@@ -46,15 +72,23 @@ const canRetry = computed(
 );
 
 const loading = ref(false);
+const loadingProductDesc = ref(false);
+const productDescription = ref("");
+
+const showProductDesc = computed(
+    () =>
+        props.transaction.status === "success" &&
+        (productDescription.value ||
+            props.transaction.description_markdown ||
+            props.transaction.readmore_markdown),
+);
 
 async function refreshTransaction() {
     loading.value = true;
     try {
         const res = await fetch(
             `/retailer/transactions/${props.transaction.id}/poll`,
-            {
-                headers: { "X-Requested-With": "XMLHttpRequest" },
-            },
+            { headers: { "X-Requested-With": "XMLHttpRequest" } },
         );
         const data = await res.json();
         if (data.transaction) {
@@ -67,7 +101,42 @@ async function refreshTransaction() {
     }
 }
 
-onMounted(() => {
+async function fetchProductDescription() {
+    const sku = props.transaction.sku_code;
+    if (!sku || loadingProductDesc.value) return;
+
+    // Skip if DB already has at least one description field
+    if (
+        props.transaction.description_markdown ||
+        props.transaction.readmore_markdown
+    )
+        return;
+
+    loadingProductDesc.value = true;
+    try {
+        const res = await fetch(
+            `/retailer/recharge/product-description?sku_code=${sku}`,
+        );
+        const data = await res.json();
+        if (data.success && data.description) {
+            productDescription.value = data.description;
+        }
+    } catch (e) {
+        console.error("Failed to fetch product description", e);
+    } finally {
+        loadingProductDesc.value = false;
+    }
+}
+
+function downloadReceipt() {
+    window.open(
+        `/retailer/transactions/${props.transaction.id}/receipt`,
+        "_blank",
+    );
+}
+
+onMounted(async () => {
+    // Poll for pending/processing transactions
     if (["pending", "processing"].includes(props.transaction.status)) {
         const interval = setInterval(() => {
             refreshTransaction().then(() => {
@@ -81,6 +150,11 @@ onMounted(() => {
             });
         }, 3000);
         setTimeout(() => clearInterval(interval), 60000);
+    }
+
+    // Fetch product description if not already in DB
+    if (props.transaction.status === "success") {
+        await fetchProductDescription();
     }
 });
 </script>
@@ -169,15 +243,33 @@ onMounted(() => {
                 </div>
             </div>
 
-            <!-- Mobile Number -->
-            <div>
+            <!-- Mobile Number (Immediate only) -->
+            <div v-if="isImmediate">
                 <div
                     class="text-xs text-dark-400 uppercase tracking-wider mb-2"
                 >
-                    Mobile Number
+                    Recharged Number
                 </div>
-                <div class="text-white font-medium">
-                    {{ transaction.mobile_number }}
+                <div class="text-white font-medium text-lg">
+                    +{{ transaction.mobile_number }}
+                </div>
+            </div>
+
+            <!-- ReadReceipt Note -->
+            <div v-else-if="isReadReceipt">
+                <div
+                    class="text-xs text-dark-400 uppercase tracking-wider mb-2"
+                >
+                    Redemption Type
+                </div>
+                <div
+                    class="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3"
+                >
+                    <p class="text-yellow-300 text-sm">
+                        📋 <strong>PIN-based recharge</strong> — share the
+                        voucher code below with your customer. Any SIM of this
+                        provider can redeem it.
+                    </p>
                 </div>
             </div>
 
@@ -186,7 +278,7 @@ onMounted(() => {
                 <div
                     class="text-xs text-dark-400 uppercase tracking-wider mb-2"
                 >
-                    Recharge Value
+                    {{ isReadReceipt ? "PIN Value" : "Recharge Value" }}
                 </div>
                 <div class="text-2xl font-bold text-white">
                     {{ transaction.receive_currency || "GBP" }}
@@ -227,7 +319,9 @@ onMounted(() => {
                     </div>
                 </div>
                 <div class="bg-dark-700 rounded-xl p-4">
-                    <div class="text-xs text-dark-400 mb-1">Customer Gets</div>
+                    <div class="text-xs text-dark-400 mb-1">
+                        {{ isReadReceipt ? "PIN Value" : "Customer Gets" }}
+                    </div>
                     <div class="text-lg font-semibold text-white">
                         {{ transaction.receive_currency || "GBP" }}
                         {{
@@ -270,6 +364,30 @@ onMounted(() => {
                 </div>
             </div>
 
+            <!-- Product Description -->
+            <div v-if="showProductDesc">
+                <div
+                    class="text-xs text-dark-400 uppercase tracking-wider mb-2"
+                >
+                    {{ isReadReceipt ? "How to Redeem" : "Product Information" }}
+                </div>
+                <div
+                    v-if="loadingProductDesc"
+                    class="text-xs text-dark-400 animate-pulse"
+                >
+                    Loading product details...
+                </div>
+                <div
+                    v-else
+                    class="bg-dark-700 rounded-xl p-4 text-sm text-dark-200 prose prose-invert max-w-none"
+                    v-html="
+                        productDescription ||
+                        transaction.readmore_markdown ||
+                        transaction.description_markdown
+                    "
+                ></div>
+            </div>
+
             <!-- DingConnect Reference -->
             <div
                 v-if="transaction.ding_transaction_id"
@@ -304,9 +422,10 @@ onMounted(() => {
                 </button>
             </div>
         </div>
-        <!-- PIN/Receipt Section for ReadReceipt Products -->
+
+        <!-- PIN / Voucher Section -->
         <div
-            v-if="transaction.status === 'success' && transaction.receipt_text"
+            v-if="hasReceipt"
             class="bg-green-500/10 border border-green-500/30 rounded-2xl p-6 mb-6"
         >
             <div class="flex items-center gap-3 mb-4">
@@ -332,7 +451,11 @@ onMounted(() => {
                         Recharge Successful
                     </div>
                     <div class="text-xs text-green-400">
-                        Please provide the PIN to your customer
+                        {{
+                            isReadReceipt
+                                ? "Share this PIN with your customer to redeem the recharge"
+                                : "PIN/Voucher generated for this transaction"
+                        }}
                     </div>
                 </div>
             </div>
@@ -352,64 +475,73 @@ onMounted(() => {
                     <div
                         class="bg-dark-900 rounded-lg p-4 border border-primary/30 flex items-center justify-between"
                     >
-                        <code v-html="transaction.receipt_text.replace(/\n/g, '<br>')"
-                            class="text-primary-light text-xl font-bold tracking-wider"
-                            ></code
-                        >
+                        <code
+                            v-html="transaction.receipt_text.replace(/\n/g, '<br>')"
+                            class="text-primary-light text-xl font-bold tracking-wider break-all"
+                        ></code>
                         <button
                             @click="copyToClipboard(transaction.receipt_text)"
-                            class="text-xs bg-dark-700 px-3 py-1 rounded text-dark-300 hover:text-white transition"
+                            class="ml-3 text-xs bg-dark-700 px-3 py-1 rounded text-dark-300 hover:text-white transition whitespace-nowrap"
                         >
-                            📋 Copy
+                            {{ copied ? "✓ Copied" : "📋 Copy" }}
                         </button>
                     </div>
                 </div>
 
                 <div
-                    v-if="transaction.redemption_type === 'ReadReceipt'"
+                    v-if="isReadReceipt"
                     class="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mt-3"
                 >
                     <p class="text-yellow-300 text-xs">
                         <strong>Note:</strong> This is a ReadReceipt product.
-                        Share the PIN with your customer for manual redemption.
+                        Any SIM card of this operator can redeem this PIN.
+                        Customer dials the operator's USSD or SMS the code to
+                        activate.
                     </p>
                 </div>
             </div>
         </div>
 
         <!-- Timestamps Card -->
-    </div>
-
-    <div class="bg-dark-800 rounded-2xl border border-dark-600 p-6 mb-6">
-        <div class="text-xs text-dark-400 uppercase tracking-wider mb-3">
-            Timeline
-        </div>
-        <div class="space-y-3">
-            <div class="flex items-center gap-3">
-                <div class="text-sm text-dark-400 w-24">Created</div>
-                <div class="text-sm text-white">
-                    {{ formatDate(transaction.created_at) }}
+        <div class="bg-dark-800 rounded-2xl border border-dark-600 p-6 mb-6">
+            <div class="text-xs text-dark-400 uppercase tracking-wider mb-3">
+                Timeline
+            </div>
+            <div class="space-y-3">
+                <div class="flex items-center gap-3">
+                    <div class="text-sm text-dark-400 w-24">Created</div>
+                    <div class="text-sm text-white">
+                        {{ formatDate(transaction.created_at) }}
+                    </div>
+                </div>
+                <div
+                    v-if="transaction.callback_received_at"
+                    class="flex items-center gap-3"
+                >
+                    <div class="text-sm text-dark-400 w-24">Updated</div>
+                    <div class="text-sm text-white">
+                        {{ formatDate(transaction.callback_received_at) }}
+                    </div>
                 </div>
             </div>
-            <div
-                v-if="transaction.callback_received_at"
-                class="flex items-center gap-3"
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-3">
+            <button
+                v-if="canRetry"
+                @click="$inertia.visit('/retailer/recharge')"
+                class="flex-1 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary-dark transition"
             >
-                <div class="text-sm text-dark-400 w-24">Updated</div>
-                <div class="text-sm text-white">
-                    {{ formatDate(transaction.callback_received_at) }}
-                </div>
-            </div>
+                New Recharge
+            </button>
+            <button
+                v-if="canDownloadReceipt"
+                @click="downloadReceipt"
+                class="flex-1 py-3 bg-dark-800 border border-green-500/30 text-green-300 rounded-xl font-semibold hover:bg-green-500/10 transition flex items-center justify-center gap-2"
+            >
+                📥 Download Receipt
+            </button>
         </div>
-    </div>
-
-    <!-- Actions -->
-    <div v-if="canRetry" class="flex gap-3">
-        <button
-            @click="$inertia.visit('/retailer/recharge')"
-            class="flex-1 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary-dark transition"
-        >
-            New Recharge
-        </button>
     </div>
 </template>
