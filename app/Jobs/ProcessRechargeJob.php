@@ -84,23 +84,30 @@ class ProcessRechargeJob implements ShouldQueue
 
             // Check if it was instant or batch
             if (in_array($processingState, ['Completed', 'Complete', 'Successful'])) {
-                // Instant success
+                // Instant success — convert hold into permanent debit
                 $this->transaction->update(['status' => 'success']);
 
-                // Call processCallback to deduct wallet commission properly
-                $dingService->processCallback(array_merge($record, ['Status' => 'Successful']));
+                $walletService = app(\App\Services\WalletService::class);
+                $walletService->releaseHold(
+                    $this->transaction->user_id,
+                    (float) $this->transaction->send_value,
+                    $this->transaction->id,
+                    'Recharge successful — converting hold to debit'
+                );
+                $walletService->debit(
+                    $this->transaction->user_id,
+                    (float) $this->transaction->send_value,
+                    $this->transaction->id,
+                    "Mobile recharge to {$this->transaction->mobile_number}"
+                );
+
+                broadcast(new RechargeSuccess($this->transaction));
             } elseif (in_array($processingState, ['Failed', 'Failure'])) {
-                // Instant failure
+                // Instant failure — release the hold
                 $this->markFailed($record['ErrorCodes'][0] ?? $record['Message'] ?? 'Transfer failed');
             } else {
-                // Batch or still processing - status remains 'processing'
-                // Will be updated via webhook callback or polling
+                // Batch or still processing — status remains 'processing'
                 $this->transaction->update(['status' => 'processing']);
-
-                Log::info('ProcessRechargeJob: Transfer is batch/processing mode', [
-                    'transfer_ref' => $transferRef,
-                    'processing_state' => $processingState,
-                ]);
             }
         } else {
             $this->markFailed($result['error']);
@@ -116,10 +123,10 @@ class ProcessRechargeJob implements ShouldQueue
 
         $walletService = app(\App\Services\WalletService::class);
         $walletService->releaseHold(
-            $this->transaction->user->wallet,
+            $this->transaction->user_id,
             (float) $this->transaction->send_value,
             $this->transaction->id,
-            "API call failed: {$reason}"
+            "Recharge failed: {$reason}"
         );
 
         broadcast(new RechargeFailed($this->transaction));

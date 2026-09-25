@@ -261,6 +261,9 @@ class RechargeController extends Controller
         if ($request->provider_code && !$operator) {
             $settings['ProviderCode'] = $request->provider_code;
         }
+        if ($request->redemption_type) {
+            $settings['RedemptionMechanism'] = $request->redemption_type;
+        }
 
         $transaction = DB::transaction(function () use ($user, $operator, $country, $request, $retailerCharged, $orderReference, $receiptNumber, $accountNumber, $settings) {
             $transaction = Transaction::create([

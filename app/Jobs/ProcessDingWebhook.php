@@ -31,7 +31,7 @@ class ProcessDingWebhook implements ShouldQueue
                 return;
             }
 
-            $transaction = \DB::table('transactions')
+            $transaction = DB::table('transactions')
                 ->where('ding_transaction_id', $transactionId)
                 ->first();
 
@@ -42,7 +42,9 @@ class ProcessDingWebhook implements ShouldQueue
 
             $statusMap = [
                 'SUCCESSFUL' => 'success',
+                'Success'    => 'success',
                 'FAILED'     => 'failed',
+                'Failure'    => 'failed',
                 'PENDING'    => 'processing',
                 'CANCELLED'  => 'cancelled',
             ];
@@ -50,7 +52,7 @@ class ProcessDingWebhook implements ShouldQueue
             $newStatus     = $statusMap[strtoupper($this->payload['Status'] ?? '')] ?? 'processing';
             $failureReason = $this->payload['FailureReason'] ?? null;
 
-            \DB::table('transactions')->where('id', $transaction->id)->update([
+            DB::table('transactions')->where('id', $transaction->id)->update([
                 'status'                => $newStatus,
                 'failure_reason'        => $failureReason,
                 'callback_received'     => true,
@@ -59,16 +61,44 @@ class ProcessDingWebhook implements ShouldQueue
                 'updated_at'            => now(),
             ]);
 
+            $walletService = app(WalletService::class);
+
+            // Success — convert hold into permanent debit
             if ($newStatus === 'success' && $transaction->status !== 'success') {
-                \DB::table('transaction_commissions')->insert([
-                    'transaction_id'   => $transaction->id,
-                    'user_id'          => $transaction->user_id,
-                    'operator_id'      => $transaction->operator_id,
-                    'amount'           => $transaction->amount,
-                    'commission_rate'  => (float) config('platform.commission_default', 2.5),
+                $walletService->releaseHold(
+                    $transaction->user_id,
+                    (float) $transaction->send_value,
+                    $transaction->id,
+                    'Recharge confirmed by DingConnect — hold released'
+                );
+                $walletService->debit(
+                    $transaction->user_id,
+                    (float) $transaction->send_value,
+                    $transaction->id,
+                    "Mobile recharge to {$transaction->mobile_number}"
+                );
+
+                DB::table('transaction_commissions')->insert([
+                    'transaction_id'    => $transaction->id,
+                    'user_id'           => $transaction->user_id,
+                    'operator_id'       => $transaction->operator_id,
+                    'amount'            => $transaction->amount,
+                    'commission_rate'   => (float) config('platform.commission_default', 2.5),
                     'commission_amount' => ($transaction->amount * (float) config('platform.commission_default', 2.5)) / 100,
-                    'created_at'       => now(),
+                    'created_at'        => now(),
                 ]);
+
+                broadcast(new \App\Events\RechargeSuccess(\App\Models\Transaction::find($transaction->id)));
+            }
+
+            // Failure — refund the hold back to balance
+            if ($newStatus === 'failed') {
+                $walletService->releaseHold(
+                    $transaction->user_id,
+                    (float) $transaction->send_value,
+                    $transaction->id,
+                    "Recharge failed: {$failureReason}"
+                );
             }
 
         } catch (\Throwable $e) {

@@ -13,16 +13,22 @@ class Transaction extends Model
         'amount', 'currency', 'ding_transaction_id', 'ding_order_reference',
         'ding_response', 'status', 'failure_reason', 'product_type',
         'ip_address', 'user_agent', 'callback_received', 'callback_received_at',
+        'receipt_number', 'redemption_type', 'redemption_reference',
+        'sku_code', 'send_value', 'receive_value', 'send_currency', 'receive_currency',
+        'display_text', 'receipt_text', 'validity_period', 'benefits',
+        'region_code', 'provider_code', 'free_range', 'receive_value_excluding_tax',
+        'description_markdown', 'readmore_markdown',
     ];
 
     protected $casts = [
-        'ding_response'      => 'array',
-        'ip_address'         => 'array',
-        'callback_received'  => 'boolean',
-        'callback_received_at' => 'datetime',
-        'amount'             => 'decimal:4',
-        'created_at'         => 'datetime',
-        'updated_at'         => 'datetime',
+        'ding_response'              => 'array',
+        'benefits'                   => 'array',
+        'ip_address'                 => 'string',
+        'callback_received'          => 'boolean',
+        'callback_received_at'       => 'datetime',
+        'amount'                     => 'decimal:4',
+        'created_at'                 => 'datetime',
+        'updated_at'                 => 'datetime',
     ];
 
     public function user(): BelongsTo

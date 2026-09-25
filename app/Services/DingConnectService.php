@@ -235,7 +235,10 @@ class DingConnectService
         }
 
         if ($settings && count($settings) > 0) {
-            $payload['Settings'] = $settings;
+            $payload['Settings'] = collect($settings)
+                ->map(fn($v, $k) => ['Key' => $k, 'Value' => $v])
+                ->values()
+                ->all();
         }
 
         return $this->postJson('/api/V1/SendTransfer', $payload);

@@ -91,11 +91,11 @@ return new class extends Migration {
             $table->index('user_id');
         });
 
-        Schema::create('wallet_ledgers', function (Blueprint $table) {
+        Schema::create('wallet_ledgers', function ($table) {
             $table->id();
-            $table->foreignId('wallet_id')->constrained()->cascadeOnDelete();
+            $table->unsignedBigInteger('wallet_id');
             $table->unsignedBigInteger('transaction_id')->nullable();
-            $table->enum('type', ['credit', 'debit', 'hold', 'refund']);
+            $table->enum('type', ['credit', 'debit', 'hold', 'release', 'refund']);
             $table->decimal('amount', 12, 2);
             $table->decimal('balance_before', 12, 2);
             $table->decimal('balance_after', 12, 2);
