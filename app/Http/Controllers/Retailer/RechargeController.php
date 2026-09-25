@@ -7,6 +7,7 @@ use App\Jobs\ProcessRechargeJob;
 use App\Models\Country;
 use App\Models\Operator;
 use App\Models\Transaction;
+use App\Models\AllowedNumber;
 use App\Services\DingConnectService;
 use App\Services\WalletService;
 use Illuminate\Http\JsonResponse;
@@ -31,6 +32,67 @@ class RechargeController extends Controller
             ->get(['id', 'name', 'iso_code', 'calling_code', 'flag_emoji']);
 
         return Inertia::render('Retailer/Recharge/New', compact('wallet', 'availableBalance', 'countries'));
+    }
+
+    // =========================================================================
+    // READRECEIPT PIN RECHARGE FLOW
+    // =========================================================================
+
+    /**
+     * Show the PIN recharge page.
+     * GET /retailer/recharge/pin?country=GB&provider=GIFFGAFF
+     */
+    public function pinIndex(Request $request, DingConnectService $dingService)
+    {
+        $user = $request->user();
+        $walletService = app(WalletService::class);
+        $wallet = $walletService->getWallet($user);
+        $availableBalance = $walletService->getAvailableBalance($wallet);
+
+        $countries = Country::where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'iso_code', 'calling_code', 'flag_emoji']);
+
+        $selectedCountry = $request->query('country');
+        $selectedProvider = $request->query('provider');
+        $providers = [];
+        $products = [];
+
+        if ($selectedCountry) {
+            $providersResult = $dingService->getProviders($selectedCountry);
+            if ($providersResult['success']) {
+                $providers = collect($providersResult['data']['Items'] ?? $providersResult['data'] ?? [])->map(function ($item) {
+                    return [
+                        'code' => $item['ProviderCode'],
+                        'name' => $item['Name'],
+                        'logo_url' => $item['LogoUrl'] ?? null,
+                        'country_iso' => $selectedCountry,
+                    ];
+                })->filter(fn($p) => !empty($p['code']))->values()->all();
+            }
+        }
+
+        if ($selectedCountry && $selectedProvider) {
+            $productsResult = $dingService->getProducts($selectedCountry, $selectedProvider);
+            if ($productsResult['success']) {
+                $items = $productsResult['data']['Items'] ?? $productsResult['data'] ?? [];
+                foreach ($items as $item) {
+                    if (($item['RedemptionMechanism'] ?? 'Immediate') === 'ReadReceipt') {
+                        $products[] = $this->transformProduct($item);
+                    }
+                }
+            }
+        }
+
+        return Inertia::render('Retailer/Recharge/Pin/Index', [
+            'wallet' => $wallet,
+            'availableBalance' => $availableBalance,
+            'countries' => $countries,
+            'providers' => $providers,
+            'products' => $products,
+            'selectedCountry' => $selectedCountry,
+            'selectedProvider' => $selectedProvider,
+        ]);
     }
 
     // =========================================================================
@@ -93,6 +155,36 @@ class RechargeController extends Controller
             'country_iso' => $countryIso,
             'providers' => $providers,
         ]);
+    }
+
+    /**
+     * Simple provider list by country (no phone number required).
+     * Used by the PIN recharge flow.
+     * GET /retailer/recharge/providers?country_iso=GB
+     */
+    public function getProvidersSimple(Request $request, DingConnectService $dingService): JsonResponse
+    {
+        $request->validate([
+            'country_iso' => 'required|string|size:2',
+        ]);
+
+        $countryIso = $request->query('country_iso');
+        $result = $dingService->getProviders($countryIso);
+
+        if (!$result['success']) {
+            return response()->json(['success' => true, 'providers' => []]);
+        }
+
+        $providers = collect($result['data']['Items'] ?? $result['data'] ?? [])->map(function ($item) use ($countryIso) {
+            return [
+                'provider_code' => $item['ProviderCode'],
+                'name' => $item['Name'],
+                'logo_url' => $item['LogoUrl'] ?? null,
+                'country_iso' => $countryIso,
+            ];
+        })->filter(fn($p) => !empty($p['provider_code']))->values()->all();
+
+        return response()->json(['success' => true, 'providers' => $providers]);
     }
 
     /**
@@ -450,6 +542,145 @@ class RechargeController extends Controller
             'readmore_markdown'    => $readmoreMarkdown ?: null,
             'source'               => 'api',
         ]);
+    }
+
+    /**
+     * Check if a serial/number is allowed for PIN recharge.
+     * GET /retailer/recharge/pin/check-serial?number=xxx
+     */
+    public function checkSerial(Request $request): JsonResponse
+    {
+        $request->validate([
+            'number' => 'required|string',
+        ]);
+
+        $number = preg_replace('/[^A-Za-z0-9\+\-]/', '', $request->number);
+
+        $allowed = AllowedNumber::where('active', true)
+            ->where(function ($q) use ($number) {
+                $q->where('number', $number)
+                  ->orWhere('number', '+' . ltrim($number, '+'));
+            })
+            ->exists();
+
+        return response()->json([
+            'allowed' => $allowed,
+            'number'  => $number,
+        ]);
+    }
+
+    /**
+     * Process a PIN (ReadReceipt) recharge. No mobile number needed;
+     * just the serial for our records.
+     * POST /retailer/recharge/pin/process
+     */
+    public function pinProcess(Request $request, DingConnectService $dingService): JsonResponse
+    {
+        $data = $request->validate([
+            'sku_code'        => 'required|string',
+            'send_value'      => 'required|numeric|min:0.01',
+            'serial_number'   => 'required|string',
+            'redemption_type' => 'required|in:ReadReceipt',
+        ]);
+
+        $user = $request->user();
+        $serial = preg_replace('/[^A-Za-z0-9\+\-]/', '', $data['serial_number']);
+
+        // Re-validate against allowed numbers
+        $allowed = AllowedNumber::where('active', true)
+            ->where(function ($q) use ($serial) {
+                $q->where('number', $serial)
+                  ->orWhere('number', '+' . ltrim($serial, '+'));
+            })
+            ->first();
+
+        if (!$allowed) {
+            return response()->json(['success' => false, 'error' => 'Serial is not authorized for PIN recharge.'], 403);
+        }
+
+        // Look up product from local cache via DingConnect (no mobile needed)
+        $product = Operator::where('provider_code', $request->input('provider_code'))->first();
+
+        $orderReference = 'PIN-' . strtoupper(Str::random(10));
+        $receiptNumber = 'RCP-' . strtoupper(Str::random(10));
+
+        // Deduct wallet & create transaction
+        try {
+            $transaction = DB::transaction(function () use ($user, $data, $serial, $orderReference, $receiptNumber, $allowed) {
+                $tx = Transaction::create([
+                    'user_id'                => $user->id,
+                    'mobile_number'          => $serial, // we store the serial here for records
+                    'serial_number'          => $serial,
+                    'operator_id'            => null,
+                    'country_id'             => null,
+                    'amount'                 => $data['send_value'],
+                    'send_value'             => $data['send_value'],
+                    'receive_value'          => $data['send_value'],
+                    'currency'               => 'GBP',
+                    'send_currency'          => 'GBP',
+                    'receive_currency'       => 'GBP',
+                    'sku_code'               => $data['sku_code'],
+                    'redemption_type'        => 'ReadReceipt',
+                    'receipt_number'         => $receiptNumber,
+                    'ding_order_reference'   => $orderReference,
+                    'status'                 => 'processing',
+                    'ip_address'             => request()->ip(),
+                    'user_agent'             => request()->userAgent(),
+                    'note'                   => "Allowed number ID: {$allowed->id}",
+                ]);
+
+                $walletService = app(WalletService::class);
+                $walletService->hold($user->id, $data['send_value'], $tx->id, "PIN recharge hold - {$serial}");
+
+                return $tx;
+            });
+        } catch (\Exception $e) {
+            Log::error('PIN recharge failed', ['err' => $e->getMessage(), 'serial' => $serial]);
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+
+        // Send to DingConnect — no AccountNumber for ReadReceipt
+        $settings = ['RedemptionMechanism' => 'ReadReceipt'];
+        $response = $dingService->sendTransfer(
+            skuCode: $data['sku_code'],
+            sendValue: (float) $data['send_value'],
+            accountNumber: '', // empty for ReadReceipt
+            distributorRef: $orderReference,
+            validateOnly: false,
+            sendCurrencyIso: 'GBP',
+            settings: $settings,
+        );
+
+        if (($response['ResultCode'] ?? 0) === 1) {
+            $transaction->update([
+                'status'             => 'success',
+                'ding_transaction_id' => $response['TransferId'] ?? null,
+                'receipt_text'       => $response['ReceiptContent'] ?? null,
+                'callback_received_at' => now(),
+            ]);
+
+            // Debit wallet
+            app(WalletService::class)->debitFromHold($user->id, $data['send_value'], $transaction->id, "PIN recharge - {$serial}");
+
+            return response()->json([
+                'success' => true,
+                'transaction_id' => $transaction->id,
+            ]);
+        } else {
+            $transaction->update([
+                'status'          => 'failed',
+                'failure_reason'  => $response['ErrorCodes'][0]['Code'] ?? 'Unknown error',
+                'callback_received_at' => now(),
+            ]);
+
+            // Release hold
+            app(WalletService::class)->releaseHold($user->id, $data['send_value'], $transaction->id);
+
+            return response()->json([
+                'success' => false,
+                'error'   => $response['ErrorCodes'][0]['DisplayMessage'] ?? 'Recharge failed',
+            ], 400);
+        }
     }
 
     /**

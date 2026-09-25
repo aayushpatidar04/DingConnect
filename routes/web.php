@@ -37,6 +37,7 @@ Route::get('/contact', fn () => Inertia::render('Contact/Index'))->name('contact
 // ==========================================================================
 // AUTH
 // ==========================================================================
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
@@ -55,6 +56,7 @@ Route::post('/logout', [AuthController::class, 'logout'])
 // ==========================================================================
 // ADMIN
 // ==========================================================================
+
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
@@ -73,11 +75,16 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
 
     Route::get('/settings', [AdminSettingController::class, 'index'])->name('settings.index');
     Route::post('/settings', [AdminSettingController::class, 'update'])->name('settings.update');
+
+    // AllowedNumbers management
+    Route::resource('allowed-numbers', \App\Http\Controllers\Admin\AllowedNumberController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::post('allowed-numbers/import', [\App\Http\Controllers\Admin\AllowedNumberController::class, 'import'])->name('allowed-numbers.import');
 });
 
 // ==========================================================================
 // RETAILER
 // ==========================================================================
+
 Route::prefix('retailer')->name('retailer.')->middleware(['auth', 'retailer'])->group(function () {
     Route::get('/dashboard', [RetailerDashboardController::class, 'index'])->name('dashboard');
 
@@ -89,12 +96,18 @@ Route::prefix('retailer')->name('retailer.')->middleware(['auth', 'retailer'])->
     Route::get('/recharge', [RechargeController::class, 'index'])->name('recharge.index');
     Route::post('/recharge', [RechargeController::class, 'initiate'])->name('recharge.initiate');
     Route::get('/recharge/operators', [RechargeController::class, 'getOperators'])->name('recharge.operators');
+    Route::get('/recharge/providers', [RechargeController::class, 'getProvidersSimple'])->name('recharge.providers');
     Route::get('/recharge/provider-status', [RechargeController::class, 'getProviderStatus'])->name('recharge.provider-status');
     Route::get('/recharge/products', [RechargeController::class, 'getProducts'])->name('recharge.products');
     Route::get('/recharge/promotions', [RechargeController::class, 'getPromotions'])->name('recharge.promotions');
     Route::get('/recharge/pricing', [RechargeController::class, 'estimatePricing'])->name('recharge.pricing');
 
-    Route::get('/transactions', [RetailerTransactionController::class, 'index'])->name('transactions.index');
+    // ReadReceipt PIN flow
+    Route::get('/recharge/pin', [RechargeController::class, 'pinIndex'])->name('recharge.pin.index');
+    Route::get('/recharge/pin/check-serial', [RechargeController::class, 'checkSerial'])->name('recharge.pin.checkSerial');
+    Route::post('/recharge/pin/process', [RechargeController::class, 'pinProcess'])->name('recharge.pin.process');
+
+    Route::get('/recharge/product-description', [RechargeController::class, 'productDescription'])->name('recharge.productDescription');
     Route::get('/transactions/{transaction}', [RetailerTransactionController::class, 'show'])->name('transactions.show');
     Route::get('/transactions/{transaction}/poll', [RetailerTransactionController::class, 'poll'])->name('transactions.poll');
     Route::get('/transactions/{transaction}/receipt', [RetailerTransactionController::class, 'receipt'])->name('transactions.receipt');
@@ -107,6 +120,7 @@ Route::prefix('retailer')->name('retailer.')->middleware(['auth', 'retailer'])->
 // ==========================================================================
 // REST API (auth:sanctum)
 // ==========================================================================
+
 Route::prefix('api')->name('api.')->group(function () {
     Route::post('/auth/register', [\App\Http\Controllers\Api\Auth\AuthController::class, 'register']);
     Route::post('/auth/login', [\App\Http\Controllers\Api\Auth\AuthController::class, 'login']);
@@ -127,6 +141,7 @@ Route::prefix('api')->name('api.')->group(function () {
 // ==========================================================================
 // BROADCASTING
 // ==========================================================================
+
 Route::get('/broadcasting/auth', function () {
     return Broadcast::auth(request()->user());
 })->middleware('auth');
@@ -140,6 +155,7 @@ Route::get('/retailer', fn () => redirect('/retailer/dashboard'))->middleware(['
 // ==========================================================================
 // LARAVEL BREEZE PROFILE
 // ==========================================================================
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');

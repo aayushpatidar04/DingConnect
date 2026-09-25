@@ -502,6 +502,29 @@ onMounted(() => {
             </p>
         </div>
 
+        <!-- PIN Recharge Option -->
+        <a
+            href="/retailer/recharge/pin"
+            class="block bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-5 mb-6 hover:bg-yellow-500/20 transition group"
+        >
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center">
+                        <span class="text-2xl">🎫</span>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-yellow-300 text-lg group-hover:text-yellow-200">
+                            PIN Voucher Recharge
+                        </div>
+                        <div class="text-sm text-yellow-400/70">
+                            No mobile number required. Purchase a PIN voucher and share it with your customer.
+                        </div>
+                    </div>
+                </div>
+                <span class="text-yellow-400 group-hover:translate-x-1 transition">→</span>
+            </div>
+        </a>
+
         <!-- Wallet Balance Alert -->
         <div
             v-if="availableBalance < 10"
