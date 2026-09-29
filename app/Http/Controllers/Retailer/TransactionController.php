@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Retailer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
+use App\Services\DingConnectService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -39,9 +40,31 @@ class TransactionController extends Controller
         return Inertia::render('Retailer/Transactions/Index', compact('transactions'));
     }
 
-    public function show(Transaction $transaction)
+    public function show(Transaction $transaction, DingConnectService $dingService)
     {
         $this->authorize('view', $transaction);
+
+        // Backfill description for old transactions that predate the job backfill
+        if (
+            $transaction->status === 'success' &&
+            empty($transaction->description_markdown) &&
+            empty($transaction->readmore_markdown)
+        ) {
+            try {
+                $result = $dingService->getProductDescriptions([$transaction->sku_code]);
+                $item = $result['data']['Items'][0] ?? null;
+
+                if ($item) {
+                    $transaction->update([
+                        'description_markdown' => $item['DescriptionMarkdown'] ?? null,
+                        'readmore_markdown' => $item['ReadMoreMarkdown'] ?? null,
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Description backfill failed for transaction ' . $transaction->id . ': ' . $e->getMessage());
+            }
+        }
+
         $transaction->load(['operator', 'country']);
 
         return Inertia::render('Retailer/Transactions/Show', compact('transaction'));

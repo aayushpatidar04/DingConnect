@@ -257,7 +257,7 @@ class DingConnectService
         $formData = [
             'SkuCode' => $skuCode,
             'SendValue' => (float) $sendValue,
-            'AccountNumber' => $accountNumber,
+            'AccountNumber' => !empty($accountNumber) ? $accountNumber : '0000000000',
             'DistributorRef' => $distributorRef,
             'ValidateOnly' => $validateOnly ? 'true' : 'false',
         ];
@@ -351,7 +351,7 @@ class DingConnectService
 
         if (!$transaction) {
             Log::warning("Ding callback for unknown transaction: {$dingTransactionId}");
-            throw new \Exception("Transaction not found: {$dingTransactionId}");
+            throw new Exception("Transaction not found: {$dingTransactionId}");
         }
 
         $status = $payload['Status'] ?? 'Unknown';

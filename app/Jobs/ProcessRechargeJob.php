@@ -83,9 +83,28 @@ class ProcessRechargeJob implements ShouldQueue
             ]);
 
             // Check if it was instant or batch
+            // Check if it was instant or batch
             if (in_array($processingState, ['Completed', 'Complete', 'Successful'])) {
                 // Instant success — convert hold into permanent debit
                 $this->transaction->update(['status' => 'success']);
+
+                // Backfill product description / how-to-redeem from DingConnect
+                if (empty($this->transaction->description_markdown) || empty($this->transaction->readmore_markdown)) {
+                    try {
+                        $descResult = $dingService->getProductDescriptions([$this->transaction->sku_code]);
+
+                        $item = $descResult['data']['Items'][0] ?? null;
+                        if ($item) {
+                            $this->transaction->update([
+                                'description_markdown' => $item['DescriptionMarkdown'] ?? $this->transaction->description_markdown,
+                                'readmore_markdown' => $item['ReadMoreMarkdown'] ?? $this->transaction->readmore_markdown,
+                            ]);
+                        }
+                    } catch (\Throwable $e) {
+                        // Never let a description lookup break a successful recharge
+                        Log::warning('Product description backfill failed for transaction ' . $this->transaction->id . ': ' . $e->getMessage());
+                    }
+                }
 
                 $walletService = app(\App\Services\WalletService::class);
                 $walletService->releaseHold(
@@ -101,7 +120,8 @@ class ProcessRechargeJob implements ShouldQueue
                     "Mobile recharge to {$this->transaction->mobile_number}"
                 );
 
-                broadcast(new RechargeSuccess($this->transaction));
+                // Broadcast AFTER backfill so RechargeSuccess carries the fresh description
+                broadcast(new RechargeSuccess($this->transaction->fresh()));
             } elseif (in_array($processingState, ['Failed', 'Failure'])) {
                 // Instant failure — release the hold
                 $this->markFailed($record['ErrorCodes'][0] ?? $record['Message'] ?? 'Transfer failed');

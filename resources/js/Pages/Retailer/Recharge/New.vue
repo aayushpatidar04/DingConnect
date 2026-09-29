@@ -2,7 +2,7 @@
 import { Head, useForm } from "@inertiajs/vue3";
 import RetailerLayout from "@/Layouts/RetailerLayout.vue";
 import ProductCategories from "@/Components/ProductCategories.vue";
-import { ref, onMounted, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 
 defineOptions({ layout: RetailerLayout });
 
@@ -13,10 +13,7 @@ const props = defineProps({
 
 const currentStep = ref(1);
 const selectedCountry = ref(null);
-const mobileNumber = ref("");
-const cleanedPhone = ref("");
 const countryIso = ref("");
-const phoneError = ref("");
 const providers = ref([]);
 const selectedProvider = ref(null);
 const providerLive = ref(true);
@@ -31,15 +28,40 @@ const isFreeRangeFlow = ref(false);
 const freeRangeAmount = ref(0);
 const freeRangePricing = ref(null);
 const freeRangeLoading = ref(false);
+const mobileNumber = ref("");
+const cleanedPhone = ref("");
 const submitting = ref(false);
 const errorMessage = ref("");
+
+// Product description (fetched on demand)
+const productDescription = ref("");
+const productReadmore = ref("");
+const loadingDescription = ref(false);
+
+// Review modal
+const showReviewModal = ref(false);
+const reviewTimestamp = ref("");
+const reviewReference = ref("");
+
+// PIN modal
 const showPinModal = ref(false);
 const receiptText = ref("");
 const receiptNumber = ref("");
 
-const showReviewModal = ref(false);
-const reviewTimestamp = ref("");
-const reviewReference = ref("");
+const stepNames = ["Country", "Provider", "Products", "Number", "Confirm"];
+const totalSteps = stepNames.length;
+
+const currentCountryIso = computed(() => {
+    if (countryIso.value) return countryIso.value;
+    if (selectedCountry.value?.iso_code) return selectedCountry.value.iso_code;
+    return "GB";
+});
+
+const isPinProduct = computed(
+    () => selectedProduct.value?.redemption_type === "ReadReceipt",
+);
+
+const showPromotionBadge = computed(() => promotions.value.length > 0);
 
 const form = useForm({
     mobile_number: "",
@@ -64,27 +86,8 @@ const form = useForm({
     receive_value_excluding_tax: 0,
 });
 
-const stepNames = ["Country", "Phone", "Operator", "Products", "Confirm"];
-const totalSteps = stepNames.length;
-
-const canProceedFromPhone = computed(
-    () => cleanedPhone.value.length >= 7 && !phoneError.value,
-);
-
-const canProceedFromProvider = computed(
-    () => !!selectedProvider.value && providerLive.value,
-);
-
-const currentCountryIso = computed(() => {
-    if (countryIso.value) return countryIso.value;
-    if (selectedCountry.value?.iso_code) return selectedCountry.value.iso_code;
-    return "GB";
-});
-
-const showPromotionBadge = computed(() => promotions.value.length > 0);
-
 // =========================================================================
-// VALIDATION
+// VALIDATION HELPERS
 // =========================================================================
 
 function parseValidityPeriod(iso) {
@@ -102,13 +105,10 @@ function parseValidityPeriod(iso) {
 function validatePhone() {
     const cleaned = mobileNumber.value.replace(/\D/g, "");
     cleanedPhone.value = cleaned;
-
     if (cleaned.length < 7) {
         phoneError.value = "Please enter a valid phone number";
         return false;
     }
-
-    // Prepend country calling code if not already present
     if (selectedCountry.value?.calling_code) {
         const code = selectedCountry.value.calling_code.replace(/\D/g, "");
         if (!cleaned.startsWith(code)) {
@@ -118,10 +118,15 @@ function validatePhone() {
             cleanedPhone.value = code + withoutCode;
         }
     }
-
     phoneError.value = "";
     return true;
 }
+
+const phoneError = ref("");
+
+const canProceedFromPhone = computed(
+    () => cleanedPhone.value.length >= 7 && !phoneError.value,
+);
 
 // =========================================================================
 // STEP NAVIGATION
@@ -131,8 +136,11 @@ function selectCountry(country) {
     selectedCountry.value = country;
     countryIso.value = country?.iso_code || "";
     currentStep.value = 2;
-    phoneError.value = "";
+    providers.value = [];
+    selectedProvider.value = null;
     errorMessage.value = "";
+
+    loadProviders();
 }
 
 function backToStep(step) {
@@ -141,14 +149,8 @@ function backToStep(step) {
 }
 
 // =========================================================================
-// PROVIDERS
+// PROVIDERS (Step 2)
 // =========================================================================
-
-async function proceedToProviders() {
-    if (!validatePhone()) return;
-    currentStep.value = 3;
-    await loadProviders();
-}
 
 async function loadProviders() {
     loadingProviders.value = true;
@@ -158,20 +160,16 @@ async function loadProviders() {
 
     try {
         const params = new URLSearchParams();
-        params.append("phone_number", cleanedPhone.value);
         params.append("country_iso", currentCountryIso.value);
 
         const res = await fetch(
-            `/retailer/recharge/operators?${params.toString()}`,
+            `/retailer/recharge/providers?${params.toString()}`,
         );
         const data = await res.json();
         if (data.success) {
-            countryIso.value = data.country_iso; // Sync with API-detected country
             providers.value = data.providers || [];
-
             if (providers.value.length === 0) {
-                errorMessage.value =
-                    "No operators available for this phone number.";
+                errorMessage.value = "No operators available for this country.";
             }
         } else {
             errorMessage.value = data.error || "Failed to load operators.";
@@ -185,7 +183,6 @@ async function loadProviders() {
 
 async function selectProvider(provider) {
     selectedProvider.value = provider;
-    form.operator_id = provider.id;
     form.provider_code = provider.provider_code;
     errorMessage.value = "";
 }
@@ -201,7 +198,6 @@ async function proceedToProducts() {
         );
         const data = await res.json();
         providerLive.value = data.is_live !== false;
-
         if (!providerLive.value) {
             errorMessage.value =
                 "Selected provider is down at this moment, please try after some time.";
@@ -212,24 +208,21 @@ async function proceedToProducts() {
     }
 
     await loadProducts();
-    currentStep.value = 4;
+    currentStep.value = 3;
 }
 
 async function loadProducts() {
     loadingProducts.value = true;
     products.value = [];
     selectedProduct.value = null;
+    productDescription.value = "";
+    productReadmore.value = "";
     errorMessage.value = "";
 
     try {
         const params = new URLSearchParams();
-        params.append("account_number", cleanedPhone.value);
         params.append("country_iso", currentCountryIso.value);
-        if (selectedProvider.value)
-            params.append(
-                "provider_code",
-                selectedProvider.value.provider_code,
-            );
+        params.append("provider_code", selectedProvider.value.provider_code);
 
         const res = await fetch(
             `/retailer/recharge/products?${params.toString()}`,
@@ -248,19 +241,11 @@ async function loadProducts() {
     }
 }
 
-// =========================================================================
-// PROMOTIONS
-// =========================================================================
-
 async function loadPromotions() {
     try {
         const params = new URLSearchParams();
         params.append("country_isos", currentCountryIso.value);
-        if (selectedProvider.value)
-            params.append(
-                "provider_codes",
-                selectedProvider.value.provider_code,
-            );
+        params.append("provider_codes", selectedProvider.value.provider_code);
 
         const res = await fetch(
             `/retailer/recharge/promotions?${params.toString()}`,
@@ -268,7 +253,6 @@ async function loadPromotions() {
         const data = await res.json();
         if (data.success && data.promotions && data.promotions.length > 0) {
             promotions.value = data.promotions;
-            showPromotionsModal.value = true;
         }
     } catch (e) {
         promotions.value = [];
@@ -280,18 +264,27 @@ function closePromotionsModal() {
 }
 
 // =========================================================================
-// PRODUCT SELECTION → CONFIRM
+// PRODUCT SELECTION (Step 3 → 4/5)
 // =========================================================================
 
-function selectProduct(product) {
+async function selectProduct(product) {
     selectedProduct.value = product;
     selectedSkuCode.value = product.sku_code;
     isFreeRangeFlow.value = !product.is_denomination;
 
     if (isFreeRangeFlow.value) {
         freeRangeAmount.value = product.min_send_value || 5;
+        freeRangePricing.value = null;
     }
 
+    // Reset description
+    productDescription.value = "";
+    productReadmore.value = "";
+
+    // Fetch product description from API
+    await fetchProductDescription(product.sku_code);
+
+    // Populate form
     form.sku_code = product.sku_code;
     form.send_value = product.send_value;
     form.receive_value = product.receive_value;
@@ -300,8 +293,8 @@ function selectProduct(product) {
     form.display_text = product.display_text;
     form.default_display_text = product.display_text;
     form.validity_period = product.validity_period;
-    form.description_markdown = product.description_markdown || "";
-    form.readmore_markdown = product.readmore_markdown || "";
+    form.description_markdown = productDescription.value || "";
+    form.readmore_markdown = productReadmore.value || "";
     form.benefits = product.benefits || [];
     form.redemption_type = product.redemption_type || "Immediate";
     form.product_type = product.product_type || "";
@@ -311,7 +304,31 @@ function selectProduct(product) {
         product.receive_value_excluding_tax || product.receive_value || 0;
     form.free_range = isFreeRangeFlow.value;
 
-    currentStep.value = 5;
+    // PIN products skip the number step
+    if (isPinProduct.value) {
+        currentStep.value = 5; // go straight to confirm
+    } else {
+        currentStep.value = 4; // ask for number
+    }
+}
+
+async function fetchProductDescription(skuCode) {
+    if (!skuCode) return;
+    loadingDescription.value = true;
+    try {
+        const res = await fetch(
+            `/retailer/recharge/product-description?sku_code=${skuCode}`,
+        );
+        const data = await res.json();
+        if (data.success) {
+            productDescription.value = data.description_markdown || "";
+            productReadmore.value = data.readmore_markdown || "";
+        }
+    } catch (e) {
+        console.error("Failed to fetch product description", e);
+    } finally {
+        loadingDescription.value = false;
+    }
 }
 
 function backToProducts() {
@@ -319,8 +336,54 @@ function backToProducts() {
     selectedSkuCode.value = "";
     isFreeRangeFlow.value = false;
     freeRangePricing.value = null;
-    form.sku_code = "";
-    currentStep.value = 4;
+    productDescription.value = "";
+    productReadmore.value = "";
+    currentStep.value = 3;
+}
+
+// =========================================================================
+// NUMBER INPUT (Step 4 — only for Immediate/Top-up)
+// =========================================================================
+
+const validatingNumber = ref(false);
+
+async function proceedToConfirmFromNumber() {
+    if (!validatePhone()) return;
+
+    errorMessage.value = "";
+    validatingNumber.value = true;
+
+    try {
+        const params = new URLSearchParams({
+            mobile_number: cleanedPhone.value,
+            provider_code: selectedProvider.value.provider_code,
+        });
+        const res = await fetch(
+            `/retailer/recharge/validate-number?${params.toString()}`,
+        );
+        const data = await res.json();
+
+        if (!data.success) {
+            errorMessage.value = data.error || "Number validation failed.";
+            return;
+        }
+
+        // Use the canonical number Ding verified
+        if (data.account_number) cleanedPhone.value = data.account_number;
+    } catch (e) {
+        errorMessage.value = "Network error. Please try again.";
+        return;
+    } finally {
+        validatingNumber.value = false;
+    }
+
+    if (props.availableBalance < form.send_value) {
+        errorMessage.value =
+            "Insufficient wallet balance. Please top up first.";
+        return;
+    }
+
+    currentStep.value = 5;
 }
 
 // =========================================================================
@@ -332,15 +395,12 @@ async function fetchFreeRangePricing() {
         freeRangePricing.value = null;
         return;
     }
-
     const min = selectedProduct.value?.min_send_value || 1;
     const max = selectedProduct.value?.max_send_value || 1000;
-
     if (freeRangeAmount.value < min || freeRangeAmount.value > max) {
         freeRangePricing.value = null;
         return;
     }
-
     freeRangeLoading.value = true;
     try {
         const params = new URLSearchParams();
@@ -352,7 +412,6 @@ async function fetchFreeRangePricing() {
             `/retailer/recharge/pricing?${params.toString()}`,
         );
         const data = await res.json();
-
         if (data.success && data.pricing) {
             freeRangePricing.value = data.pricing;
             form.send_value = data.pricing.send_value;
@@ -370,29 +429,29 @@ async function fetchFreeRangePricing() {
 }
 
 // =========================================================================
-// SUBMIT
+// SUBMIT / REVIEW
 // =========================================================================
 
-// Shared pre-submit validation
 function validateBeforeSubmit() {
     errorMessage.value = "";
-
     if (!selectedProduct.value) {
         errorMessage.value = "Please select a product";
         return false;
     }
-
     if (isFreeRangeFlow.value && !freeRangePricing.value) {
         errorMessage.value = "Please enter a valid amount";
         return false;
     }
-
     if (props.availableBalance < form.send_value) {
         errorMessage.value =
             "Insufficient wallet balance. Please top up first.";
         return false;
     }
-
+    // Top-up products need a number
+    if (!isPinProduct.value && !cleanedPhone.value) {
+        errorMessage.value = "Please enter a phone number";
+        return false;
+    }
     return true;
 }
 
@@ -400,12 +459,11 @@ function submitRecharge(action = "buy") {
     if (action === "review") {
         if (!validateBeforeSubmit()) return;
         reviewTimestamp.value = new Date().toLocaleString();
-        reviewReference.value = "RCPT-" + Date.now(); // client-side reference only
+        reviewReference.value = "RCPT-" + Date.now();
         showReviewModal.value = true;
         return;
     }
 
-    // action === 'buy'
     if (!validateBeforeSubmit()) return;
     showReviewModal.value = false;
     doSubmit();
@@ -421,14 +479,14 @@ function doSubmit() {
     form.country_id = selectedCountry.value.id;
 
     if (selectedProvider.value) {
-        form.operator_id = selectedProvider.value.id;
+        form.operator_id = selectedProvider.value.provider_id;
         form.provider_code = selectedProvider.value.provider_code;
     }
 
     form.post("/retailer/recharge", {
         onSuccess: () => {
             showReviewModal.value = false;
-            if (selectedProduct.value.redemption_type === "ReadReceipt") {
+            if (isPinProduct.value) {
                 showPinModal.value = true;
             }
         },
@@ -455,8 +513,6 @@ function copyPin() {
 function resetFlow() {
     currentStep.value = 1;
     selectedCountry.value = null;
-    mobileNumber.value = "";
-    cleanedPhone.value = "";
     countryIso.value = "";
     providers.value = [];
     selectedProvider.value = null;
@@ -467,8 +523,13 @@ function resetFlow() {
     freeRangeAmount.value = 0;
     freeRangePricing.value = null;
     promotions.value = [];
+    mobileNumber.value = "";
+    cleanedPhone.value = "";
+    productDescription.value = "";
+    productReadmore.value = "";
     errorMessage.value = "";
     phoneError.value = "";
+    form.reset();
 }
 
 // =========================================================================
@@ -501,29 +562,6 @@ onMounted(() => {
                 Instant mobile top-up powered by DingConnect
             </p>
         </div>
-
-        <!-- PIN Recharge Option -->
-        <a
-            href="/retailer/recharge/pin"
-            class="block bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-5 mb-6 hover:bg-yellow-500/20 transition group"
-        >
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center">
-                        <span class="text-2xl">🎫</span>
-                    </div>
-                    <div>
-                        <div class="font-semibold text-yellow-300 text-lg group-hover:text-yellow-200">
-                            PIN Voucher Recharge
-                        </div>
-                        <div class="text-sm text-yellow-400/70">
-                            No mobile number required. Purchase a PIN voucher and share it with your customer.
-                        </div>
-                    </div>
-                </div>
-                <span class="text-yellow-400 group-hover:translate-x-1 transition">→</span>
-            </div>
-        </a>
 
         <!-- Wallet Balance Alert -->
         <div
@@ -571,18 +609,18 @@ onMounted(() => {
                     </div>
                     <div
                         v-if="idx < stepNames.length - 1"
-                        :class="[
-                            'flex-1 h-0.5 mx-1 mb-4 transition min-w-[20px]',
+                        class="flex-1 h-0.5 mx-1 mb-4 transition min-w-[20px]"
+                        :class="
                             currentStep > idx + 1
                                 ? 'bg-green-500'
-                                : 'bg-dark-700',
-                        ]"
+                                : 'bg-dark-700'
+                        "
                     ></div>
                 </template>
             </div>
         </div>
 
-        <!-- Error Message -->
+        <!-- Error -->
         <div
             v-if="errorMessage"
             class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 text-red-300 text-sm"
@@ -627,12 +665,12 @@ onMounted(() => {
         </div>
 
         <!-- =================================================================
-             STEP 2: PHONE NUMBER
+             STEP 2: PROVIDER SELECTION
              ================================================================= -->
         <div v-if="currentStep === 2">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-xl font-semibold text-white">
-                    Enter Phone Number
+                    Select Provider
                 </h2>
                 <button
                     @click="backToStep(1)"
@@ -642,10 +680,229 @@ onMounted(() => {
                 </button>
             </div>
 
-            <div class="bg-dark-800 border border-dark-600 rounded-2xl p-6">
-                <label class="text-sm text-dark-300 mb-2 block"
-                    >Mobile Number ({{ selectedCountry?.name }})</label
+            <div v-if="loadingProviders" class="text-center py-16">
+                <div
+                    class="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"
+                ></div>
+                <p class="mt-4 text-dark-300">Loading providers...</p>
+            </div>
+
+            <div
+                v-else-if="providers.length === 0 && !loadingProviders"
+                class="text-center py-16"
+            >
+                <p class="text-dark-300 text-lg mb-2">
+                    No operators found for this country.
+                </p>
+                <button
+                    @click="backToStep(1)"
+                    class="btn-primary text-white px-6 py-2 rounded-xl text-sm"
                 >
+                    &larr; Change country
+                </button>
+            </div>
+
+            <div
+                v-else
+                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+            >
+                <button
+                    v-for="provider in providers"
+                    :key="provider.provider_code"
+                    @click="selectProvider(provider)"
+                    :class="[
+                        'rounded-2xl p-5 text-left transition relative',
+                        selectedProvider?.provider_code ===
+                        provider.provider_code
+                            ? 'bg-primary/20 border-2 border-primary'
+                            : 'bg-dark-800 border border-dark-600 hover:border-primary/50',
+                    ]"
+                >
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-12 h-12 bg-white rounded-lg flex items-center justify-center overflow-hidden shrink-0"
+                        >
+                            <img
+                                v-if="provider.logo_url"
+                                :src="provider.logo_url"
+                                :alt="provider.name"
+                                class="w-full h-full object-contain p-1"
+                                @error="$event.target.style.display = 'none'"
+                            />
+                            <span v-else class="text-2xl">📱</span>
+                        </div>
+                        <div>
+                            <div class="text-lg font-semibold text-white">
+                                {{ provider.name }}
+                            </div>
+                            <div class="text-xs text-dark-400 mt-1">
+                                {{ provider.provider_code }}
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        v-if="
+                            selectedProvider?.provider_code ===
+                            provider.provider_code
+                        "
+                        class="text-xs text-primary mt-2 font-semibold"
+                    >
+                        &#10003; Selected
+                    </div>
+                </button>
+            </div>
+
+            <button
+                v-if="providers.length > 0"
+                @click="proceedToProducts"
+                :disabled="!selectedProvider"
+                class="mt-6 w-full btn-primary text-white py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                Continue &rarr;
+            </button>
+        </div>
+
+        <!-- =================================================================
+             STEP 3: PRODUCTS (categorized)
+             ================================================================= -->
+        <div v-if="currentStep === 3">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold text-white">Select Product</h2>
+                <button
+                    @click="backToStep(2)"
+                    class="text-sm text-dark-300 hover:text-white"
+                >
+                    &larr; Change provider
+                </button>
+            </div>
+
+            <!-- Selected provider info -->
+            <div
+                v-if="selectedProvider"
+                class="flex items-center gap-3 mb-4 bg-dark-800 rounded-xl p-3 border border-dark-600"
+            >
+                <div
+                    class="w-8 h-8 bg-white rounded-lg flex items-center justify-center overflow-hidden"
+                >
+                    <img
+                        v-if="selectedProvider.logo_url"
+                        :src="selectedProvider.logo_url"
+                        class="w-full h-full object-contain p-0.5"
+                        @error="$event.target.style.display = 'none'"
+                    />
+                    <span v-else>📱</span>
+                </div>
+                <div>
+                    <div class="text-sm font-medium text-white">
+                        {{ selectedProvider.name }}
+                    </div>
+                    <div class="text-xs text-dark-400">
+                        {{ selectedCountry?.name }}
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="showPromotionBadge" class="mb-4">
+                <button
+                    @click="showPromotionsModal = true"
+                    class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-2 text-yellow-300 text-sm hover:bg-yellow-500/20"
+                >
+                    🎁 {{ promotions.length }} promotion{{
+                        promotions.length > 1 ? "s" : ""
+                    }}
+                    available
+                </button>
+            </div>
+
+            <ProductCategories
+                :products="products"
+                :loading="loadingProducts"
+                @select-product="selectProduct"
+            />
+
+            <div
+                v-if="!loadingProducts && products.length === 0"
+                class="text-center py-12"
+            >
+                <p class="text-dark-300">
+                    No products available for this operator.
+                </p>
+            </div>
+        </div>
+
+        <!-- =================================================================
+             STEP 4: MOBILE NUMBER (only for Immediate/Top-up products)
+             ================================================================= -->
+        <div v-if="currentStep === 4 && !isPinProduct">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold text-white">
+                    Enter Mobile Number
+                </h2>
+                <button
+                    @click="backToStep(3)"
+                    class="text-sm text-dark-300 hover:text-white"
+                >
+                    &larr; Change product
+                </button>
+            </div>
+
+            <!-- Selected product summary -->
+            <div
+                class="bg-dark-800 border border-dark-600 rounded-2xl p-5 mb-5"
+            >
+                <div class="flex items-center gap-3 mb-3">
+                    <div
+                        class="w-10 h-10 bg-white rounded-lg flex items-center justify-center overflow-hidden"
+                    >
+                        <img
+                            v-if="selectedProvider?.logo_url"
+                            :src="selectedProvider.logo_url"
+                            class="w-full h-full object-contain p-1"
+                            @error="$event.target.style.display = 'none'"
+                        />
+                        <span v-else>📱</span>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-white">
+                            {{
+                                selectedProduct?.display_text || selectedSkuCode
+                            }}
+                        </div>
+                        <div class="text-xs text-dark-400">
+                            {{ selectedProvider?.name }} ·
+                            {{ selectedProduct?.redemption_type }}
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-dark-300">You Pay</span>
+                    <span class="text-white font-bold"
+                        >{{ selectedProduct?.send_currency }}
+                        {{
+                            (selectedProduct?.send_value || 0).toFixed(2)
+                        }}</span
+                    >
+                </div>
+            </div>
+
+            <!-- How to redeem (from description API) -->
+            <div
+                v-if="productReadmore || productDescription"
+                class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-5"
+            >
+                <div class="text-xs text-blue-300 font-medium mb-1">
+                    How to Redeem
+                </div>
+                <div
+                    class="text-sm text-blue-200"
+                    v-html="productReadmore || productDescription"
+                ></div>
+            </div>
+
+            <div class="bg-dark-800 border border-dark-600 rounded-2xl p-6">
+                <label class="text-sm text-dark-300 mb-2 block">
+                    Mobile Number ({{ selectedCountry?.name }})
+                </label>
                 <div
                     class="flex items-center bg-dark-700 border border-dark-600 rounded-xl overflow-hidden"
                 >
@@ -665,167 +922,14 @@ onMounted(() => {
                 <p v-if="phoneError" class="text-xs text-red-400 mt-2">
                     {{ phoneError }}
                 </p>
-                <p class="text-xs text-dark-400 mt-2">
-                    Country code will be added automatically
-                </p>
 
                 <button
-                    @click="proceedToProviders"
-                    :disabled="!canProceedFromPhone"
+                    @click="proceedToConfirmFromNumber"
+                    :disabled="!canProceedFromPhone || validatingNumber"
                     class="mt-6 w-full btn-primary text-white py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    Continue &rarr;
+                    {{ validatingNumber ? "Verifying number..." : "Continue to Review →" }}
                 </button>
-            </div>
-        </div>
-
-        <!-- =================================================================
-             STEP 3: OPERATOR SELECTION
-             ================================================================= -->
-        <div v-if="currentStep === 3">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-semibold text-white">
-                    Select Operator
-                </h2>
-                <button
-                    @click="backToStep(2)"
-                    class="text-sm text-dark-300 hover:text-white"
-                >
-                    &larr; Change phone
-                </button>
-            </div>
-
-            <!-- Loading -->
-            <div v-if="loadingProviders" class="text-center py-16">
-                <div
-                    class="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"
-                ></div>
-                <p class="mt-4 text-dark-300">Detecting operator...</p>
-            </div>
-
-            <!-- No providers found -->
-            <div
-                v-else-if="providers.length === 0 && !loadingProviders"
-                class="text-center py-16"
-            >
-                <p class="text-dark-300 text-lg mb-2">
-                    No operators found for this number.
-                </p>
-                <p class="text-dark-400 text-sm mb-4">
-                    Try a different number or country.
-                </p>
-                <button
-                    @click="backToStep(2)"
-                    class="btn-primary text-white px-6 py-2 rounded-xl text-sm"
-                >
-                    &larr; Change number
-                </button>
-            </div>
-
-            <!-- Provider list -->
-            <div v-else>
-                <p class="text-sm text-dark-300 mb-4">
-                    Available operators for +{{ cleanedPhone }}:
-                </p>
-                <div
-                    :class="[
-                        'grid gap-4',
-                        providers.length === 1
-                            ? 'grid-cols-1 max-w-md'
-                            : 'grid-cols-2 md:grid-cols-3',
-                    ]"
-                >
-                    <button
-                        v-for="provider in providers"
-                        :key="provider.provider_code"
-                        @click="selectProvider(provider)"
-                        :class="[
-                            'rounded-2xl p-5 text-left transition relative',
-                            selectedProvider?.provider_code ===
-                            provider.provider_code
-                                ? 'bg-primary/20 border-2 border-primary'
-                                : 'bg-dark-800 border border-dark-600 hover:border-primary/50',
-                        ]"
-                    >
-                        <div class="flex items-center gap-3">
-                            <img
-                                v-if="provider.logo_url"
-                                :src="provider.logo_url"
-                                :alt="provider.name"
-                                class="w-12 h-12 rounded-lg object-contain bg-white p-1"
-                            />
-                            <div>
-                                <div class="text-lg font-semibold text-white">
-                                    {{ provider.name }}
-                                </div>
-                                <div class="text-xs text-dark-400 mt-1">
-                                    {{ provider.provider_code }}
-                                </div>
-                            </div>
-                        </div>
-                        <div
-                            v-if="
-                                selectedProvider?.provider_code ===
-                                provider.provider_code
-                            "
-                            class="text-xs text-primary mt-2 font-semibold"
-                        >
-                            &#10003; Selected
-                        </div>
-                    </button>
-                </div>
-
-                <button
-                    @click="proceedToProducts"
-                    :disabled="!canProceedFromProvider"
-                    class="mt-6 w-full btn-primary text-white py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    Continue &rarr;
-                </button>
-            </div>
-        </div>
-
-        <!-- =================================================================
-             STEP 4: PRODUCTS (categorized)
-             ================================================================= -->
-        <div v-if="currentStep === 4">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-semibold text-white">Select Product</h2>
-                <button
-                    @click="backToStep(3)"
-                    class="text-sm text-dark-300 hover:text-white"
-                >
-                    &larr; Change operator
-                </button>
-            </div>
-
-            <!-- Promotions Badge -->
-            <div v-if="showPromotionBadge" class="mb-4">
-                <button
-                    @click="showPromotionsModal = true"
-                    class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-2 text-yellow-300 text-sm hover:bg-yellow-500/20"
-                >
-                    &#127873; {{ promotions.length }} promotion{{
-                        promotions.length > 1 ? "s" : ""
-                    }}
-                    available
-                </button>
-            </div>
-
-            <!-- Product Categories Component -->
-            <ProductCategories
-                :products="products"
-                :loading="loadingProducts"
-                @select-product="selectProduct"
-            />
-
-            <div
-                v-if="!loadingProducts && products.length === 0"
-                class="text-center py-12"
-            >
-                <p class="text-dark-300">
-                    No products available for this operator.
-                </p>
             </div>
         </div>
 
@@ -835,22 +939,153 @@ onMounted(() => {
         <div v-if="currentStep === 5">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-xl font-semibold text-white">
-                    {{ isFreeRangeFlow ? "Enter Amount" : "Review Order" }}
+                    {{ isPinProduct ? "Confirm PIN Purchase" : "Review Order" }}
                 </h2>
                 <button
-                    @click="backToProducts"
+                    @click="backToStep(isPinProduct ? 3 : 4)"
                     class="text-sm text-dark-300 hover:text-white"
                 >
-                    &larr; Back to products
+                    &larr; Back
                 </button>
             </div>
 
             <div class="bg-dark-800 border border-dark-600 rounded-2xl p-6">
-                <!-- Free Range Input -->
-                <div v-if="isFreeRangeFlow" class="mb-6">
-                    <label class="text-sm text-dark-300 mb-2 block">
-                        Enter Amount ({{ selectedProduct?.send_currency }})
-                    </label>
+                <!-- Product info row: logo + name + values -->
+                <div
+                    class="flex items-center gap-4 mb-5 pb-5 border-b border-dark-600"
+                >
+                    <div
+                        class="w-12 h-12 bg-white rounded-lg flex items-center justify-center overflow-hidden shrink-0"
+                    >
+                        <img
+                            v-if="selectedProvider?.logo_url"
+                            :src="selectedProvider.logo_url"
+                            class="w-full h-full object-contain p-1"
+                            @error="$event.target.style.display = 'none'"
+                        />
+                        <span v-else class="text-2xl">📱</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-semibold text-white truncate">
+                            {{
+                                selectedProduct?.display_text || selectedSkuCode
+                            }}
+                        </div>
+                        <div class="text-xs text-dark-400">
+                            {{ selectedProvider?.name }} ·
+                            {{ selectedProduct?.redemption_type }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Three values: You Paid | PIN Value / Customer Gets | Number/Redemption -->
+                <div class="grid grid-cols-3 gap-3 mb-5">
+                    <div class="bg-dark-700 rounded-xl p-3 text-center">
+                        <div
+                            class="text-[10px] text-dark-400 uppercase tracking-wider mb-1"
+                        >
+                            You Paid
+                        </div>
+                        <div class="text-sm font-bold text-white">
+                            {{ selectedProduct?.send_currency || "GBP" }}
+                            {{ (selectedProduct?.send_value || 0).toFixed(2) }}
+                        </div>
+                    </div>
+                    <div
+                        class="bg-yellow-500/10 rounded-xl p-3 text-center border border-yellow-500/20"
+                    >
+                        <div
+                            class="text-[10px] text-yellow-400 uppercase tracking-wider mb-1"
+                        >
+                            {{ isPinProduct ? "PIN Value" : "Customer Gets" }}
+                        </div>
+                        <div class="text-sm font-bold text-yellow-400">
+                            {{ selectedProduct?.receive_currency || "GBP" }}
+                            {{
+                                (selectedProduct?.receive_value || 0).toFixed(2)
+                            }}
+                        </div>
+                    </div>
+                    <div class="bg-dark-700 rounded-xl p-3 text-center">
+                        <div
+                            class="text-[10px] text-dark-400 uppercase tracking-wider mb-1"
+                        >
+                            {{ isPinProduct ? "Redemption" : "Number" }}
+                        </div>
+                        <div class="text-xs text-white font-medium">
+                            {{
+                                isPinProduct
+                                    ? "Any SIM can redeem"
+                                    : "+ " + (cleanedPhone || "—")
+                            }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Details -->
+                <div class="space-y-2 mb-5 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-dark-300">SKU</span>
+                        <span class="text-white font-mono text-xs">{{
+                            selectedSkuCode
+                        }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-dark-300">Redemption</span>
+                        <span class="text-white">{{
+                            selectedProduct?.redemption_type
+                        }}</span>
+                    </div>
+                    <div
+                        v-if="selectedProduct?.validity_period"
+                        class="flex justify-between"
+                    >
+                        <span class="text-dark-300">Validity</span>
+                        <span class="text-green-400">{{
+                            parseValidityPeriod(selectedProduct.validity_period)
+                        }}</span>
+                    </div>
+                    <div
+                        v-if="selectedProduct?.benefits?.length"
+                        class="flex justify-between"
+                    >
+                        <span class="text-dark-300">Benefits</span>
+                        <span class="text-white">{{
+                            selectedProduct.benefits.join(", ")
+                        }}</span>
+                    </div>
+                </div>
+
+                <!-- Description / How to Redeem -->
+                <div v-if="productReadmore || productDescription" class="mb-5">
+                    <div
+                        class="text-[10px] text-dark-400 uppercase tracking-wider mb-2"
+                    >
+                        {{
+                            isPinProduct
+                                ? "How to Redeem"
+                                : "Product Information"
+                        }}
+                    </div>
+                    <div
+                        v-if="productReadmore"
+                        class="bg-dark-700 rounded-xl p-4 mb-2 text-sm text-dark-200"
+                        v-html="productReadmore"
+                    ></div>
+                    <div
+                        v-if="productDescription"
+                        class="bg-dark-700 rounded-xl p-4 text-sm text-dark-200"
+                        v-html="productDescription"
+                    ></div>
+                </div>
+
+                <!-- Free range input (if applicable) -->
+                <div v-if="isFreeRangeFlow" class="mb-5">
+                    <label class="text-sm text-dark-300 mb-2 block"
+                        >Enter Amount ({{
+                            selectedProduct?.send_currency
+                        }})</label
+                    >
                     <input
                         v-model.number="freeRangeAmount"
                         @input="fetchFreeRangePricing"
@@ -865,14 +1100,12 @@ onMounted(() => {
                         {{ selectedProduct?.send_currency }}
                         {{ selectedProduct?.max_send_value }}
                     </p>
-
                     <div v-if="freeRangeLoading" class="mt-4 text-center">
                         <div
                             class="inline-block w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"
                         ></div>
                         <span class="ml-2 text-dark-300">Calculating...</span>
                     </div>
-
                     <div
                         v-else-if="freeRangePricing"
                         class="mt-4 bg-primary/10 border border-primary/30 rounded-xl p-4"
@@ -884,101 +1117,10 @@ onMounted(() => {
                             {{ freeRangePricing.receive_currency }}
                             {{ freeRangePricing.receive_value.toFixed(2) }}
                         </div>
-                        <div
-                            v-if="
-                                freeRangePricing.receive_value !==
-                                freeRangePricing.receive_value_excluding_tax
-                            "
-                            class="text-xs text-dark-400 mt-2"
-                        >
-                            (excluding tax:
-                            {{ freeRangePricing.receive_currency }}
-                            {{
-                                freeRangePricing.receive_value_excluding_tax.toFixed(
-                                    2,
-                                )
-                            }})
-                        </div>
                     </div>
                 </div>
 
-                <!-- Order Summary -->
-                <div class="space-y-3 mb-6">
-                    <div class="flex justify-between text-sm">
-                        <span class="text-dark-300">Country</span>
-                        <span class="text-white"
-                            >{{ selectedCountry?.name }} ({{
-                                currentCountryIso
-                            }})</span
-                        >
-                    </div>
-                    <div class="flex justify-between text-sm">
-                        <span class="text-dark-300">Phone</span>
-                        <span class="text-white">+{{ cleanedPhone }}</span>
-                    </div>
-                    <div class="flex justify-between text-sm">
-                        <span class="text-dark-300">Operator</span>
-                        <span class="text-white">{{
-                            selectedProvider?.name
-                        }}</span>
-                    </div>
-                    <div class="flex justify-between text-sm">
-                        <span class="text-dark-300">Product</span>
-                        <span class="text-white">{{
-                            selectedProduct?.display_text || selectedSkuCode
-                        }}</span>
-                    </div>
-                    <div
-                        v-if="selectedProduct?.validity_period"
-                        class="flex justify-between text-sm"
-                    >
-                        <span class="text-dark-300">Validity</span>
-                        <span class="text-green-400">{{
-                            parseValidityPeriod(selectedProduct.validity_period)
-                        }}</span>
-                    </div>
-                    <div class="border-t border-dark-600 pt-3 mt-3">
-                        <div class="flex justify-between items-baseline">
-                            <span class="text-dark-300">You Pay</span>
-                            <span class="text-2xl font-bold text-white">
-                                {{ form.send_currency }}
-                                {{ form.send_value.toFixed(2) }}
-                            </span>
-                        </div>
-                        <div class="flex justify-between text-sm mt-1">
-                            <span class="text-dark-300">Customer Gets</span>
-                            <span class="text-green-400">
-                                {{ form.receive_currency }}
-                                {{ form.receive_value.toFixed(2) }}
-                            </span>
-                        </div>
-                        <div
-                            v-if="
-                                form.receive_value !==
-                                form.receive_value_excluding_tax
-                            "
-                            class="flex justify-between text-xs mt-1 text-dark-400"
-                        >
-                            <span>Excl. tax</span>
-                            <span
-                                >{{ form.receive_currency }}
-                                {{
-                                    form.receive_value_excluding_tax.toFixed(2)
-                                }}</span
-                            >
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Description -->
-                <div
-                    v-if="selectedProduct?.description_markdown"
-                    class="mb-4 text-sm text-dark-300 prose prose-invert max-w-none"
-                >
-                    <div v-html="selectedProduct.description_markdown"></div>
-                </div>
-
-                <!-- Action Buttons -->
+                <!-- Action -->
                 <div class="flex gap-3">
                     <button
                         @click="submitRecharge('review')"
@@ -996,7 +1138,13 @@ onMounted(() => {
                         "
                         class="flex-1 btn-primary text-white py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {{ submitting ? "Processing..." : "Buy Now" }}
+                        {{
+                            submitting
+                                ? "Processing..."
+                                : isPinProduct
+                                  ? "Purchase PIN"
+                                  : "Recharge Now"
+                        }}
                     </button>
                 </div>
             </div>
@@ -1015,7 +1163,7 @@ onMounted(() => {
             >
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold text-white">
-                        &#127873; Available Promotions
+                        🎁 Available Promotions
                     </h3>
                     <button
                         @click="closePromotionsModal"
@@ -1056,8 +1204,8 @@ onMounted(() => {
         </div>
 
         <!-- =================================================================
-            REVIEW / RECEIPT CONFIRMATION MODAL
-            ================================================================= -->
+             REVIEW MODAL
+             ================================================================= -->
         <div
             v-if="showReviewModal"
             @click.self="cancelReview"
@@ -1066,23 +1214,16 @@ onMounted(() => {
             <div
                 class="bg-dark-800 border border-dark-600 rounded-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto"
             >
-                <!-- Receipt header -->
                 <div
                     class="text-center border-b border-dashed border-dark-600 pb-4 mb-4"
                 >
-                    <h3 class="text-lg font-bold text-white">
-                        Recharge Receipt
-                    </h3>
-                    <p class="text-xs text-dark-400 mt-1">
-                        Please review before proceeding
-                    </p>
+                    <h3 class="text-lg font-bold text-white">Review Order</h3>
                     <p class="text-xs text-dark-400 font-mono mt-1">
                         {{ reviewReference }}
                     </p>
                     <p class="text-xs text-dark-400">{{ reviewTimestamp }}</p>
                 </div>
 
-                <!-- Receipt details -->
                 <div class="space-y-2 text-sm mb-4">
                     <div class="flex justify-between">
                         <span class="text-dark-300">Country</span>
@@ -1092,7 +1233,7 @@ onMounted(() => {
                             }})</span
                         >
                     </div>
-                    <div class="flex justify-between">
+                    <div v-if="!isPinProduct" class="flex justify-between">
                         <span class="text-dark-300">Phone</span>
                         <span class="text-white">+{{ cleanedPhone }}</span>
                     </div>
@@ -1119,48 +1260,30 @@ onMounted(() => {
                     </div>
                 </div>
 
-                <!-- Amounts -->
                 <div class="border-t border-dashed border-dark-600 pt-3 mb-4">
-                    <div class="flex justify-between items-baseline mb-1">
+                    <div class="flex justify-between items-baseline">
                         <span class="text-dark-300">You Pay</span>
                         <span class="text-xl font-bold text-white">
                             {{ form.send_currency }}
                             {{ form.send_value.toFixed(2) }}
                         </span>
                     </div>
-                    <div class="flex justify-between text-sm mb-1">
+                    <div class="flex justify-between text-sm mt-1">
                         <span class="text-dark-300">Customer Gets</span>
                         <span class="text-green-400">
                             {{ form.receive_currency }}
                             {{ form.receive_value.toFixed(2) }}
                         </span>
                     </div>
-                    <div
-                        v-if="
-                            form.receive_value !==
-                            form.receive_value_excluding_tax
-                        "
-                        class="flex justify-between text-xs text-dark-400"
-                    >
-                        <span>Excl. tax</span>
-                        <span
-                            >{{ form.receive_currency }}
-                            {{
-                                form.receive_value_excluding_tax.toFixed(2)
-                            }}</span
-                        >
-                    </div>
                 </div>
 
-                <!-- Description -->
                 <div
-                    v-if="selectedProduct?.description_markdown"
-                    class="mb-4 text-xs text-dark-300 prose prose-invert max-w-none"
+                    v-if="productReadmore || productDescription"
+                    class="mb-4 text-xs text-dark-300"
                 >
-                    <div v-html="selectedProduct.description_markdown"></div>
+                    <div v-html="productReadmore || productDescription"></div>
                 </div>
 
-                <!-- Actions -->
                 <div class="flex gap-3">
                     <button
                         @click="cancelReview"
@@ -1177,7 +1300,9 @@ onMounted(() => {
                         {{
                             submitting
                                 ? "Processing..."
-                                : "Proceed with Recharge"
+                                : isPinProduct
+                                  ? "Purchase PIN"
+                                  : "Proceed with Recharge"
                         }}
                     </button>
                 </div>

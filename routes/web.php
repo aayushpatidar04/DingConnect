@@ -101,12 +101,7 @@ Route::prefix('retailer')->name('retailer.')->middleware(['auth', 'retailer'])->
     Route::get('/recharge/products', [RechargeController::class, 'getProducts'])->name('recharge.products');
     Route::get('/recharge/promotions', [RechargeController::class, 'getPromotions'])->name('recharge.promotions');
     Route::get('/recharge/pricing', [RechargeController::class, 'estimatePricing'])->name('recharge.pricing');
-
-    // ReadReceipt PIN flow
-    Route::get('/recharge/pin', [RechargeController::class, 'pinIndex'])->name('recharge.pin.index');
-    Route::get('/recharge/pin/check-serial', [RechargeController::class, 'checkSerial'])->name('recharge.pin.checkSerial');
-    Route::post('/recharge/pin/process', [RechargeController::class, 'pinProcess'])->name('recharge.pin.process');
-
+    Route::get('/recharge/validate-number', [RechargeController::class, 'validateNumber'])->name('recharge.validate-number');
     Route::get('/recharge/product-description', [RechargeController::class, 'productDescription'])->name('recharge.productDescription');
     Route::get('/transactions', [RetailerTransactionController::class, 'index'])->name('transactions.index');
     Route::get('/transactions/{transaction}', [RetailerTransactionController::class, 'show'])->name('transactions.show');
