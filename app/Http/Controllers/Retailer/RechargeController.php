@@ -150,6 +150,7 @@ class RechargeController extends Controller
 
     /**
      * Get products for selected operator.
+     * Always fetches from API and merges product descriptions.
      * GET /api/V1/GetProducts?countryIsos=<>&providerCodes=<>&accountNumber=<>
      */
     public function getProducts(Request $request, DingConnectService $dingService): JsonResponse
@@ -169,9 +170,40 @@ class RechargeController extends Controller
         if (!$result['success']) {
             return response()->json(['success' => false, 'error' => $result['error']], 400);
         }
+
         $products = collect($result['data']['Items'] ?? [])->map(function ($item) {
             return $this->transformProduct($item);
         })->values();
+
+        // Fetch product descriptions from DingConnect API for all returned SKUs
+        $skuCodes = $products->pluck('sku_code')->filter()->unique()->values()->all();
+        $descriptions = [];
+
+        if (!empty($skuCodes)) {
+            $descResult = $dingService->getProductDescriptions($skuCodes);
+            if ($descResult['success'] && !empty($descResult['data'])) {
+                foreach ($descResult['data'] as $descItem) {
+                    $sku = $descItem['SkuCode'] ?? null;
+                    if ($sku) {
+                        $descriptions[$sku] = [
+                            'description_markdown' => $descItem['DescriptionMarkdown'] ?? '',
+                            'readmore_markdown'    => $descItem['ReadMoreMarkdown'] ?? '',
+                        ];
+                    }
+                }
+            }
+        }
+
+        // Merge descriptions into each product
+        $products = $products->map(function ($product) use ($descriptions) {
+            $sku = $product['sku_code'];
+            if (isset($descriptions[$sku])) {
+                $product['description_markdown'] = $descriptions[$sku]['description_markdown'];
+                $product['readmore_markdown']    = $descriptions[$sku]['readmore_markdown'];
+            }
+            return $product;
+        });
+
         return response()->json(['success' => true, 'products' => $products]);
     }
 
@@ -258,54 +290,86 @@ class RechargeController extends Controller
         return response()->json(['success' => true, 'data' => $result['data']]);
     }
 
+    /**
+     * Validate number — mobile (with 44) or serial (anything else).
+     * Phone: 12 digits starting with 44 → checks DB with/without 44, then AccountLookup.
+     * Serial: not 12-digit 44 → exact DB match, no AccountLookup.
+     */
     public function validateNumber(Request $request, DingConnectService $dingService)
     {
         $request->validate([
-            'mobile_number' => ['required', 'string', 'min:7', 'max:20'],
+            'mobile_number' => ['required', 'string', 'min:3', 'max:30'],
             'provider_code' => ['required', 'string'],
         ]);
 
-        $accountNumber = preg_replace('/[^0-9]/', '', $request->mobile_number);
+        $digits = preg_replace('/[^0-9]/', '', $request->mobile_number);
 
-        // 1. Allow-list gate: number MUST exist in AllowedNumber
-        if (!AllowedNumber::where('number', $accountNumber)->exists()) {
+        $isPhone = strlen($digits) === 12 && str_starts_with($digits, '44');
+        $bareNumber = substr($digits, 2);
+
+        if ($isPhone) {
+            // Match DB entry with 44 (449982414226) or without (9982414226)
+            $allowed = AllowedNumber::where('active', true)
+                ->where(function ($q) use ($digits, $bareNumber) {
+                    $q->where('number', $digits)
+                      ->orWhere('number', $bareNumber);
+                })
+                ->first();
+
+            if (!$allowed) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'This number is not registered for recharges on this portal.',
+                ], 422);
+            }
+
+            // AccountLookup with full 44-prefixed number
+            try {
+                $result = $dingService->getAccountLookup($digits);
+            } catch (\Throwable $e) {
+                Log::error('AccountLookup failed for ' . $digits . ': ' . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Could not verify this number right now. Please try again.',
+                ], 500);
+            }
+
+            $data = $result['data'] ?? $result;
+
+            if (($data['ResultCode'] ?? 0) !== 1 || empty($data['Items'])) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'This number could not be verified. Please check it and try again.',
+                ], 422);
+            }
+
+            $providers = collect($data['Items'])->pluck('ProviderCode');
+
+            if (!$providers->contains($request->provider_code)) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'This number does not belong to ' . $request->provider_code . '. Please check the number or change provider.',
+                ], 422);
+            }
+
+            return response()->json(['success' => true, 'account_number' => $digits]);
+        }
+
+        // =========================================================
+        // SERIAL NUMBER — exact match, no AccountLookup
+        // =========================================================
+        $allowed = AllowedNumber::where('active', true)
+            ->where('number', $digits)
+            ->first();
+
+        if (!$allowed) {
             return response()->json([
                 'success' => false,
                 'error' => 'This number is not registered for recharges on this portal.',
             ], 422);
         }
 
-        // 2. DingConnect AccountLookup — verify number ↔ provider
-        try {
-            $result = $dingService->getAccountLookup($accountNumber);
-        } catch (\Throwable $e) {
-            \Log::error('AccountLookup failed for ' . $accountNumber . ': ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'error' => 'Could not verify this number right now. Please try again.',
-            ], 500);
-        }
-
-        $data = $result['data'] ?? $result; // handle wrapper variations
-
-        if (($data['ResultCode'] ?? 0) !== 1 || empty($data['Items'])) {
-            return response()->json([
-                'success' => false,
-                'error' => 'This number could not be verified. Please check it and try again.',
-            ], 422);
-        }
-
-        // Items can contain MULTIPLE providers — selected one must be among them
-        $providers = collect($data['Items'])->pluck('ProviderCode');
-
-        if (!$providers->contains($request->provider_code)) {
-            return response()->json([
-                'success' => false,
-                'error' => 'This number does not belong to ' . $request->provider_code . '. Please check the number or change provider.',
-            ], 422);
-        }
-
-        return response()->json(['success' => true, 'account_number' => $accountNumber]);
+        return response()->json(['success' => true, 'account_number' => $digits]);
     }
 
     /**
@@ -357,7 +421,6 @@ class RechargeController extends Controller
         // Determine account number for SendTransfer
         $accountNumber = $isPin ? '' : preg_replace('/[^0-9]/', '', $request->mobile_number);
 
-        // Build settings array for SendTransfer
         $settings = [];
         if ($request->region_code) {
             $settings['RegionCode'] = $request->region_code;
@@ -409,7 +472,6 @@ class RechargeController extends Controller
             return $transaction;
         });
 
-        // Dispatch job to process with DingConnect
         ProcessRechargeJob::dispatch($transaction, $accountNumber, $settings);
 
         broadcast(new \App\Events\RechargeProcessing($transaction));
@@ -473,7 +535,6 @@ class RechargeController extends Controller
             'sku_code' => 'required|string',
         ]);
 
-        // Always fetch from DingConnect
         $result = $dingService->getProductDescriptions([$request->sku_code]);
 
         if (!$result['success'] || empty($result['data'])) {
