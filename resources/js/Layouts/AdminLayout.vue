@@ -9,11 +9,12 @@ import { useToast, toasts } from "@/composables/useToast.js";
 const showMobileMenu = ref(false);
 const notifications = ref([]);
 let echoChannel = null;
+const showAdminDropdown = ref(false);
 
 const user = usePage().props.auth.user;
 
 onMounted(() => {
-    if (user) {
+    if (user && typeof Echo !== "undefined" && Echo.private) {
         echoChannel = Echo.private(`admin.${user.id}`);
         echoChannel.listen(".NewTransaction", (e) => {
             notifications.value.unshift(e);
@@ -215,32 +216,37 @@ onUnmounted(() => {
 
                 <!-- User Section -->
                 <div class="p-3 border-t border-dark-600">
-                    <div class="flex items-center px-3 py-2">
-                        <div
-                            class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                    <div class="relative profile-dropdown-wrapper">
+                        <button
+                            @click.stop="showAdminDropdown = !showAdminDropdown"
+                            class="flex items-center w-full px-3 py-2 hover:bg-dark-700 rounded-lg transition"
                         >
-                            {{ user.name.charAt(0).toUpperCase() }}
-                        </div>
-                        <div v-if="showMobileMenu" class="ml-3">
-                            <p class="text-sm font-medium text-white">
-                                {{ user.name }}
-                            </p>
-                            <p class="text-xs text-dark-400">Administrator</p>
+                            <div
+                                class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                            >
+                                {{ user.name.charAt(0).toUpperCase() }}
+                            </div>
+                            <div class="ml-3 flex-1 text-left">
+                                <p class="text-sm font-medium text-white">
+                                    {{ user.name }}
+                                </p>
+                                <p class="text-xs text-dark-400">Administrator</p>
+                            </div>
+                        </button>
+                        <div
+                            v-show="showAdminDropdown"
+                            class="mt-1 bg-dark-700 rounded-xl border border-dark-600 overflow-hidden"
+                        >
+                            <form method="POST" action="/logout">
+                                <button
+                                    type="submit"
+                                    class="block w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-dark-600 transition"
+                                >
+                                    Logout
+                                </button>
+                            </form>
                         </div>
                     </div>
-                    <form
-                        v-if="showMobileMenu"
-                        method="POST"
-                        action="/logout"
-                        class="mt-2"
-                    >
-                        <button
-                            type="submit"
-                            class="w-full text-left px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-dark-700 rounded-lg transition"
-                        >
-                            Logout
-                        </button>
-                    </form>
                 </div>
             </aside>
 

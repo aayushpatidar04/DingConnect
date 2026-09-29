@@ -7,6 +7,7 @@ import Toast from "@/Components/Toast.vue";
 import { useToast, toasts } from "@/composables/useToast.js";
 
 const showMobileMenu = ref(false);
+const showProfileDropdown = ref(false);
 const notifications = ref([]);
 const unreadCount = ref(0);
 let echoChannel = null;
@@ -14,6 +15,8 @@ let echoChannel = null;
 const user = usePage().props.auth.user;
 
 onMounted(() => {
+    document.addEventListener("click", closeDropdowns);
+
     if (user && typeof Echo !== "undefined" && Echo.private) {
         echoChannel = Echo.private(`retailer.${user.id}`);
 
@@ -50,10 +53,16 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+    document.removeEventListener("click", closeDropdowns);
     if (echoChannel) {
         echoChannel.stopListening();
     }
 });
+
+function closeDropdowns(e) {
+    if (e && e.target.closest && e.target.closest('.profile-dropdown-wrapper')) return;
+    showProfileDropdown.value = false;
+}
 
 function logout() {
     if (echoChannel && typeof Echo !== "undefined" && Echo.leave) {
@@ -222,20 +231,46 @@ function logout() {
                             </div>
                         </div>
 
-                        <!-- Profile -->
-                        <button
-                            class="flex items-center space-x-2 p-2 hover:bg-dark-700 rounded-lg transition"
-                        >
+                        <!-- Profile Dropdown -->
+                        <div class="relative profile-dropdown-wrapper">
+                            <button
+                                @click.stop="showProfileDropdown = !showProfileDropdown"
+                                class="flex items-center space-x-2 p-2 hover:bg-dark-700 rounded-lg transition"
+                            >
+                                <div
+                                    class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-sm"
+                                >
+                                    {{ user.name.charAt(0).toUpperCase() }}
+                                </div>
+                                <span
+                                    class="hidden md:block text-sm font-medium text-white"
+                                    >{{ user.name }}</span
+                                >
+                                <svg class="hidden md:block w-4 h-4 text-dark-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
                             <div
-                                class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-sm"
+                                v-if="showProfileDropdown"
+                                class="absolute right-0 mt-2 w-48 bg-dark-800 rounded-xl shadow-xl border border-dark-600 z-50 py-2"
                             >
-                                {{ user.name.charAt(0).toUpperCase() }}
+                                <div class="px-4 py-2 border-b border-dark-600 mb-1">
+                                    <div class="text-sm font-medium text-white">{{ user.name }}</div>
+                                    <div class="text-xs text-dark-400">{{ user.email }}</div>
+                                </div>
+                                <Link
+                                    href="/retailer/profile"
+                                    @click="showProfileDropdown = false"
+                                    class="block px-4 py-2 text-sm text-dark-300 hover:text-white hover:bg-dark-700"
+                                >Profile</Link>
+                                <button
+                                    @click="logout(); showProfileDropdown = false"
+                                    class="block w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-dark-700"
+                                >
+                                    Logout
+                                </button>
                             </div>
-                            <span
-                                class="hidden md:block text-sm font-medium text-white"
-                                >{{ user.name }}</span
-                            >
-                        </button>
+                        </div>
                     </div>
                 </div>
             </div>

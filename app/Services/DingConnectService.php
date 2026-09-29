@@ -16,9 +16,9 @@ class DingConnectService
 
     public function __construct()
     {
-        $this->baseUrl      = rtrim(config('ding.api_url', 'https://api.dingconnect.com'), '/');
-        $this->apiKey       = config('ding.api_key', '');
-        $this->customerId   = config('ding.customer_id', '');
+        $this->baseUrl = rtrim(config('ding.api_url', 'https://api.dingconnect.com'), '/');
+        $this->apiKey = config('ding.api_key', '');
+        $this->customerId = config('ding.customer_id', '');
     }
 
     // =========================================================================
@@ -141,7 +141,39 @@ class DingConnectService
             $params['providerCodes'] = $providerCodes;
         if ($accountNumber)
             $params['accountNumber'] = $accountNumber;
-        return $this->get('/api/V1/GetProviders', $params);
+
+        $result = $this->get('/api/V1/GetProviders', $params);
+
+        // Filter to allowed providers per country
+        if ($countryIso && ($result['data']['Items'] ?? $result['data'] ?? [])) {
+            $allowed = $this->allowedProviders($countryIso);
+            if ($allowed) {
+                $allowedLower = array_map('mb_strtolower', $allowed);
+                $items = $result['data']['Items'] ?? $result['data'] ?? [];
+                $filtered = array_values(array_filter($items, function ($item) use ($allowedLower) {
+                    $name = mb_strtolower($item['Name'] ?? '');
+                    foreach ($allowedLower as $an) {
+                        if ($name === $an || str_contains($name, $an)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }));
+                $result['data']['Items'] = $filtered;
+                $result['data'] = $filtered;
+            }
+        }
+
+        return $result;
+    }
+
+    /** @return string[]|null Allowed provider names for a country, or null for no filter */
+    private function allowedProviders(string $countryIso): ?array
+    {
+        return match ($countryIso) {
+            'GB' => ['Vodafone United Kingdom', 'O2 United Kingdom', 'Lebara United Kingdom', 'giffgaff United Kingdom', 'Lyca Mobile United Kingdom', '3 United Kingdom'],
+            default => null,
+        };
     }
 
     /**
@@ -152,7 +184,7 @@ class DingConnectService
     public function getProducts(string $countryIso, string $providerCode, ?string $accountNumber = null): array
     {
         $params = [
-            'countryIsos'   => $countryIso,
+            'countryIsos' => $countryIso,
             'providerCodes' => $providerCode,
         ];
 
@@ -223,11 +255,11 @@ class DingConnectService
     public function sendTransfer(string $skuCode, float $sendValue, string $accountNumber, string $distributorRef, bool $validateOnly = false, ?string $sendCurrencyIso = null, ?array $settings = null, ?string $billRef = null): array
     {
         $formData = [
-            'SkuCode'        => $skuCode,
-            'SendValue'      => (float) $sendValue,
-            'AccountNumber'  => $accountNumber,
+            'SkuCode' => $skuCode,
+            'SendValue' => (float) $sendValue,
+            'AccountNumber' => $accountNumber,
             'DistributorRef' => $distributorRef,
-            'ValidateOnly'   => $validateOnly ? 'true' : 'false',
+            'ValidateOnly' => $validateOnly ? 'true' : 'false',
         ];
 
         if ($sendCurrencyIso) {
@@ -335,10 +367,10 @@ class DingConnectService
         $newStatus = $statusMap[$status] ?? 'failed';
 
         $transaction->update([
-            'status'               => $newStatus,
-            'callback_received'    => true,
+            'status' => $newStatus,
+            'callback_received' => true,
             'callback_received_at' => now(),
-            'ding_response'        => $payload,
+            'ding_response' => $payload,
         ]);
 
         return $transaction->fresh();

@@ -108,6 +108,7 @@ Route::prefix('retailer')->name('retailer.')->middleware(['auth', 'retailer'])->
     Route::post('/recharge/pin/process', [RechargeController::class, 'pinProcess'])->name('recharge.pin.process');
 
     Route::get('/recharge/product-description', [RechargeController::class, 'productDescription'])->name('recharge.productDescription');
+    Route::get('/transactions', [RetailerTransactionController::class, 'index'])->name('transactions.index');
     Route::get('/transactions/{transaction}', [RetailerTransactionController::class, 'show'])->name('transactions.show');
     Route::get('/transactions/{transaction}/poll', [RetailerTransactionController::class, 'poll'])->name('transactions.poll');
     Route::get('/transactions/{transaction}/receipt', [RetailerTransactionController::class, 'receipt'])->name('transactions.receipt');

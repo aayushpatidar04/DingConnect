@@ -61,7 +61,7 @@ class RechargeController extends Controller
         if ($selectedCountry) {
             $providersResult = $dingService->getProviders($selectedCountry);
             if ($providersResult['success']) {
-                $providers = collect($providersResult['data']['Items'] ?? $providersResult['data'] ?? [])->map(function ($item) {
+                $providers = collect($providersResult['data']['Items'] ?? $providersResult['data'] ?? [])->map(function ($item) use ($selectedCountry) {
                     return [
                         'code' => $item['ProviderCode'],
                         'name' => $item['Name'],
