@@ -17,22 +17,22 @@ defineOptions({ layout: GuestLayout });
             </Link>
         </div>
 
-        <h2 class="text-3xl font-bold text-white mb-4">
+        <h2 class="text-3xl font-bold text-ink-900 mb-4">
             Retailer Registration
         </h2>
-        <p class="text-dark-300 mb-8 max-w-md mx-auto">
+        <p class="text-ink-500 mb-8 max-w-md mx-auto">
             Retailer accounts are created by administrators only. Please contact
             MK Network to request access to the platform.
         </p>
         <div class="space-y-4">
             <Link
                 href="/login"
-                class="inline-block btn-primary px-8 py-3 bg-primary text-white rounded-xl font-semibold"
+                class="inline-block btn-primary px-8 py-3 bg-primary text-ink-900 rounded-xl font-semibold"
             >
                 Already have an account? Sign In
             </Link>
             <div class="block">
-                <p class="text-dark-400 text-sm mt-4">
+                <p class="text-ink-500 text-sm mt-4">
                     Need access? Contact us at
                 </p>
                 <p class="text-primary-light text-sm font-medium">

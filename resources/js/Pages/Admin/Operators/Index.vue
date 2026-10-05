@@ -76,8 +76,8 @@ function applyFilters() {
     <div class="space-y-6">
         <div class="flex items-center justify-between flex-wrap gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-white mb-1">Operators</h1>
-                <p class="text-dark-300">
+                <h1 class="text-3xl font-bold text-ink-900 mb-1">Operators</h1>
+                <p class="text-ink-500">
                     {{ operators.total }} operator{{
                         operators.total !== 1 ? "s" : ""
                     }}
@@ -88,7 +88,7 @@ function applyFilters() {
                 <button
                     @click="syncFromDing"
                     :disabled="syncing"
-                    class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition flex items-center gap-2 whitespace-nowrap"
+                    class="px-4 py-2 bg-green-600 text-ink-900 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-60 transition flex items-center gap-2 whitespace-nowrap"
                 >
                     <svg
                         v-if="syncing"
@@ -137,32 +137,32 @@ function applyFilters() {
         </div>
         <div
             v-if="$page.props.flash?.error"
-            class="p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300"
+            class="p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-600"
         >
             {{ $page.props.flash.error }}
         </div>
 
         <div
-            class="bg-dark-800 rounded-2xl border border-dark-600 overflow-visible"
+            class="bg-surface-2 rounded-2xl border border-surface-3 overflow-visible"
         >
-            <div class="p-4 border-b border-dark-600 flex flex-wrap gap-4">
+            <div class="p-4 border-b border-surface-3 flex flex-wrap gap-4">
                 <input
                     v-model="search"
                     @keyup.enter="applyFilters"
                     type="text"
                     placeholder="Search operators..."
-                    class="border border-dark-600 rounded-lg px-4 py-2 bg-dark-700 text-white text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+                    class="border border-surface-3 rounded-lg px-4 py-2 bg-surface-3 text-ink-900 text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none"
                 />
                 <div class="relative">
                     <button
                         @click="showCountryDropdown = !showCountryDropdown"
-                        class="border border-dark-600 rounded-lg px-4 py-2 bg-dark-700 text-white text-sm outline-none min-w-[180px] text-left flex items-center justify-between"
+                        class="border border-surface-3 rounded-lg px-4 py-2 bg-surface-3 text-ink-900 text-sm outline-none min-w-[180px] text-left flex items-center justify-between"
                     >
                         <span>{{
                             selectedCountryName || "All Countries"
                         }}</span>
                         <svg
-                            class="w-4 h-4 text-dark-400"
+                            class="w-4 h-4 text-ink-500"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -177,24 +177,24 @@ function applyFilters() {
                     </button>
                     <div
                         v-if="showCountryDropdown"
-                        class="absolute z-50 mt-1 w-80 bg-dark-700 border border-dark-600 rounded-lg shadow-xl max-h-80 flex flex-col"
+                        class="absolute z-50 mt-1 w-80 bg-surface-3 border border-surface-3 rounded-lg shadow-xl max-h-80 flex flex-col"
                     >
-                        <div class="p-2 border-b border-dark-600">
+                        <div class="p-2 border-b border-surface-3">
                             <input
                                 v-model="countrySearch"
                                 type="text"
                                 placeholder="Search countries..."
-                                class="w-full border border-dark-600 rounded px-3 py-2 bg-dark-800 text-white text-sm outline-none"
+                                class="w-full border border-surface-3 rounded px-3 py-2 bg-surface-2 text-ink-900 text-sm outline-none"
                             />
                         </div>
                         <div class="overflow-y-auto flex-1">
                             <div
                                 @click="selectCountry('', null)"
-                                class="px-3 py-2 text-sm cursor-pointer hover:bg-dark-600 transition"
+                                class="px-3 py-2 text-sm cursor-pointer hover:bg-surface-3 transition"
                                 :class="
                                     !countryFilter
                                         ? 'text-primary font-medium'
-                                        : 'text-dark-200'
+                                        : 'text-ink-700'
                                 "
                             >
                                 All Countries
@@ -203,22 +203,22 @@ function applyFilters() {
                                 v-for="c in filteredCountries"
                                 :key="c.id"
                                 @click="selectCountry(c.id, c.name)"
-                                class="px-3 py-2 text-sm cursor-pointer hover:bg-dark-600 transition flex items-center gap-2"
+                                class="px-3 py-2 text-sm cursor-pointer hover:bg-surface-3 transition flex items-center gap-2"
                                 :class="
                                     countryFilter == c.id
-                                        ? 'bg-dark-600 text-primary font-medium'
-                                        : 'text-dark-200'
+                                        ? 'bg-surface-3 text-primary font-medium'
+                                        : 'text-ink-700'
                                 "
                             >
                                 <span>{{ c.flag_emoji || "" }}</span>
                                 <span>{{ c.name }}</span>
-                                <span class="text-dark-400 text-xs ml-auto">{{
+                                <span class="text-ink-500 text-xs ml-auto">{{
                                     c.iso_code
                                 }}</span>
                             </div>
                             <div
                                 v-if="!filteredCountries.length"
-                                class="px-3 py-4 text-center text-dark-400 text-sm"
+                                class="px-3 py-4 text-center text-ink-500 text-sm"
                             >
                                 No countries found
                             </div>
@@ -229,25 +229,25 @@ function applyFilters() {
 
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-dark-600">
-                    <thead class="bg-dark-700">
+                    <thead class="bg-surface-3">
                         <tr>
                             <th
-                                class="px-4 py-3 text-left text-xs font-medium text-dark-200 uppercase"
+                                class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase"
                             >
                                 Provider
                             </th>
                             <th
-                                class="px-4 py-3 text-left text-xs font-medium text-dark-200 uppercase"
+                                class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase"
                             >
                                 Provider Code
                             </th>
                             <th
-                                class="px-4 py-3 text-left text-xs font-medium text-dark-200 uppercase"
+                                class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase"
                             >
                                 Country
                             </th>
                             <th
-                                class="px-4 py-3 text-left text-xs font-medium text-dark-200 uppercase"
+                                class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase"
                             >
                                 Status
                             </th>
@@ -257,19 +257,19 @@ function applyFilters() {
                         <tr
                             v-for="op in operators.data"
                             :key="op.id"
-                            class="hover:bg-dark-700 transition"
+                            class="hover:bg-surface-2 transition"
                         >
                             <td
-                                class="px-4 py-3 text-sm font-medium text-white"
+                                class="px-4 py-3 text-sm font-medium text-ink-900"
                             >
                                 {{ op.name }}
                             </td>
                             <td
-                                class="px-4 py-3 text-sm font-mono text-dark-300"
+                                class="px-4 py-3 text-sm font-mono text-ink-500"
                             >
                                 {{ op.provider_code || "-" }}
                             </td>
-                            <td class="px-4 py-3 text-sm text-dark-200">
+                            <td class="px-4 py-3 text-sm text-ink-700">
                                 {{ op.country?.flag_emoji }}
                                 {{ op.country?.name || "-" }}
                             </td>
@@ -279,7 +279,7 @@ function applyFilters() {
                                         'px-2 py-1 text-xs rounded-full',
                                         op.is_active
                                             ? 'bg-green-500/20 text-green-300'
-                                            : 'bg-dark-600 text-dark-400',
+                                            : 'bg-surface-3 text-ink-500',
                                     ]"
                                 >
                                     {{ op.is_active ? "Active" : "Inactive" }}
@@ -289,7 +289,7 @@ function applyFilters() {
                         <tr v-if="!operators.data?.length">
                             <td
                                 colspan="5"
-                                class="px-4 py-8 text-center text-dark-400"
+                                class="px-4 py-8 text-center text-ink-500"
                             >
                                 No operators found. Click "Sync from Ding" to
                                 import.
@@ -301,9 +301,9 @@ function applyFilters() {
 
             <div
                 v-if="operators.last_page > 1"
-                class="p-4 border-t border-dark-600 flex items-center justify-between flex-wrap gap-2"
+                class="p-4 border-t border-surface-3 flex items-center justify-between flex-wrap gap-2"
             >
-                <p class="text-sm text-dark-400">
+                <p class="text-sm text-ink-500">
                     Showing {{ operators.from }} to {{ operators.to }} of
                     {{ operators.total }}
                 </p>
@@ -316,8 +316,8 @@ function applyFilters() {
                         :class="[
                             'px-3 py-1 rounded text-sm transition',
                             link.active
-                                ? 'bg-primary text-white'
-                                : 'bg-dark-700 text-dark-300 hover:bg-dark-600',
+                                ? 'bg-primary text-ink-900'
+                                : 'bg-surface-3 text-ink-500 hover:bg-surface-3',
                             !link.url ? 'opacity-50 cursor-not-allowed' : '',
                         ]"
                         v-html="link.label"

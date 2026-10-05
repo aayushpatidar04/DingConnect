@@ -7,11 +7,11 @@ import MkLogo from '@/Components/MkLogo.vue'
             </a>
         </div>
 
-        <h2 class="text-3xl font-bold text-white text-center mb-4">
+        <h2 class="text-3xl font-bold text-ink-900 text-center mb-4">
             Verify Your Email
         </h2>
 
-        <div class="mb-6 text-sm text-dark-300 text-center">
+        <div class="mb-6 text-sm text-ink-500 text-center">
             Thanks for signing up! Before getting started, could you verify your
             email address by clicking on the link we just emailed to you? If you
             didn't receive the email, we will gladly send you another.

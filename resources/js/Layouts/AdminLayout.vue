@@ -28,7 +28,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="min-h-screen bg-dark-900">
+    <div class="min-h-screen bg-surface-0">
         <Head>
             <title>
                 {{ $page.component?.props?.pageTitle || "Admin Panel" }} - MK
@@ -40,13 +40,13 @@ onUnmounted(() => {
             <!-- Sidebar -->
             <aside
                 :class="[
-                    'bg-dark-800 border-r border-dark-600 transition-all duration-300 flex flex-col',
+                    'bg-surface-2 border-r border-surface-3 transition-all duration-300 flex flex-col',
                     showMobileMenu ? 'w-64' : 'w-20',
                 ]"
             >
                 <!-- Logo -->
                 <div
-                    class="h-16 flex items-center justify-center border-b border-dark-600 px-3"
+                    class="h-16 flex items-center justify-center border-b border-surface-3 px-3"
                 >
                     <Link href="/admin" class="flex items-center">
                         <MkLogo v-if="showMobileMenu" size="xl" />
@@ -62,8 +62,8 @@ onUnmounted(() => {
                         :class="
                             $page.url === '/admin' ||
                             $page.url.startsWith('/admin/dashboard')
-                                ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                                : 'text-dark-300 hover:bg-dark-700 hover:text-white'
+                                ? 'bg-primary text-ink-900 shadow-lg shadow-primary/20'
+                                : 'text-ink-500 hover:bg-surface-2 hover:text-ink-900'
                         "
                     >
                         <svg
@@ -89,8 +89,8 @@ onUnmounted(() => {
                         class="flex items-center px-3 py-3 rounded-xl transition-all duration-200"
                         :class="
                             $page.url.includes('/retailers')
-                                ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                                : 'text-dark-300 hover:bg-dark-700 hover:text-white'
+                                ? 'bg-primary text-ink-900 shadow-lg shadow-primary/20'
+                                : 'text-ink-500 hover:bg-surface-2 hover:text-ink-900'
                         "
                     >
                         <svg
@@ -116,8 +116,8 @@ onUnmounted(() => {
                         class="flex items-center px-3 py-3 rounded-xl transition-all duration-200"
                         :class="
                             $page.url.includes('/transactions')
-                                ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                                : 'text-dark-300 hover:bg-dark-700 hover:text-white'
+                                ? 'bg-primary text-ink-900 shadow-lg shadow-primary/20'
+                                : 'text-ink-500 hover:bg-surface-2 hover:text-ink-900'
                         "
                     >
                         <svg
@@ -143,8 +143,8 @@ onUnmounted(() => {
                         class="flex items-center px-3 py-3 rounded-xl transition-all duration-200"
                         :class="
                             $page.url.includes('/operators')
-                                ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                                : 'text-dark-300 hover:bg-dark-700 hover:text-white'
+                                ? 'bg-primary text-ink-900 shadow-lg shadow-primary/20'
+                                : 'text-ink-500 hover:bg-surface-2 hover:text-ink-900'
                         "
                     >
                         <svg
@@ -170,8 +170,8 @@ onUnmounted(() => {
                         class="flex items-center px-3 py-3 rounded-xl transition-all duration-200"
                         :class="
                             $page.url.includes('/allowed-numbers')
-                                ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                                : 'text-dark-300 hover:bg-dark-700 hover:text-white'
+                                ? 'bg-primary text-ink-900 shadow-lg shadow-primary/20'
+                                : 'text-ink-500 hover:bg-surface-2 hover:text-ink-900'
                         "
                     >
                         <svg
@@ -197,8 +197,8 @@ onUnmounted(() => {
                         class="flex items-center px-3 py-3 rounded-xl transition-all duration-200"
                         :class="
                             $page.url.includes('/settings')
-                                ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                                : 'text-dark-300 hover:bg-dark-700 hover:text-white'
+                                ? 'bg-primary text-ink-900 shadow-lg shadow-primary/20'
+                                : 'text-ink-500 hover:bg-surface-2 hover:text-ink-900'
                         "
                     >
                         <svg
@@ -227,22 +227,22 @@ onUnmounted(() => {
                 </nav>
 
                 <!-- User Section -->
-                <div class="p-3 border-t border-dark-600">
+                <div class="p-3 border-t border-surface-3">
                     <div
                         class="flex items-center gap-2"
                         :class="showMobileMenu ? '' : 'flex-col'"
                     >
                         <div v-if="showMobileMenu"
-                            class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                            class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-ink-900 font-bold text-sm flex-shrink-0"
                         >
                             {{ user.name.charAt(0).toUpperCase() }}
                         </div>
 
                         <div v-if="showMobileMenu" class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-white truncate">
+                            <p class="text-sm font-medium text-ink-900 truncate">
                                 {{ user.name }}
                             </p>
-                            <p class="text-xs text-dark-400">Administrator</p>
+                            <p class="text-xs text-ink-500">Administrator</p>
                         </div>
 
                         <Link
@@ -250,7 +250,7 @@ onUnmounted(() => {
                             href="/logout"
                             as="button"
                             title="Logout"
-                            class="p-2 rounded-lg text-red-700 hover:text-red-400 hover:bg-dark-700 transition flex-shrink-0"
+                            class="p-2 rounded-lg text-red-700 hover:text-red-600 hover:bg-surface-2 transition flex-shrink-0"
                         >
                             <svg
                                 class="w-5 h-5"
@@ -274,11 +274,11 @@ onUnmounted(() => {
             <div class="flex-1 flex flex-col overflow-hidden">
                 <!-- Top Header -->
                 <header
-                    class="h-16 bg-dark-800 border-b border-dark-600 flex items-center justify-between px-6"
+                    class="h-16 bg-surface-2 border-b border-surface-3 flex items-center justify-between px-6"
                 >
                     <button
                         @click="showMobileMenu = !showMobileMenu"
-                        class="p-2 text-dark-300 hover:text-white hover:bg-dark-700 rounded-lg transition"
+                        class="p-2 text-ink-500 hover:text-ink-900 hover:bg-surface-2 rounded-lg transition"
                     >
                         <svg
                             class="w-6 h-6"
@@ -295,7 +295,7 @@ onUnmounted(() => {
                         </svg>
                     </button>
 
-                    <h1 class="text-lg font-semibold text-white">
+                    <h1 class="text-lg font-semibold text-ink-900">
                         {{ $page.props.pageTitle || "Dashboard" }}
                     </h1>
 
@@ -303,7 +303,7 @@ onUnmounted(() => {
                         <!-- Notifications -->
                         <div v-if="notifications.length > 0" class="relative">
                             <button
-                                class="p-2 text-dark-300 hover:text-white hover:bg-dark-700 rounded-lg transition relative"
+                                class="p-2 text-ink-500 hover:text-ink-900 hover:bg-surface-2 rounded-lg transition relative"
                             >
                                 <svg
                                     class="w-5 h-5"
@@ -319,19 +319,19 @@ onUnmounted(() => {
                                     />
                                 </svg>
                                 <span
-                                    class="absolute -top-1 -right-1 bg-accent text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
+                                    class="absolute -top-1 -right-1 bg-accent text-ink-900 text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
                                 >
                                     {{ notifications.length }}
                                 </span>
                             </button>
                         </div>
 
-                        <div class="text-sm text-dark-300">{{ user.name }}</div>
+                        <div class="text-sm text-ink-500">{{ user.name }}</div>
                     </div>
                 </header>
 
                 <!-- Page Content -->
-                <main class="flex-1 overflow-y-auto bg-dark-900 p-6">
+                <main class="flex-1 overflow-y-auto bg-surface-0 p-6">
                     <slot />
                     <Toast />
                 </main>

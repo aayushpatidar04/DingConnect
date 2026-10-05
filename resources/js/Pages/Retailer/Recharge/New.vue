@@ -708,8 +708,8 @@ onMounted(() => {
     <div class="max-w-5xl mx-auto">
         <!-- Header -->
         <div class="mb-6">
-            <h1 class="text-3xl font-bold text-white mb-1">New Recharge</h1>
-            <p class="text-dark-300">
+            <h1 class="text-3xl font-bold text-ink-900 mb-1">New Recharge</h1>
+            <p class="text-ink-500">
                 Instant mobile top-up powered by MK Network
             </p>
         </div>
@@ -719,7 +719,7 @@ onMounted(() => {
             v-if="availableBalance < 10"
             class="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 mb-6 flex items-start"
         >
-            <p class="text-sm text-red-300">
+            <p class="text-sm text-red-600">
                 Low wallet balance.
                 <a
                     href="/retailer/wallet"
@@ -738,10 +738,10 @@ onMounted(() => {
                             :class="[
                                 'w-9 h-9 rounded-full flex items-center justify-center font-semibold text-xs transition',
                                 currentStep > idx + 1
-                                    ? 'bg-green-500 text-white'
+                                    ? 'bg-green-500 text-ink-900'
                                     : currentStep === idx + 1
-                                      ? 'bg-primary text-white'
-                                      : 'bg-dark-700 text-dark-400 border border-dark-600',
+                                      ? 'bg-primary text-ink-900'
+                                      : 'bg-surface-3 text-ink-500 border border-surface-3',
                             ]"
                         >
                             <span v-if="currentStep > idx + 1">&#10003;</span>
@@ -751,8 +751,8 @@ onMounted(() => {
                             :class="[
                                 'text-[10px] mt-1 font-medium whitespace-nowrap',
                                 currentStep >= idx + 1
-                                    ? 'text-white'
-                                    : 'text-dark-400',
+                                    ? 'text-ink-900'
+                                    : 'text-ink-500',
                             ]"
                         >
                             {{ step }}
@@ -764,7 +764,7 @@ onMounted(() => {
                         :class="
                             currentStep > idx + 1
                                 ? 'bg-green-500'
-                                : 'bg-dark-700'
+                                : 'bg-surface-3'
                         "
                     ></div>
                 </template>
@@ -774,7 +774,7 @@ onMounted(() => {
         <!-- Error -->
         <div
             v-if="errorMessage"
-            class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 text-red-300 text-sm"
+            class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 text-red-600 text-sm"
         >
             {{ errorMessage }}
         </div>
@@ -783,10 +783,10 @@ onMounted(() => {
              STEP 1: COUNTRY
              ================================================================= -->
         <div v-if="currentStep === 1">
-            <h2 class="text-xl font-semibold text-white mb-4">
+            <h2 class="text-xl font-semibold text-ink-900 mb-4">
                 Select Country
             </h2>
-            <p class="text-sm text-dark-300 mb-4">
+            <p class="text-sm text-ink-500 mb-4">
                 Choose the destination country for this recharge.
             </p>
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -794,17 +794,17 @@ onMounted(() => {
                     v-for="country in countries"
                     :key="country.id"
                     @click="selectCountry(country)"
-                    class="bg-dark-800 hover:bg-dark-700 border border-dark-600 hover:border-primary rounded-2xl p-5 text-left transition"
+                    class="bg-surface-2 hover:bg-surface-2 border border-surface-3 hover:border-primary rounded-2xl p-5 text-left transition"
                 >
                     <div class="flex items-center gap-3">
                         <span class="text-3xl text-primary">{{
                             country.flag_emoji || "🌍"
                         }}</span>
                         <div>
-                            <div class="font-semibold text-white">
+                            <div class="font-semibold text-ink-900">
                                 {{ country.name }}
                             </div>
-                            <div class="text-xs text-dark-400">
+                            <div class="text-xs text-ink-500">
                                 {{ country.iso_code }} · +{{
                                     country.calling_code
                                 }}
@@ -820,12 +820,12 @@ onMounted(() => {
              ================================================================= -->
         <div v-if="currentStep === 2">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-semibold text-white">
+                <h2 class="text-xl font-semibold text-ink-900">
                     Select Provider
                 </h2>
                 <button
                     @click="backToStep(1)"
-                    class="text-sm text-dark-300 hover:text-white"
+                    class="text-sm text-ink-500 hover:text-ink-900"
                 >
                     &larr; Change country
                 </button>
@@ -839,25 +839,25 @@ onMounted(() => {
                 <div
                     v-for="n in 6"
                     :key="n"
-                    class="rounded-2xl p-5 border border-dark-700 bg-dark-800/60"
+                    class="rounded-2xl p-5 border border-surface-3 bg-surface-2/80"
                 >
                     <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 bg-dark-700 rounded-lg animate-pulse shrink-0"></div>
+                        <div class="w-12 h-12 bg-surface-3 rounded-lg animate-pulse shrink-0"></div>
                         <div class="flex-1 space-y-2">
-                            <div class="h-4 bg-dark-700 rounded w-3/4 animate-pulse"></div>
-                            <div class="h-3 bg-dark-700 rounded w-1/2 animate-pulse"></div>
+                            <div class="h-4 bg-surface-3 rounded w-3/4 animate-pulse"></div>
+                            <div class="h-3 bg-surface-3 rounded w-1/2 animate-pulse"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div v-else-if="providers.length === 0" class="text-center py-16">
-                <p class="text-dark-300 text-lg mb-2">
+                <p class="text-ink-500 text-lg mb-2">
                     No operators found for this country.
                 </p>
                 <button
                     @click="backToStep(1)"
-                    class="btn-primary text-white px-6 py-2 rounded-xl text-sm"
+                    class="btn-primary text-ink-900 px-6 py-2 rounded-xl text-sm"
                 >
                     &larr; Change country
                 </button>
@@ -879,8 +879,8 @@ onMounted(() => {
                                 ? 'bg-yellow-500/20 border-2 border-yellow-500'
                                 : 'bg-primary/20 border-2 border-primary')
                             : (provider.source === 'valuetopup_only'
-                                ? 'bg-dark-800 border border-yellow-500/50'
-                                : 'bg-dark-800 border border-dark-600 hover:border-primary/50'),
+                                ? 'bg-surface-2 border border-yellow-500/50'
+                                : 'bg-surface-2 border border-surface-3 hover:border-primary/50'),
                     ]"
                 >
                     <div class="flex items-center gap-3">
@@ -897,10 +897,10 @@ onMounted(() => {
                             <span v-else class="text-2xl">📱</span>
                         </div>
                         <div>
-                            <div class="text-lg font-semibold text-white">
+                            <div class="text-lg font-semibold text-ink-900">
                                 {{ provider.name }}
                             </div>
-                            <div class="text-xs text-dark-400 mt-1">
+                            <div class="text-xs text-ink-500 mt-1">
                                 {{ provider.provider_code }}
                             </div>
                         </div>
@@ -912,7 +912,7 @@ onMounted(() => {
                         "
                         class="text-xs mt-2 font-semibold"
                         :class="provider.source === 'valuetopup_only'
-                            ? 'text-yellow-400'
+                            ? 'text-yellow-600'
                             : 'text-primary'"
                     >
                         &#10003; Selected
@@ -924,7 +924,7 @@ onMounted(() => {
                 v-if="providers.length > 0"
                 @click="proceedToProducts"
                 :disabled="!selectedProvider"
-                class="mt-6 w-full btn-primary text-white py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                class="mt-6 w-full btn-primary text-ink-900 py-3 rounded-xl font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
             >
                 Continue &rarr;
             </button>
@@ -935,10 +935,10 @@ onMounted(() => {
              ================================================================= -->
         <div v-if="currentStep === 3">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-semibold text-white">Select Product</h2>
+                <h2 class="text-xl font-semibold text-ink-900">Select Product</h2>
                 <button
                     @click="backToStep(2)"
-                    class="text-sm text-dark-300 hover:text-white"
+                    class="text-sm text-ink-500 hover:text-ink-900"
                 >
                     &larr; Change provider
                 </button>
@@ -947,7 +947,7 @@ onMounted(() => {
             <!-- Selected provider info -->
             <div
                 v-if="selectedProvider"
-                class="flex items-center gap-3 mb-4 bg-dark-800 rounded-xl p-3 border border-dark-600"
+                class="flex items-center gap-3 mb-4 bg-surface-2 rounded-xl p-3 border border-surface-3"
             >
                 <div
                     class="w-8 h-8 bg-white rounded-lg flex items-center justify-center overflow-hidden"
@@ -961,10 +961,10 @@ onMounted(() => {
                     <span v-else>📱</span>
                 </div>
                 <div>
-                    <div class="text-sm font-medium text-white">
+                    <div class="text-sm font-medium text-ink-900">
                         {{ selectedProvider.name }}
                     </div>
-                    <div class="text-xs text-dark-400">
+                    <div class="text-xs text-ink-500">
                         {{ selectedCountry?.name }}
                     </div>
                 </div>
@@ -973,7 +973,7 @@ onMounted(() => {
             <div v-if="showPromotionBadge" class="mb-4">
                 <button
                     @click="showPromotionsModal = true"
-                    class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-2 text-yellow-300 text-sm hover:bg-yellow-500/20"
+                    class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-2 text-yellow-600 text-sm hover:bg-yellow-500/20"
                 >
                     🎁 {{ promotions.length }} promotion{{
                         promotions.length > 1 ? "s" : ""
@@ -986,19 +986,19 @@ onMounted(() => {
             <div v-if="loadingProducts" class="space-y-8">
                 <!-- Category skeleton: tabs -->
                 <div class="flex gap-2 mb-6">
-                    <div v-for="n in 4" :key="n" class="h-9 bg-dark-700/60 rounded-xl w-20 animate-pulse"></div>
+                    <div v-for="n in 4" :key="n" class="h-9 bg-surface-3/80 rounded-xl w-20 animate-pulse"></div>
                 </div>
                 <!-- Category skeleton: products -->
                 <div v-for="n in 2" :key="n" class="mb-8">
-                    <div class="h-7 bg-dark-700/60 rounded-lg w-32 mb-4 animate-pulse"></div>
+                    <div class="h-7 bg-surface-3/80 rounded-lg w-32 mb-4 animate-pulse"></div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div v-for="m in 6" :key="m" class="rounded-2xl p-5 border border-dark-700/60 bg-dark-800/40">
-                            <div class="h-5 bg-dark-700 rounded w-3/4 mb-3 animate-pulse"></div>
+                        <div v-for="m in 6" :key="m" class="rounded-2xl p-5 border border-surface-3/60 bg-surface-2/60">
+                            <div class="h-5 bg-surface-3 rounded w-3/4 mb-3 animate-pulse"></div>
                             <div class="flex gap-1.5 mb-3">
-                                <div class="h-5 bg-dark-700 rounded-full w-14 animate-pulse"></div>
-                                <div class="h-5 bg-dark-700 rounded-full w-10 animate-pulse"></div>
+                                <div class="h-5 bg-surface-3 rounded-full w-14 animate-pulse"></div>
+                                <div class="h-5 bg-surface-3 rounded-full w-10 animate-pulse"></div>
                             </div>
-                            <div class="h-8 bg-dark-700 rounded-lg w-24 animate-pulse"></div>
+                            <div class="h-8 bg-surface-3 rounded-lg w-24 animate-pulse"></div>
                         </div>
                     </div>
                 </div>
@@ -1015,7 +1015,7 @@ onMounted(() => {
                 v-if="!loadingProducts && allProducts.length === 0"
                 class="text-center py-12"
             >
-                <p class="text-dark-300">
+                <p class="text-ink-500">
                     No products available for this operator.
                 </p>
             </div>
@@ -1026,12 +1026,12 @@ onMounted(() => {
              ================================================================= -->
         <div v-if="currentStep === 4 && !isPinProduct">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-semibold text-white">
+                <h2 class="text-xl font-semibold text-ink-900">
                     Enter Mobile Number
                 </h2>
                 <button
                     @click="backToStep(3)"
-                    class="text-sm text-dark-300 hover:text-white"
+                    class="text-sm text-ink-500 hover:text-ink-900"
                 >
                     &larr; Change product
                 </button>
@@ -1039,7 +1039,7 @@ onMounted(() => {
 
             <!-- Selected product summary -->
             <div
-                class="bg-dark-800 border border-dark-600 rounded-2xl p-5 mb-5"
+                class="bg-surface-2 border border-surface-3 rounded-2xl p-5 mb-5"
             >
                 <div class="flex items-center gap-3 mb-3">
                     <div
@@ -1054,20 +1054,20 @@ onMounted(() => {
                         <span v-else>📱</span>
                     </div>
                     <div>
-                        <div class="font-semibold text-white">
+                        <div class="font-semibold text-ink-900">
                             {{
                                 selectedProduct?.display_text || selectedSkuCode
                             }}
                         </div>
-                        <div class="text-xs text-dark-400">
+                        <div class="text-xs text-ink-500">
                             {{ selectedProvider?.name }} ·
                             {{ selectedProduct?.redemption_type }}
                         </div>
                     </div>
                 </div>
                 <div class="flex justify-between text-sm">
-                    <span class="text-dark-300">You Pay</span>
-                    <span class="text-white font-bold"
+                    <span class="text-ink-500">You Pay</span>
+                    <span class="text-ink-900 font-bold"
                         >{{ selectedProduct?.send_currency }}
                         {{
                             (selectedProduct?.send_value || 0).toFixed(2)
@@ -1090,19 +1090,19 @@ onMounted(() => {
                 ></div>
             </div>
 
-            <div class="bg-dark-800 border border-dark-600 rounded-2xl p-6 relative">
-                <div v-if="validatingNumber" class="absolute inset-0 bg-dark-900/40 rounded-2xl flex items-center justify-center z-10">
+            <div class="bg-surface-2 border border-surface-3 rounded-2xl p-6 relative">
+                <div v-if="validatingNumber" class="absolute inset-0 bg-surface-0/60 rounded-2xl flex items-center justify-center z-10">
                     <div class="inline-block w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
                 </div>
-                <label class="text-sm text-dark-300 mb-2 block">
+                <label class="text-sm text-ink-500 mb-2 block">
                     Mobile Number ({{ selectedCountry?.name }})
                 </label>
                 <div
-                    class="flex items-center bg-dark-700 border border-dark-600 rounded-xl overflow-hidden"
+                    class="flex items-center bg-surface-3 border border-surface-3 rounded-xl overflow-hidden"
                     :class="{ 'opacity-50': validatingNumber }"
                 >
                     <span
-                        class="px-4 py-3 text-white font-semibold border-r border-dark-600"
+                        class="px-4 py-3 text-ink-900 font-semibold border-r border-surface-3"
                     >
                         +{{ selectedCountry?.calling_code }}
                     </span>
@@ -1110,19 +1110,19 @@ onMounted(() => {
                         v-model="mobileNumber"
                         type="tel"
                         placeholder="Enter phone number"
-                        class="flex-1 bg-transparent px-4 py-3 text-white outline-none"
+                        class="flex-1 bg-transparent px-4 py-3 text-ink-900 outline-none"
                         @input="validatePhone"
                         :disabled="validatingNumber"
                     />
                 </div>
-                <p v-if="phoneError" class="text-xs text-red-400 mt-2">
+                <p v-if="phoneError" class="text-xs text-red-600 mt-2">
                     {{ phoneError }}
                 </p>
 
                 <button
                     @click="proceedToConfirmFromNumber"
                     :disabled="!canProceedFromPhone || validatingNumber"
-                    class="mt-6 w-full btn-primary text-white py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="mt-6 w-full btn-primary text-ink-900 py-3 rounded-xl font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                     {{
                         validatingNumber
@@ -1138,21 +1138,21 @@ onMounted(() => {
              ================================================================= -->
         <div v-if="currentStep === 5">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-semibold text-white">
+                <h2 class="text-xl font-semibold text-ink-900">
                     {{ isPinProduct ? "Confirm PIN Purchase" : "Review Order" }}
                 </h2>
                 <button
                     @click="backToStep(isPinProduct ? 3 : 4)"
-                    class="text-sm text-dark-300 hover:text-white"
+                    class="text-sm text-ink-500 hover:text-ink-900"
                 >
                     &larr; Back
                 </button>
             </div>
 
-            <div class="bg-dark-800 border border-dark-600 rounded-2xl p-6">
+            <div class="bg-surface-2 border border-surface-3 rounded-2xl p-6">
                 <!-- Product info row: logo + name + values -->
                 <div
-                    class="flex items-center gap-4 mb-5 pb-5 border-b border-dark-600"
+                    class="flex items-center gap-4 mb-5 pb-5 border-b border-surface-3"
                 >
                     <div
                         class="w-12 h-12 bg-white rounded-lg flex items-center justify-center overflow-hidden shrink-0"
@@ -1166,12 +1166,12 @@ onMounted(() => {
                         <span v-else class="text-2xl">📱</span>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <div class="font-semibold text-white truncate">
+                        <div class="font-semibold text-ink-900 truncate">
                             {{
                                 selectedProduct?.display_text || selectedSkuCode
                             }}
                         </div>
-                        <div class="text-xs text-dark-400">
+                        <div class="text-xs text-ink-500">
                             {{ selectedProvider?.name }} ·
                             {{ selectedProduct?.redemption_type }}
                         </div>
@@ -1180,13 +1180,13 @@ onMounted(() => {
 
                 <!-- Three values: You Paid | PIN Value / Customer Gets | Number/Redemption -->
                 <div class="grid grid-cols-3 gap-3 mb-5">
-                    <div class="bg-dark-700 rounded-xl p-3 text-center">
+                    <div class="bg-surface-3 rounded-xl p-3 text-center">
                         <div
-                            class="text-[10px] text-dark-400 uppercase tracking-wider mb-1"
+                            class="text-[10px] text-ink-500 uppercase tracking-wider mb-1"
                         >
                             You Paid
                         </div>
-                        <div class="text-sm font-bold text-white">
+                        <div class="text-sm font-bold text-ink-900">
                             {{ selectedProduct?.send_currency || "GBP" }}
                             {{ (selectedProduct?.send_value || 0).toFixed(2) }}
                         </div>
@@ -1195,24 +1195,24 @@ onMounted(() => {
                         class="bg-yellow-500/10 rounded-xl p-3 text-center border border-yellow-500/20"
                     >
                         <div
-                            class="text-[10px] text-yellow-400 uppercase tracking-wider mb-1"
+                            class="text-[10px] text-yellow-600 uppercase tracking-wider mb-1"
                         >
                             {{ isPinProduct ? "PIN Value" : "Customer Gets" }}
                         </div>
-                        <div class="text-sm font-bold text-yellow-400">
+                        <div class="text-sm font-bold text-yellow-600">
                             {{ selectedProduct?.receive_currency || "GBP" }}
                             {{
                                 (selectedProduct?.receive_value || 0).toFixed(2)
                             }}
                         </div>
                     </div>
-                    <div class="bg-dark-700 rounded-xl p-3 text-center">
+                    <div class="bg-surface-3 rounded-xl p-3 text-center">
                         <div
-                            class="text-[10px] text-dark-400 uppercase tracking-wider mb-1"
+                            class="text-[10px] text-ink-500 uppercase tracking-wider mb-1"
                         >
                             {{ isPinProduct ? "Redemption" : "Number" }}
                         </div>
-                        <div class="text-xs text-white font-medium">
+                        <div class="text-xs text-ink-900 font-medium">
                             {{
                                 isPinProduct
                                     ? "Any SIM can redeem"
@@ -1225,14 +1225,14 @@ onMounted(() => {
                 <!-- Details -->
                 <div class="space-y-2 mb-5 text-sm">
                     <div class="flex justify-between">
-                        <span class="text-dark-300">SKU</span>
-                        <span class="text-white font-mono text-xs">{{
+                        <span class="text-ink-500">SKU</span>
+                        <span class="text-ink-900 font-mono text-xs">{{
                             selectedSkuCode
                         }}</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-dark-300">Redemption</span>
-                        <span class="text-white">{{
+                        <span class="text-ink-500">Redemption</span>
+                        <span class="text-ink-900">{{
                             selectedProduct?.redemption_type
                         }}</span>
                     </div>
@@ -1240,7 +1240,7 @@ onMounted(() => {
                         v-if="selectedProduct?.validity_period"
                         class="flex justify-between"
                     >
-                        <span class="text-dark-300">Validity</span>
+                        <span class="text-ink-500">Validity</span>
                         <span class="text-green-400">{{
                             parseValidityPeriod(selectedProduct.validity_period)
                         }}</span>
@@ -1249,8 +1249,8 @@ onMounted(() => {
                         v-if="selectedProduct?.benefits?.length"
                         class="flex justify-between"
                     >
-                        <span class="text-dark-300">Benefits</span>
-                        <span class="text-white">{{
+                        <span class="text-ink-500">Benefits</span>
+                        <span class="text-ink-900">{{
                             selectedProduct.benefits.join(", ")
                         }}</span>
                     </div>
@@ -1259,7 +1259,7 @@ onMounted(() => {
                 <!-- Description / How to Redeem -->
                 <div v-if="productReadmore || productDescription" class="mb-5">
                     <div
-                        class="text-[10px] text-dark-400 uppercase tracking-wider mb-2"
+                        class="text-[10px] text-ink-500 uppercase tracking-wider mb-2"
                     >
                         {{
                             isPinProduct
@@ -1269,19 +1269,19 @@ onMounted(() => {
                     </div>
                     <div
                         v-if="productReadmore"
-                        class="bg-dark-700 rounded-xl p-4 mb-2 text-sm text-dark-200"
+                        class="bg-surface-3 rounded-xl p-4 mb-2 text-sm text-ink-700"
                         v-html="productReadmore"
                     ></div>
                     <div
                         v-if="productDescription"
-                        class="bg-dark-700 rounded-xl p-4 text-sm text-dark-200"
+                        class="bg-surface-3 rounded-xl p-4 text-sm text-ink-700"
                         v-html="productDescription"
                     ></div>
                 </div>
 
                 <!-- Free range input (if applicable) -->
                 <div v-if="isFreeRangeFlow" class="mb-5">
-                    <label class="text-sm text-dark-300 mb-2 block"
+                    <label class="text-sm text-ink-500 mb-2 block"
                         >Enter Amount ({{
                             selectedProduct?.send_currency
                         }})</label
@@ -1292,9 +1292,9 @@ onMounted(() => {
                         type="number"
                         :min="selectedProduct?.min_send_value"
                         :max="selectedProduct?.max_send_value"
-                        class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-3 text-white text-lg outline-none"
+                        class="w-full bg-surface-3 border border-surface-3 rounded-xl px-4 py-3 text-ink-900 text-lg outline-none"
                     />
-                    <p class="text-xs text-dark-400 mt-2">
+                    <p class="text-xs text-ink-500 mt-2">
                         Min: {{ selectedProduct?.send_currency }}
                         {{ selectedProduct?.min_send_value }} &middot; Max:
                         {{ selectedProduct?.send_currency }}
@@ -1304,13 +1304,13 @@ onMounted(() => {
                         <div
                             class="inline-block w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"
                         ></div>
-                        <span class="ml-2 text-dark-300">Calculating...</span>
+                        <span class="ml-2 text-ink-500">Calculating...</span>
                     </div>
                     <div
                         v-else-if="freeRangePricing"
                         class="mt-4 bg-primary/10 border border-primary/30 rounded-xl p-4"
                     >
-                        <div class="text-sm text-dark-300 mb-1">
+                        <div class="text-sm text-ink-500 mb-1">
                             Customer will receive:
                         </div>
                         <div class="text-2xl font-bold text-primary-light">
@@ -1322,7 +1322,7 @@ onMounted(() => {
                                 selectedProductSource === 'valuetopup' &&
                                 freeRangePricing.face_value
                             "
-                            class="text-sm text-yellow-400 mt-1"
+                            class="text-sm text-yellow-600 mt-1"
                         >
                             Face value: {{ freeRangePricing.face_value_currency || 'GBP' }}
                             {{ freeRangePricing.face_value.toFixed(2) }}
@@ -1337,7 +1337,7 @@ onMounted(() => {
                         :disabled="
                             submitting || (isFreeRangeFlow && !freeRangePricing)
                         "
-                        class="flex-1 border border-dark-600 text-white py-3 rounded-xl font-semibold hover:bg-dark-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        class="flex-1 border border-surface-3 text-ink-900 py-3 rounded-xl font-semibold hover:bg-surface-2 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                         Review Order
                     </button>
@@ -1346,7 +1346,7 @@ onMounted(() => {
                         :disabled="
                             submitting || (isFreeRangeFlow && !freeRangePricing)
                         "
-                        class="flex-1 btn-primary text-white py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                        class="flex-1 btn-primary text-ink-900 py-3 rounded-xl font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                         {{
                             submitting
@@ -1369,15 +1369,15 @@ onMounted(() => {
             class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
         >
             <div
-                class="bg-dark-800 border border-dark-600 rounded-2xl max-w-md w-full max-h-[90vh] flex flex-col"
+                class="bg-surface-2 border border-surface-3 rounded-2xl max-w-md w-full max-h-[90vh] flex flex-col"
             >
                 <div class="flex items-center justify-between mb-4 shrink-0">
-                    <h3 class="text-lg font-semibold text-white">
+                    <h3 class="text-lg font-semibold text-ink-900">
                         🎁 Available Promotions
                     </h3>
                     <button
                         @click="closePromotionsModal"
-                        class="text-dark-400 hover:text-white"
+                        class="text-ink-500 hover:text-ink-900"
                     >
                         &times;
                     </button>
@@ -1388,7 +1388,7 @@ onMounted(() => {
                         :key="promo.localization_key"
                         class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4"
                     >
-                        <div class="font-semibold text-yellow-300 mb-1">
+                        <div class="font-semibold text-yellow-600 mb-1">
                             {{ promo.promotion_name }}
                         </div>
                         <div class="text-sm text-yellow-200">
@@ -1396,7 +1396,7 @@ onMounted(() => {
                         </div>
                         <div
                             v-if="promo.from_date || promo.to_date"
-                            class="text-xs text-yellow-400 mt-2"
+                            class="text-xs text-yellow-600 mt-2"
                         >
                             {{ promo.from_date }}
                             {{ promo.from_date && promo.to_date ? "to" : "" }}
@@ -1406,7 +1406,7 @@ onMounted(() => {
                 </div>
                 <button
                     @click="closePromotionsModal"
-                    class="mt-6 w-full btn-primary text-white py-3 rounded-xl font-semibold shrink-0"
+                    class="mt-6 w-full btn-primary text-ink-900 py-3 rounded-xl font-semibold shrink-0"
                 >
                     Got it
                 </button>
@@ -1422,41 +1422,41 @@ onMounted(() => {
             class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
         >
             <div
-                class="bg-dark-800 border border-dark-600 rounded-2xl max-w-md w-full p-6 max-h-[90vh] flex flex-col"
+                class="bg-surface-2 border border-surface-3 rounded-2xl max-w-md w-full p-6 max-h-[90vh] flex flex-col"
             >
                 <div
-                    class="text-center border-b border-dashed border-dark-600 pb-4 mb-4 shrink-0"
+                    class="text-center border-b border-dashed border-surface-3 pb-4 mb-4 shrink-0"
                 >
-                    <h3 class="text-lg font-bold text-white">Review Order</h3>
-                    <p class="text-xs text-dark-400 font-mono mt-1">
+                    <h3 class="text-lg font-bold text-ink-900">Review Order</h3>
+                    <p class="text-xs text-ink-500 font-mono mt-1">
                         {{ reviewReference }}
                     </p>
-                    <p class="text-xs text-dark-400">{{ reviewTimestamp }}</p>
+                    <p class="text-xs text-ink-500">{{ reviewTimestamp }}</p>
                 </div>
 
                 <div class="overflow-y-auto flex-1 pr-1">
                     <div class="space-y-2 text-sm mb-4">
                         <div class="flex justify-between">
-                            <span class="text-dark-300">Country</span>
-                            <span class="text-white"
+                            <span class="text-ink-500">Country</span>
+                            <span class="text-ink-900"
                                 >{{ selectedCountry?.name }} ({{
                                     currentCountryIso
                                 }})</span
                             >
                         </div>
                         <div v-if="!isPinProduct" class="flex justify-between">
-                            <span class="text-dark-300">Phone</span>
-                            <span class="text-white">+{{ cleanedPhone }}</span>
+                            <span class="text-ink-500">Phone</span>
+                            <span class="text-ink-900">+{{ cleanedPhone }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-dark-300">Operator</span>
-                            <span class="text-white">{{
+                            <span class="text-ink-500">Operator</span>
+                            <span class="text-ink-900">{{
                                 selectedProvider?.name
                             }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-dark-300">Product</span>
-                            <span class="text-white">{{
+                            <span class="text-ink-500">Product</span>
+                            <span class="text-ink-900">{{
                                 selectedProduct?.display_text || selectedSkuCode
                             }}</span>
                         </div>
@@ -1464,7 +1464,7 @@ onMounted(() => {
                             v-if="selectedProduct?.validity_period"
                             class="flex justify-between"
                         >
-                            <span class="text-dark-300">Validity</span>
+                            <span class="text-ink-500">Validity</span>
                             <span class="text-green-400">{{
                                 parseValidityPeriod(
                                     selectedProduct.validity_period,
@@ -1474,17 +1474,17 @@ onMounted(() => {
                     </div>
 
                     <div
-                        class="border-t border-dashed border-dark-600 pt-3 mb-4"
+                        class="border-t border-dashed border-surface-3 pt-3 mb-4"
                     >
                         <div class="flex justify-between items-baseline">
-                            <span class="text-dark-300">You Pay</span>
-                            <span class="text-xl font-bold text-white">
+                            <span class="text-ink-500">You Pay</span>
+                            <span class="text-xl font-bold text-ink-900">
                                 {{ form.send_currency }}
                                 {{ form.send_value.toFixed(2) }}
                             </span>
                         </div>
                         <div class="flex justify-between text-sm mt-1">
-                            <span class="text-dark-300">Customer Gets</span>
+                            <span class="text-ink-500">Customer Gets</span>
                             <span class="text-green-400">
                                 {{ form.receive_currency }}
                                 {{ form.receive_value.toFixed(2) }}
@@ -1494,7 +1494,7 @@ onMounted(() => {
 
                     <div
                         v-if="productReadmore || productDescription"
-                        class="mb-4 text-xs text-dark-300"
+                        class="mb-4 text-xs text-ink-500"
                     >
                         <div
                             v-html="productReadmore || productDescription"
@@ -1504,14 +1504,14 @@ onMounted(() => {
                         <button
                             @click="cancelReview"
                             :disabled="submitting"
-                            class="flex-1 border border-dark-600 text-white py-3 rounded-xl font-semibold hover:bg-dark-700 disabled:opacity-50"
+                            class="flex-1 border border-surface-3 text-ink-900 py-3 rounded-xl font-semibold hover:bg-surface-2 disabled:opacity-60"
                         >
                             Cancel
                         </button>
                         <button
                             @click="submitRecharge('buy')"
                             :disabled="submitting"
-                            class="flex-1 btn-primary text-white py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="flex-1 btn-primary text-ink-900 py-3 rounded-xl font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                             {{
                                 submitting
@@ -1533,7 +1533,7 @@ onMounted(() => {
                     class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
                 >
                     <div
-                        class="bg-dark-800 border border-green-500/30 rounded-2xl max-w-md w-full p-6 max-h-[90vh] flex flex-col"
+                        class="bg-surface-2 border border-green-500/30 rounded-2xl max-w-md w-full p-6 max-h-[90vh] flex flex-col"
                     >
                         <div class="text-center shrink-0">
                             <div
@@ -1541,34 +1541,34 @@ onMounted(() => {
                             >
                                 &#10003;
                             </div>
-                            <h3 class="text-xl font-bold text-white mb-2">
+                            <h3 class="text-xl font-bold text-ink-900 mb-2">
                                 Recharge Successful!
                             </h3>
-                            <p class="text-sm text-dark-300 mb-4">
+                            <p class="text-sm text-ink-500 mb-4">
                                 Please share this PIN with your customer
                             </p>
                         </div>
                         <div class="overflow-y-auto flex-1 pr-1">
-                            <div class="bg-dark-700 rounded-xl p-4 mb-4">
-                                <div class="text-xs text-dark-400 mb-1">
+                            <div class="bg-surface-3 rounded-xl p-4 mb-4">
+                                <div class="text-xs text-ink-500 mb-1">
                                     Receipt Number
                                 </div>
-                                <div class="text-white font-mono text-sm mb-3">
+                                <div class="text-ink-900 font-mono text-sm mb-3">
                                     {{ receiptNumber }}
                                 </div>
-                                <div class="text-xs text-dark-400 mb-1">
+                                <div class="text-xs text-ink-500 mb-1">
                                     PIN / Voucher Code
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <div
-                                        class="flex-1 bg-dark-900 rounded-lg p-3 border border-primary/30 text-primary-light font-bold break-all"
+                                        class="flex-1 bg-surface-0 rounded-lg p-3 border border-primary/30 text-primary-light font-bold break-all"
                                         v-html="
                                             receiptText.replace(/\n/g, '<br>')
                                         "
                                     ></div>
                                     <button
                                         @click="copyPin"
-                                        class="text-xs bg-dark-700 px-3 py-2 rounded text-dark-300 hover:text-white transition whitespace-nowrap"
+                                        class="text-xs bg-surface-3 px-3 py-2 rounded text-ink-500 hover:text-ink-900 transition whitespace-nowrap"
                                     >
                                         📋 Copy
                                     </button>
@@ -1577,7 +1577,7 @@ onMounted(() => {
                         </div>
                         <button
                             @click="closePinModal"
-                            class="w-full btn-primary text-white py-3 rounded-xl font-semibold shrink-0 mt-4"
+                            class="w-full btn-primary text-ink-900 py-3 rounded-xl font-semibold shrink-0 mt-4"
                         >
                             Close
                         </button>

@@ -19,15 +19,15 @@ function submit() {
     <Head title="Settings - Admin" />
     <div class="space-y-6">
         <div>
-            <h1 class="text-3xl font-bold text-white mb-1">Settings</h1>
-            <p class="text-dark-300">Platform configuration</p>
+            <h1 class="text-3xl font-bold text-ink-900 mb-1">Settings</h1>
+            <p class="text-ink-500">Platform configuration</p>
         </div>
 
         <form @submit.prevent="submit" class="space-y-6">
             <template v-for="group in groups" :key="group">
-                <div class="bg-dark-800 rounded-2xl p-6 border border-dark-600">
+                <div class="bg-surface-2 rounded-2xl p-6 border border-surface-3">
                     <h3
-                        class="text-lg font-semibold text-white mb-4 capitalize"
+                        class="text-lg font-semibold text-ink-900 mb-4 capitalize"
                     >
                         {{ group }}
                     </h3>
@@ -37,7 +37,7 @@ function submit() {
                             :key="setting.id"
                             class="flex items-center gap-4"
                         >
-                            <label class="w-1/3 text-sm text-dark-200">{{
+                            <label class="w-1/3 text-sm text-ink-700">{{
                                 setting.description || setting.key
                             }}</label>
                             <input
@@ -51,7 +51,7 @@ function submit() {
                                     }
                                 "
                                 type="text"
-                                class="flex-1 border border-dark-600 rounded-lg px-3 py-2 text-sm bg-dark-700 text-white input-dark"
+                                class="flex-1 border border-surface-3 rounded-lg px-3 py-2 text-sm bg-surface-3 text-ink-900 input-dark"
                             />
                         </div>
                     </div>
@@ -60,7 +60,7 @@ function submit() {
             <button
                 type="submit"
                 :disabled="form.processing"
-                class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark disabled:opacity-50 transition"
+                class="px-6 py-2 bg-primary text-ink-900 rounded-lg hover:bg-primary-dark disabled:opacity-60 transition"
             >
                 Save Settings
             </button>

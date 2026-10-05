@@ -8,10 +8,10 @@ defineOptions({ layout: RetailerLayout });
 const props = defineProps({ transaction: Object });
 
 const statusColors = {
-    pending: "bg-yellow-500/10 text-yellow-300 border-yellow-500/30",
+    pending: "bg-yellow-500/10 text-yellow-600 border-yellow-500/30",
     processing: "bg-blue-500/10 text-blue-300 border-blue-500/30",
     success: "bg-green-500/10 text-green-300 border-green-500/30",
-    failed: "bg-red-500/10 text-red-300 border-red-500/30",
+    failed: "bg-red-500/10 text-red-600 border-red-500/30",
     cancelled: "bg-gray-500/10 text-gray-300 border-gray-500/30",
 };
 
@@ -199,16 +199,16 @@ onMounted(async () => {
         <div class="mb-6">
             <button
                 @click="$inertia.visit('/retailer/transactions')"
-                class="text-sm text-dark-300 hover:text-white transition mb-3 flex items-center gap-1"
+                class="text-sm text-ink-500 hover:text-ink-900 transition mb-3 flex items-center gap-1"
             >
                 ← Back to transactions
             </button>
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold text-white">
+                    <h1 class="text-2xl font-bold text-ink-900">
                         Transaction Details
                     </h1>
-                    <p class="text-dark-300 text-sm mt-1">
+                    <p class="text-ink-500 text-sm mt-1">
                         Receipt: {{ transaction.receipt_number }}
                     </p>
                 </div>
@@ -233,26 +233,26 @@ onMounted(async () => {
             v-if="transaction.status === 'failed'"
             class="bg-red-500/10 border border-red-500/30 rounded-2xl p-5 mb-6"
         >
-            <div class="text-red-300 font-medium">Transaction Failed</div>
-            <div class="text-red-400 text-sm mt-1">
+            <div class="text-red-600 font-medium">Transaction Failed</div>
+            <div class="text-red-600 text-sm mt-1">
                 {{ transaction.failure_reason || "Unknown error occurred" }}
             </div>
         </div>
 
         <!-- Main Details Card -->
         <div
-            class="bg-dark-800 rounded-2xl border border-dark-600 p-6 mb-6 space-y-5"
+            class="bg-surface-2 rounded-2xl border border-surface-3 p-6 mb-6 space-y-5"
         >
             <!-- Plan Info -->
             <div>
                 <div
-                    class="text-xs text-dark-400 uppercase tracking-wider mb-2"
+                    class="text-xs text-ink-500 uppercase tracking-wider mb-2"
                 >
                     Plan
                 </div>
                 <div class="flex items-center gap-3">
                     <div
-                        class="w-10 h-10 bg-white rounded-lg flex items-center justify-center overflow-hidden border border-dark-600"
+                        class="w-10 h-10 bg-white rounded-lg flex items-center justify-center overflow-hidden border border-surface-3"
                     >
                         <img
                             v-if="transaction.operator?.logo_url"
@@ -263,10 +263,10 @@ onMounted(async () => {
                         <span v-else>📱</span>
                     </div>
                     <div>
-                        <div class="font-semibold text-white">
+                        <div class="font-semibold text-ink-900">
                             {{ transaction.operator?.name || "-" }}
                         </div>
-                        <div class="text-sm text-dark-300">
+                        <div class="text-sm text-ink-500">
                             {{
                                 transaction.display_text ||
                                 transaction.operator?.name ||
@@ -280,11 +280,11 @@ onMounted(async () => {
             <!-- Mobile Number (Immediate only) -->
             <div v-if="isImmediate">
                 <div
-                    class="text-xs text-dark-400 uppercase tracking-wider mb-2"
+                    class="text-xs text-ink-500 uppercase tracking-wider mb-2"
                 >
                     Recharged Number
                 </div>
-                <div class="text-white font-medium text-lg">
+                <div class="text-ink-900 font-medium text-lg">
                     +{{ transaction.mobile_number }}
                 </div>
             </div>
@@ -292,14 +292,14 @@ onMounted(async () => {
             <!-- ReadReceipt Note -->
             <div v-else-if="isReadReceipt">
                 <div
-                    class="text-xs text-dark-400 uppercase tracking-wider mb-2"
+                    class="text-xs text-ink-500 uppercase tracking-wider mb-2"
                 >
                     Redemption Type
                 </div>
                 <div
                     class="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3"
                 >
-                    <p class="text-yellow-300 text-sm">
+                    <p class="text-yellow-600 text-sm">
                         📋 <strong>PIN-based recharge</strong> — share the
                         voucher code below with your customer.
                     </p>
@@ -309,11 +309,11 @@ onMounted(async () => {
             <!-- Amount -->
             <div>
                 <div
-                    class="text-xs text-dark-400 uppercase tracking-wider mb-2"
+                    class="text-xs text-ink-500 uppercase tracking-wider mb-2"
                 >
                     {{ isReadReceipt ? "PIN Value" : "Recharge Value" }}
                 </div>
-                <div class="text-2xl font-bold text-white">
+                <div class="text-2xl font-bold text-ink-900">
                     {{ transaction.receive_currency || "GBP" }}
                     {{
                         transaction.receive_value
@@ -328,11 +328,11 @@ onMounted(async () => {
                 v-if="transaction.sku_code"
                 class="flex items-center justify-between"
             >
-                <div class="text-xs text-dark-400 uppercase tracking-wider">
+                <div class="text-xs text-ink-500 uppercase tracking-wider">
                     SKU Code
                 </div>
                 <div
-                    class="text-xs bg-dark-700 px-2 py-1 rounded text-dark-300 font-mono"
+                    class="text-xs bg-surface-3 px-2 py-1 rounded text-ink-500 font-mono"
                 >
                     {{ transaction.sku_code }}
                 </div>
@@ -340,9 +340,9 @@ onMounted(async () => {
 
             <!-- Send / Receive Details -->
             <div class="grid grid-cols-2 gap-4">
-                <div class="bg-dark-700 rounded-xl p-4">
-                    <div class="text-xs text-dark-400 mb-1">You Paid</div>
-                    <div class="text-lg font-semibold text-white">
+                <div class="bg-surface-3 rounded-xl p-4">
+                    <div class="text-xs text-ink-500 mb-1">You Paid</div>
+                    <div class="text-lg font-semibold text-ink-900">
                         {{ transaction.send_currency || "GBP" }}
                         {{
                             transaction.send_value
@@ -351,11 +351,11 @@ onMounted(async () => {
                         }}
                     </div>
                 </div>
-                <div class="bg-dark-700 rounded-xl p-4">
-                    <div class="text-xs text-dark-400 mb-1">
+                <div class="bg-surface-3 rounded-xl p-4">
+                    <div class="text-xs text-ink-500 mb-1">
                         {{ isReadReceipt ? "PIN Value" : "Customer Gets" }}
                     </div>
-                    <div class="text-lg font-semibold text-white">
+                    <div class="text-lg font-semibold text-ink-900">
                         {{ transaction.receive_currency || "GBP" }}
                         {{
                             transaction.receive_value
@@ -371,7 +371,7 @@ onMounted(async () => {
                 v-if="transaction.validity_period"
                 class="flex items-center justify-between"
             >
-                <div class="text-xs text-dark-400 uppercase tracking-wider">
+                <div class="text-xs text-ink-500 uppercase tracking-wider">
                     Validity
                 </div>
                 <div class="text-sm text-green-300">
@@ -382,7 +382,7 @@ onMounted(async () => {
             <!-- Benefits -->
             <div v-if="transaction.benefits && transaction.benefits.length">
                 <div
-                    class="text-xs text-dark-400 uppercase tracking-wider mb-2"
+                    class="text-xs text-ink-500 uppercase tracking-wider mb-2"
                 >
                     Benefits
                 </div>
@@ -400,25 +400,25 @@ onMounted(async () => {
             <!-- Product Description -->
             <div v-if="showProductDesc">
                 <div
-                    class="text-xs text-dark-400 uppercase tracking-wider mb-2"
+                    class="text-xs text-ink-500 uppercase tracking-wider mb-2"
                 >
                     {{ isReadReceipt ? "How to Redeem" : "Product Information" }}
                 </div>
                 <div
                     v-if="loadingProductDesc"
-                    class="text-xs text-dark-400 animate-pulse"
+                    class="text-xs text-ink-500 animate-pulse"
                 >
                     Loading product details...
                 </div>
                 <template v-else>
                     <div
                         v-if="displayDescription"
-                        class="bg-dark-700 rounded-xl p-4 text-sm text-dark-200 prose prose-invert max-w-none mb-2"
+                        class="bg-surface-3 rounded-xl p-4 text-sm text-ink-700 prose prose-invert max-w-none mb-2"
                         v-html="displayDescription"
                     ></div>
                     <div
                         v-if="displayReadmore"
-                        class="bg-dark-700/50 rounded-xl p-4 text-sm text-dark-300 prose prose-invert max-w-none"
+                        class="bg-surface-3/70 rounded-xl p-4 text-sm text-ink-500 prose prose-invert max-w-none"
                         v-html="displayReadmore"
                     ></div>
                 </template>
@@ -429,12 +429,12 @@ onMounted(async () => {
                 v-if="transaction.ding_transaction_id"
                 class="flex items-center justify-between"
             >
-                <div class="text-xs text-dark-400 uppercase tracking-wider">
+                <div class="text-xs text-ink-500 uppercase tracking-wider">
                     Transaction ID
                 </div>
                 <button
                     @click="copyToClipboard(transaction.ding_transaction_id)"
-                    class="text-xs bg-dark-700 px-2 py-1 rounded text-dark-300 font-mono hover:text-white transition"
+                    class="text-xs bg-surface-3 px-2 py-1 rounded text-ink-500 font-mono hover:text-ink-900 transition"
                 >
                     {{ transaction.ding_transaction_id }}
                     📋
@@ -446,12 +446,12 @@ onMounted(async () => {
                 v-if="transaction.ding_order_reference"
                 class="flex items-center justify-between"
             >
-                <div class="text-xs text-dark-400 uppercase tracking-wider">
+                <div class="text-xs text-ink-500 uppercase tracking-wider">
                     Order Reference
                 </div>
                 <button
                     @click="copyToClipboard(transaction.ding_order_reference)"
-                    class="text-xs bg-dark-700 px-2 py-1 rounded text-dark-300 font-mono hover:text-white transition"
+                    class="text-xs bg-surface-3 px-2 py-1 rounded text-ink-500 font-mono hover:text-ink-900 transition"
                 >
                     {{ transaction.ding_order_reference }}
                     📋
@@ -496,20 +496,20 @@ onMounted(async () => {
                 </div>
             </div>
 
-            <div class="bg-dark-700/50 rounded-xl p-4 space-y-3">
+            <div class="bg-surface-3/70 rounded-xl p-4 space-y-3">
                 <div v-if="transaction.receipt_number">
-                    <div class="text-xs text-dark-400 mb-1">Receipt Number</div>
-                    <div class="text-white font-mono text-sm">
+                    <div class="text-xs text-ink-500 mb-1">Receipt Number</div>
+                    <div class="text-ink-900 font-mono text-sm">
                         {{ transaction.receipt_number }}
                     </div>
                 </div>
 
                 <div>
-                    <div class="text-xs text-dark-400 mb-1">
+                    <div class="text-xs text-ink-500 mb-1">
                         PIN / Voucher Code
                     </div>
                     <div
-                        class="bg-dark-900 rounded-lg p-4 border border-primary/30 flex items-center justify-between"
+                        class="bg-surface-0 rounded-lg p-4 border border-primary/30 flex items-center justify-between"
                     >
                         <code
                             v-html="transaction.receipt_text.replace(/\n/g, '<br>')"
@@ -517,7 +517,7 @@ onMounted(async () => {
                         ></code>
                         <button
                             @click="copyToClipboard(transaction.receipt_text)"
-                            class="ml-3 text-xs bg-dark-700 px-3 py-1 rounded text-dark-300 hover:text-white transition whitespace-nowrap"
+                            class="ml-3 text-xs bg-surface-3 px-3 py-1 rounded text-ink-500 hover:text-ink-900 transition whitespace-nowrap"
                         >
                             {{ copied ? "✓ Copied" : "📋 Copy" }}
                         </button>
@@ -528,7 +528,7 @@ onMounted(async () => {
                     v-if="isReadReceipt"
                     class="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mt-3"
                 >
-                    <p class="text-yellow-300 text-xs">
+                    <p class="text-yellow-600 text-xs">
                         <strong>Note:</strong> This is a ReadReceipt product.
                         Customer dials the operator's USSD or follow the redeem instructions given above.
                     </p>
@@ -537,14 +537,14 @@ onMounted(async () => {
         </div>
 
         <!-- Timestamps Card -->
-        <div class="bg-dark-800 rounded-2xl border border-dark-600 p-6 mb-6">
-            <div class="text-xs text-dark-400 uppercase tracking-wider mb-3">
+        <div class="bg-surface-2 rounded-2xl border border-surface-3 p-6 mb-6">
+            <div class="text-xs text-ink-500 uppercase tracking-wider mb-3">
                 Timeline
             </div>
             <div class="space-y-3">
                 <div class="flex items-center gap-3">
-                    <div class="text-sm text-dark-400 w-24">Created</div>
-                    <div class="text-sm text-white">
+                    <div class="text-sm text-ink-500 w-24">Created</div>
+                    <div class="text-sm text-ink-900">
                         {{ formatDate(transaction.created_at) }}
                     </div>
                 </div>
@@ -552,8 +552,8 @@ onMounted(async () => {
                     v-if="transaction.callback_received_at"
                     class="flex items-center gap-3"
                 >
-                    <div class="text-sm text-dark-400 w-24">Updated</div>
-                    <div class="text-sm text-white">
+                    <div class="text-sm text-ink-500 w-24">Updated</div>
+                    <div class="text-sm text-ink-900">
                         {{ formatDate(transaction.callback_received_at) }}
                     </div>
                 </div>
@@ -565,14 +565,14 @@ onMounted(async () => {
             <button
                 v-if="canRetry"
                 @click="$inertia.visit('/retailer/recharge')"
-                class="flex-1 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary-dark transition"
+                class="flex-1 py-3 bg-primary text-ink-900 rounded-xl font-semibold hover:bg-primary-dark transition"
             >
                 New Recharge
             </button>
             <button
                 v-if="canDownloadReceipt"
                 @click="downloadReceipt"
-                class="flex-1 py-3 bg-dark-800 border border-green-500/30 text-green-300 rounded-xl font-semibold hover:bg-green-500/10 transition flex items-center justify-center gap-2"
+                class="flex-1 py-3 bg-surface-2 border border-green-500/30 text-green-300 rounded-xl font-semibold hover:bg-green-500/10 transition flex items-center justify-center gap-2"
             >
                 📥 Download Receipt
             </button>

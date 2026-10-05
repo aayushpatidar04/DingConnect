@@ -153,8 +153,8 @@ async function confirmRecharge() {
     <div class="max-w-4xl mx-auto">
         <!-- Header -->
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-white mb-1">PIN Recharge</h1>
-            <p class="text-dark-300">
+            <h1 class="text-3xl font-bold text-ink-900 mb-1">PIN Recharge</h1>
+            <p class="text-ink-500">
                 Purchase a ReadReceipt voucher. No mobile number required — just
                 enter a serial for your records.
             </p>
@@ -180,10 +180,10 @@ async function confirmRecharge() {
                         :class="[
                             'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0',
                             step > i + 1
-                                ? 'bg-green-500 text-white'
+                                ? 'bg-green-500 text-ink-900'
                                 : step === i + 1
-                                  ? 'bg-primary text-white'
-                                  : 'bg-dark-700 text-dark-400',
+                                  ? 'bg-primary text-ink-900'
+                                  : 'bg-surface-3 text-ink-500',
                         ]"
                     >
                         {{ step > i + 1 ? "✓" : i + 1 }}
@@ -191,14 +191,14 @@ async function confirmRecharge() {
                     <span
                         :class="[
                             'text-xs hidden sm:inline',
-                            step >= i + 1 ? 'text-white' : 'text-dark-400',
+                            step >= i + 1 ? 'text-ink-900' : 'text-ink-500',
                         ]"
                     >
                         {{ s }}
                     </span>
                     <span
                         v-if="i < 4"
-                        class="flex-1 h-px bg-dark-700 mx-2"
+                        class="flex-1 h-px bg-surface-3 mx-2"
                     ></span>
                 </div>
             </template>
@@ -209,16 +209,16 @@ async function confirmRecharge() {
             v-if="errorMsg"
             class="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 mb-6"
         >
-            <p class="text-sm text-red-300">{{ errorMsg }}</p>
+            <p class="text-sm text-red-600">{{ errorMsg }}</p>
         </div>
 
         <!-- Step 1: Country -->
         <div
             v-if="step === 1"
-            class="bg-dark-800 rounded-2xl border border-dark-600 p-6"
+            class="bg-surface-2 rounded-2xl border border-surface-3 p-6"
         >
-            <h2 class="text-lg font-bold text-white mb-1">Select Country</h2>
-            <p class="text-sm text-dark-300 mb-5">
+            <h2 class="text-lg font-bold text-ink-900 mb-1">Select Country</h2>
+            <p class="text-sm text-ink-500 mb-5">
                 Choose the country for your PIN voucher.
             </p>
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -230,11 +230,11 @@ async function confirmRecharge() {
                         'flex items-center gap-3 p-3 rounded-xl border transition',
                         country === c.iso_code
                             ? 'border-primary bg-primary/10'
-                            : 'border-dark-600 bg-dark-700 hover:border-dark-500',
+                            : 'border-surface-3 bg-surface-3 hover:border-surface-3',
                     ]"
                 >
                     <span class="text-xl text-primary">{{ c.flag_emoji }}</span>
-                    <span class="text-sm font-medium text-white">{{
+                    <span class="text-sm font-medium text-ink-900">{{
                         c.name
                     }}</span>
                 </button>
@@ -243,7 +243,7 @@ async function confirmRecharge() {
                 <button
                     @click="loadProviders"
                     :disabled="!country || loading"
-                    class="px-6 py-2.5 bg-primary text-white rounded-xl font-medium hover:bg-primary-dark transition disabled:opacity-50"
+                    class="px-6 py-2.5 bg-primary text-ink-900 rounded-xl font-medium hover:bg-primary-dark transition disabled:opacity-60"
                 >
                     {{ loading ? "Loading..." : "Continue →" }}
                 </button>
@@ -253,20 +253,20 @@ async function confirmRecharge() {
         <!-- Step 2: Provider -->
         <div
             v-if="step === 2"
-            class="bg-dark-800 rounded-2xl border border-dark-600 p-6"
+            class="bg-surface-2 rounded-2xl border border-surface-3 p-6"
         >
-            <h2 class="text-lg font-bold text-white mb-1">Select Provider</h2>
-            <p class="text-sm text-dark-300 mb-5">
+            <h2 class="text-lg font-bold text-ink-900 mb-1">Select Provider</h2>
+            <p class="text-sm text-ink-500 mb-5">
                 Choose the network operator.
             </p>
 
-            <div v-if="loading" class="text-center text-dark-400 py-8">
+            <div v-if="loading" class="text-center text-ink-500 py-8">
                 Loading providers...
             </div>
 
             <div
                 v-else-if="selectedProviders.length === 0"
-                class="text-center text-dark-400 py-8"
+                class="text-center text-ink-500 py-8"
             >
                 No providers found. Go back and try another country.
             </div>
@@ -280,7 +280,7 @@ async function confirmRecharge() {
                         'flex items-center gap-3 p-4 rounded-xl border text-left transition',
                         provider === p.provider_code
                             ? 'border-primary bg-primary/10'
-                            : 'border-dark-600 bg-dark-700 hover:border-dark-500',
+                            : 'border-surface-3 bg-surface-3 hover:border-surface-3',
                     ]"
                 >
                     <div
@@ -295,8 +295,8 @@ async function confirmRecharge() {
                         <span v-else>📱</span>
                     </div>
                     <div>
-                        <div class="font-medium text-white">{{ p.name }}</div>
-                        <div class="text-xs text-dark-400">
+                        <div class="font-medium text-ink-900">{{ p.name }}</div>
+                        <div class="text-xs text-ink-500">
                             {{ p.provider_code }}
                         </div>
                     </div>
@@ -306,14 +306,14 @@ async function confirmRecharge() {
             <div class="mt-6 flex justify-between">
                 <button
                     @click="step = 1"
-                    class="px-6 py-2.5 bg-dark-700 text-white rounded-xl font-medium hover:bg-dark-600 transition"
+                    class="px-6 py-2.5 bg-surface-3 text-ink-900 rounded-xl font-medium hover:bg-surface-3 transition"
                 >
                     ← Back
                 </button>
                 <button
                     @click="selectProvider"
                     :disabled="!provider || loading"
-                    class="px-6 py-2.5 bg-primary text-white rounded-xl font-medium hover:bg-primary-dark transition disabled:opacity-50"
+                    class="px-6 py-2.5 bg-primary text-ink-900 rounded-xl font-medium hover:bg-primary-dark transition disabled:opacity-60"
                 >
                     Continue →
                 </button>
@@ -323,22 +323,22 @@ async function confirmRecharge() {
         <!-- Step 3: Product -->
         <div
             v-if="step === 3"
-            class="bg-dark-800 rounded-2xl border border-dark-600 p-6"
+            class="bg-surface-2 rounded-2xl border border-surface-3 p-6"
         >
-            <h2 class="text-lg font-bold text-white mb-1">
+            <h2 class="text-lg font-bold text-ink-900 mb-1">
                 Select PIN Product
             </h2>
-            <p class="text-sm text-dark-300 mb-5">
+            <p class="text-sm text-ink-500 mb-5">
                 Choose a PIN voucher. A code will be generated after purchase.
             </p>
 
-            <div v-if="loading" class="text-center text-dark-400 py-8">
+            <div v-if="loading" class="text-center text-ink-500 py-8">
                 Loading products...
             </div>
 
             <div
                 v-else-if="pinProducts.length === 0"
-                class="text-center text-dark-400 py-8"
+                class="text-center text-ink-500 py-8"
             >
                 No PIN products available for this provider.
             </div>
@@ -348,31 +348,31 @@ async function confirmRecharge() {
                     v-for="product in pinProducts"
                     :key="product.sku_code"
                     @click="selectProduct(product)"
-                    class="p-5 rounded-xl border border-dark-600 bg-dark-700 hover:border-primary text-left transition"
+                    class="p-5 rounded-xl border border-surface-3 bg-surface-3 hover:border-primary text-left transition"
                 >
                     <div class="flex items-start justify-between mb-2">
-                        <div class="font-semibold text-white">
+                        <div class="font-semibold text-ink-900">
                             {{ product.display_text || product.sku_code }}
                         </div>
                         <span
-                            class="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded-full"
+                            class="text-xs bg-yellow-500/20 text-yellow-600 px-2 py-0.5 rounded-full"
                             >PIN</span
                         >
                     </div>
-                    <div class="text-xs text-dark-400 mb-3">
+                    <div class="text-xs text-ink-500 mb-3">
                         SKU: {{ product.sku_code }}
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <div class="text-xs text-dark-400">You Pay</div>
-                            <div class="text-sm font-bold text-white">
+                            <div class="text-xs text-ink-500">You Pay</div>
+                            <div class="text-sm font-bold text-ink-900">
                                 {{ product.send_currency || "GBP" }}
                                 {{ (product.send_value || 0).toFixed(2) }}
                             </div>
                         </div>
                         <div>
-                            <div class="text-xs text-dark-400">PIN Value</div>
-                            <div class="text-sm font-bold text-yellow-400">
+                            <div class="text-xs text-ink-500">PIN Value</div>
+                            <div class="text-sm font-bold text-yellow-600">
                                 {{ product.receive_currency || "GBP" }}
                                 {{ (product.receive_value || 0).toFixed(2) }}
                             </div>
@@ -390,7 +390,7 @@ async function confirmRecharge() {
             <div class="mt-6 flex justify-between">
                 <button
                     @click="step = 2"
-                    class="px-6 py-2.5 bg-dark-700 text-white rounded-xl font-medium hover:bg-dark-600 transition"
+                    class="px-6 py-2.5 bg-surface-3 text-ink-900 rounded-xl font-medium hover:bg-surface-3 transition"
                 >
                     ← Back
                 </button>
@@ -400,33 +400,33 @@ async function confirmRecharge() {
         <!-- Step 4: Serial Number -->
         <div
             v-if="step === 4"
-            class="bg-dark-800 rounded-2xl border border-dark-600 p-6"
+            class="bg-surface-2 rounded-2xl border border-surface-3 p-6"
         >
-            <h2 class="text-lg font-bold text-white mb-1">
+            <h2 class="text-lg font-bold text-ink-900 mb-1">
                 Enter Serial Number
             </h2>
-            <p class="text-sm text-dark-300 mb-5">
+            <p class="text-sm text-ink-500 mb-5">
                 Enter a serial number for your records. Must be authorized in
                 the system.
             </p>
 
             <!-- Selected product summary -->
-            <div class="bg-dark-700 rounded-xl p-4 mb-5">
+            <div class="bg-surface-3 rounded-xl p-4 mb-5">
                 <div class="flex items-center justify-between">
                     <div>
-                        <div class="font-semibold text-white">
+                        <div class="font-semibold text-ink-900">
                             {{
                                 selectedProduct.display_text ||
                                 selectedProduct.sku_code
                             }}
                         </div>
-                        <div class="text-xs text-dark-400 mt-0.5">
+                        <div class="text-xs text-ink-500 mt-0.5">
                             SKU: {{ selectedProduct.sku_code }}
                         </div>
                     </div>
                     <div class="text-right">
-                        <div class="text-xs text-dark-400">You Pay</div>
-                        <div class="text-lg font-bold text-yellow-400">
+                        <div class="text-xs text-ink-500">You Pay</div>
+                        <div class="text-lg font-bold text-yellow-600">
                             {{ selectedProduct.receive_currency || "GBP" }}
                             {{
                                 (selectedProduct.receive_value || 0).toFixed(2)
@@ -458,17 +458,17 @@ async function confirmRecharge() {
 
             <div>
                 <label
-                    class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                    class="block text-xs text-ink-500 uppercase tracking-wider mb-1"
                     >Serial Number</label
                 >
                 <input
                     v-model="serialNumber"
                     type="text"
-                    class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-3 text-white text-sm font-mono"
+                    class="w-full bg-surface-3 border border-surface-3 rounded-xl px-4 py-3 text-ink-900 text-sm font-mono"
                     placeholder="Enter serial number for records"
                     @keyup.enter="checkAndConfirm"
                 />
-                <p class="text-xs text-dark-400 mt-1">
+                <p class="text-xs text-ink-500 mt-1">
                     This number must be in the authorized list to proceed.
                 </p>
             </div>
@@ -476,14 +476,14 @@ async function confirmRecharge() {
             <div class="mt-6 flex justify-between">
                 <button
                     @click="step = 3"
-                    class="px-6 py-2.5 bg-dark-700 text-white rounded-xl font-medium hover:bg-dark-600 transition"
+                    class="px-6 py-2.5 bg-surface-3 text-ink-900 rounded-xl font-medium hover:bg-surface-3 transition"
                 >
                     ← Back
                 </button>
                 <button
                     @click="checkAndConfirm"
                     :disabled="!serialNumber.trim() || loading"
-                    class="px-6 py-2.5 bg-primary text-white rounded-xl font-medium hover:bg-primary-dark transition disabled:opacity-50"
+                    class="px-6 py-2.5 bg-primary text-ink-900 rounded-xl font-medium hover:bg-primary-dark transition disabled:opacity-60"
                 >
                     {{ loading ? "Checking..." : "Continue →" }}
                 </button>
@@ -493,33 +493,33 @@ async function confirmRecharge() {
         <!-- Step 5: Confirm -->
         <div
             v-if="step === 5"
-            class="bg-dark-800 rounded-2xl border border-dark-600 p-6"
+            class="bg-surface-2 rounded-2xl border border-surface-3 p-6"
         >
-            <h2 class="text-lg font-bold text-white mb-5">Confirm Purchase</h2>
+            <h2 class="text-lg font-bold text-ink-900 mb-5">Confirm Purchase</h2>
 
             <div class="space-y-0 mb-6">
-                <div class="flex justify-between py-3 border-b border-dark-600">
-                    <span class="text-dark-300">Product</span>
-                    <span class="text-white font-medium">{{
+                <div class="flex justify-between py-3 border-b border-surface-3">
+                    <span class="text-ink-500">Product</span>
+                    <span class="text-ink-900 font-medium">{{
                         selectedProduct.display_text || selectedProduct.sku_code
                     }}</span>
                 </div>
-                <div class="flex justify-between py-3 border-b border-dark-600">
-                    <span class="text-dark-300">Serial Number</span>
-                    <span class="text-white font-mono">{{ serialNumber }}</span>
+                <div class="flex justify-between py-3 border-b border-surface-3">
+                    <span class="text-ink-500">Serial Number</span>
+                    <span class="text-ink-900 font-mono">{{ serialNumber }}</span>
                 </div>
-                <div class="flex justify-between py-3 border-b border-dark-600">
-                    <span class="text-dark-300">PIN Value</span>
-                    <span class="text-white font-bold"
+                <div class="flex justify-between py-3 border-b border-surface-3">
+                    <span class="text-ink-500">PIN Value</span>
+                    <span class="text-ink-900 font-bold"
                         >{{ selectedProduct.receive_currency || "GBP" }}
                         {{
                             (selectedProduct.receive_value || 0).toFixed(2)
                         }}</span
                     >
                 </div>
-                <div class="flex justify-between py-3 border-b border-dark-600">
-                    <span class="text-dark-300">You Pay</span>
-                    <span class="text-yellow-400 font-bold text-lg"
+                <div class="flex justify-between py-3 border-b border-surface-3">
+                    <span class="text-ink-500">You Pay</span>
+                    <span class="text-yellow-600 font-bold text-lg"
                         >{{ selectedProduct.send_currency || "GBP" }}
                         {{
                             (
@@ -531,8 +531,8 @@ async function confirmRecharge() {
                     >
                 </div>
                 <div class="flex justify-between py-3">
-                    <span class="text-dark-300">Type</span>
-                    <span class="text-yellow-300 font-medium"
+                    <span class="text-ink-500">Type</span>
+                    <span class="text-yellow-600 font-medium"
                         >ReadReceipt — No mobile number needed</span
                     >
                 </div>
@@ -541,7 +541,7 @@ async function confirmRecharge() {
             <div
                 class="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 mb-6"
             >
-                <p class="text-sm text-yellow-300">
+                <p class="text-sm text-yellow-600">
                     <strong>Note:</strong> After purchase you will receive a PIN
                     code. Any SIM of this provider can redeem it. Share the PIN
                     with your customer.
@@ -551,14 +551,14 @@ async function confirmRecharge() {
             <div class="flex justify-between">
                 <button
                     @click="step = 4"
-                    class="px-6 py-2.5 bg-dark-700 text-white rounded-xl font-medium hover:bg-dark-600 transition"
+                    class="px-6 py-2.5 bg-surface-3 text-ink-900 rounded-xl font-medium hover:bg-surface-3 transition"
                 >
                     ← Back
                 </button>
                 <button
                     @click="confirmRecharge"
                     :disabled="loading"
-                    class="px-8 py-2.5 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition disabled:opacity-50"
+                    class="px-8 py-2.5 bg-green-600 text-ink-900 rounded-xl font-medium hover:bg-green-700 transition disabled:opacity-60"
                 >
                     {{ loading ? "Processing..." : "Complete Purchase" }}
                 </button>

@@ -77,7 +77,7 @@ function logout() {
 </script>
 
 <template>
-    <div class="min-h-screen bg-dark-900">
+    <div class="min-h-screen bg-surface-0">
         <Head>
             <title>
                 {{ $page.component?.props?.pageTitle || "Dashboard" }} - MK
@@ -86,14 +86,14 @@ function logout() {
         </Head>
 
         <!-- Top Navigation -->
-        <nav class="bg-dark-800 border-b border-dark-600">
+        <nav class="bg-surface-2 border-b border-surface-3">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <!-- Left: Logo & Mobile Menu -->
                     <div class="flex items-center">
                         <button
                             @click="showMobileMenu = !showMobileMenu"
-                            class="sm:hidden p-2 text-dark-300 hover:text-white"
+                            class="sm:hidden p-2 text-ink-500 hover:text-ink-900"
                         >
                             <svg
                                 class="w-6 h-6"
@@ -127,8 +127,8 @@ function logout() {
                                 !$page.url.includes('recharge') &&
                                 !$page.url.includes('wallet') &&
                                 !$page.url.includes('transactions')
-                                    ? 'bg-dark-700 text-white'
-                                    : 'text-dark-300 hover:text-white hover:bg-dark-700'
+                                    ? 'bg-surface-3 text-ink-900'
+                                    : 'text-ink-500 hover:text-ink-900 hover:bg-surface-2'
                             "
                             >Dashboard</Link
                         >
@@ -137,8 +137,8 @@ function logout() {
                             class="px-3 py-2 rounded-lg text-sm font-medium transition"
                             :class="
                                 $page.url.includes('/recharge')
-                                    ? 'bg-dark-700 text-white'
-                                    : 'text-dark-300 hover:text-white hover:bg-dark-700'
+                                    ? 'bg-surface-3 text-ink-900'
+                                    : 'text-ink-500 hover:text-ink-900 hover:bg-surface-2'
                             "
                             >Recharge</Link
                         >
@@ -147,8 +147,8 @@ function logout() {
                             class="px-3 py-2 rounded-lg text-sm font-medium transition"
                             :class="
                                 $page.url.includes('/transactions')
-                                    ? 'bg-dark-700 text-white'
-                                    : 'text-dark-300 hover:text-white hover:bg-dark-700'
+                                    ? 'bg-surface-3 text-ink-900'
+                                    : 'text-ink-500 hover:text-ink-900 hover:bg-surface-2'
                             "
                             >Transactions</Link
                         >
@@ -157,8 +157,8 @@ function logout() {
                             class="px-3 py-2 rounded-lg text-sm font-medium transition"
                             :class="
                                 $page.url.includes('/wallet')
-                                    ? 'bg-dark-700 text-white'
-                                    : 'text-dark-300 hover:text-white hover:bg-dark-700'
+                                    ? 'bg-surface-3 text-ink-900'
+                                    : 'text-ink-500 hover:text-ink-900 hover:bg-surface-2'
                             "
                             >Wallet</Link
                         >
@@ -170,7 +170,7 @@ function logout() {
                         <div class="relative">
                             <button
                                 @click="toggleNotifications"
-                                class="p-2 text-dark-300 hover:text-white hover:bg-dark-700 rounded-lg transition relative"
+                                class="p-2 text-ink-500 hover:text-ink-900 hover:bg-surface-2 rounded-lg transition relative"
                             >
                                 <svg
                                     class="w-5 h-5"
@@ -187,7 +187,7 @@ function logout() {
                                 </svg>
                                 <span
                                     v-if="unreadCount > 0"
-                                    class="absolute -top-1 -right-1 bg-accent text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
+                                    class="absolute -top-1 -right-1 bg-accent text-ink-900 text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
                                 >
                                     {{ unreadCount > 9 ? "9+" : unreadCount }}
                                 </span>
@@ -196,10 +196,10 @@ function logout() {
                             <!-- Notification Dropdown -->
                             <div
                                 v-if="notifications.length > 0"
-                                class="absolute right-0 mt-2 w-80 bg-dark-800 rounded-xl shadow-xl border border-dark-600 z-50"
+                                class="absolute right-0 mt-2 w-80 bg-surface-2 rounded-xl shadow-xl border border-surface-3 z-50"
                             >
-                                <div class="p-3 border-b border-dark-600">
-                                    <h3 class="font-semibold text-white">
+                                <div class="p-3 border-b border-surface-3">
+                                    <h3 class="font-semibold text-ink-900">
                                         Notifications
                                     </h3>
                                 </div>
@@ -210,17 +210,17 @@ function logout() {
                                             5,
                                         )"
                                         :key="notif.time"
-                                        class="p-3 border-b border-dark-700 last:border-0 hover:bg-dark-700 transition"
+                                        class="p-3 border-b border-surface-3 last:border-0 hover:bg-surface-2 transition"
                                     >
                                         <div class="flex items-start">
                                             <div class="flex-1">
                                                 <p
-                                                    class="text-sm font-medium text-white"
+                                                    class="text-sm font-medium text-ink-900"
                                                 >
                                                     {{ notif.title }}
                                                 </p>
                                                 <p
-                                                    class="text-sm text-dark-300 mt-1"
+                                                    class="text-sm text-ink-500 mt-1"
                                                 >
                                                     {{ notif.message }}
                                                 </p>
@@ -235,37 +235,37 @@ function logout() {
                         <div class="relative profile-dropdown-wrapper">
                             <button
                                 @click.stop="showProfileDropdown = !showProfileDropdown"
-                                class="flex items-center space-x-2 p-2 hover:bg-dark-700 rounded-lg transition"
+                                class="flex items-center space-x-2 p-2 hover:bg-surface-2 rounded-lg transition"
                             >
                                 <div
-                                    class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-sm"
+                                    class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-ink-900 font-bold text-sm"
                                 >
                                     {{ user.name.charAt(0).toUpperCase() }}
                                 </div>
                                 <span
-                                    class="hidden md:block text-sm font-medium text-white"
+                                    class="hidden md:block text-sm font-medium text-ink-900"
                                     >{{ user.name }}</span
                                 >
-                                <svg class="hidden md:block w-4 h-4 text-dark-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="hidden md:block w-4 h-4 text-ink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                 </svg>
                             </button>
                             <div
                                 v-if="showProfileDropdown"
-                                class="absolute right-0 mt-2 w-48 bg-dark-800 rounded-xl shadow-xl border border-dark-600 z-50 py-2"
+                                class="absolute right-0 mt-2 w-48 bg-surface-2 rounded-xl shadow-xl border border-surface-3 z-50 py-2"
                             >
-                                <div class="px-4 py-2 border-b border-dark-600 mb-1">
-                                    <div class="text-sm font-medium text-white">{{ user.name }}</div>
-                                    <div class="text-xs text-dark-400">{{ user.email }}</div>
+                                <div class="px-4 py-2 border-b border-surface-3 mb-1">
+                                    <div class="text-sm font-medium text-ink-900">{{ user.name }}</div>
+                                    <div class="text-xs text-ink-500">{{ user.email }}</div>
                                 </div>
                                 <Link
                                     href="/retailer/profile"
                                     @click="showProfileDropdown = false"
-                                    class="block px-4 py-2 text-sm text-dark-300 hover:text-white hover:bg-dark-700"
+                                    class="block px-4 py-2 text-sm text-ink-500 hover:text-ink-900 hover:bg-surface-2"
                                 >Profile</Link>
                                 <button
                                     @click="logout(); showProfileDropdown = false"
-                                    class="block w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-dark-700"
+                                    class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:text-red-600 hover:bg-surface-2"
                                 >
                                     Logout
                                 </button>
@@ -278,37 +278,37 @@ function logout() {
             <!-- Mobile Menu -->
             <div
                 v-if="showMobileMenu"
-                class="sm:hidden border-t border-dark-600 bg-dark-800"
+                class="sm:hidden border-t border-surface-3 bg-surface-2"
             >
                 <div class="pt-2 pb-3 space-y-1 px-4">
                     <Link
                         href="/retailer"
-                        class="block px-3 py-2 rounded-lg text-base font-medium text-dark-300 hover:text-white hover:bg-dark-700"
+                        class="block px-3 py-2 rounded-lg text-base font-medium text-ink-500 hover:text-ink-900 hover:bg-surface-2"
                         >Dashboard</Link
                     >
                     <Link
                         href="/retailer/recharge"
-                        class="block px-3 py-2 rounded-lg text-base font-medium text-dark-300 hover:text-white hover:bg-dark-700"
+                        class="block px-3 py-2 rounded-lg text-base font-medium text-ink-500 hover:text-ink-900 hover:bg-surface-2"
                         >Recharge</Link
                     >
                     <Link
                         href="/retailer/transactions"
-                        class="block px-3 py-2 rounded-lg text-base font-medium text-dark-300 hover:text-white hover:bg-dark-700"
+                        class="block px-3 py-2 rounded-lg text-base font-medium text-ink-500 hover:text-ink-900 hover:bg-surface-2"
                         >Transactions</Link
                     >
                     <Link
                         href="/retailer/wallet"
-                        class="block px-3 py-2 rounded-lg text-base font-medium text-dark-300 hover:text-white hover:bg-dark-700"
+                        class="block px-3 py-2 rounded-lg text-base font-medium text-ink-500 hover:text-ink-900 hover:bg-surface-2"
                         >Wallet</Link
                     >
                     <Link
                         href="/retailer/profile"
-                        class="block px-3 py-2 rounded-lg text-base font-medium text-dark-300 hover:text-white hover:bg-dark-700"
+                        class="block px-3 py-2 rounded-lg text-base font-medium text-ink-500 hover:text-ink-900 hover:bg-surface-2"
                         >Profile</Link
                     >
                     <button
                         @click="logout"
-                        class="block w-full text-left px-3 py-2 rounded-lg text-base font-medium text-red-400 hover:text-red-300 hover:bg-dark-700"
+                        class="block w-full text-left px-3 py-2 rounded-lg text-base font-medium text-red-600 hover:text-red-600 hover:bg-surface-2"
                     >
                         Logout
                     </button>
@@ -323,9 +323,9 @@ function logout() {
         </main>
 
         <!-- Footer -->
-        <footer class="bg-dark-800 border-t border-dark-600 mt-auto">
+        <footer class="bg-surface-2 border-t border-surface-3 mt-auto">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                <p class="text-center text-sm text-dark-400">
+                <p class="text-center text-sm text-ink-500">
                     MK Network Communications. All rights reserved.
                 </p>
             </div>

@@ -152,10 +152,10 @@ function filterBy(type) {
             <!-- Header -->
             <div class="flex items-center justify-between mb-6">
                 <div>
-                    <h1 class="text-2xl font-bold text-white">
+                    <h1 class="text-2xl font-bold text-ink-900">
                         Allowed Numbers
                     </h1>
-                    <p class="text-dark-300 text-sm mt-1">
+                    <p class="text-ink-500 text-sm mt-1">
                         Manage numbers/serials authorized for ReadReceipt PIN
                         recharges
                     </p>
@@ -163,13 +163,13 @@ function filterBy(type) {
                 <div class="flex gap-3">
                     <button
                         @click="showImportModal = true"
-                        class="px-4 py-2 bg-dark-700 border border-dark-600 text-white rounded-xl text-sm font-medium hover:bg-dark-600 transition"
+                        class="px-4 py-2 bg-surface-3 border border-surface-3 text-ink-900 rounded-xl text-sm font-medium hover:bg-surface-3 transition"
                     >
                         Import Bulk
                     </button>
                     <button
                         @click="openAdd"
-                        class="px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-dark transition"
+                        class="px-4 py-2 bg-primary text-ink-900 rounded-xl text-sm font-medium hover:bg-primary-dark transition"
                     >
                         Add Number
                     </button>
@@ -178,9 +178,9 @@ function filterBy(type) {
 
             <!-- Filters -->
             <div
-                class="bg-dark-800 rounded-2xl border border-dark-600 p-4 mb-6 flex items-center gap-3"
+                class="bg-surface-2 rounded-2xl border border-surface-3 p-4 mb-6 flex items-center gap-3"
             >
-                <span class="text-xs text-dark-400 uppercase tracking-wider"
+                <span class="text-xs text-ink-500 uppercase tracking-wider"
                     >Filter:</span
                 >
                 <button
@@ -188,8 +188,8 @@ function filterBy(type) {
                     :class="[
                         'px-3 py-1.5 rounded-lg text-xs font-medium transition',
                         filters.type === 'mobile'
-                            ? 'bg-primary text-white'
-                            : 'bg-dark-700 text-dark-300 hover:text-white',
+                            ? 'bg-primary text-ink-900'
+                            : 'bg-surface-3 text-ink-500 hover:text-ink-900',
                     ]"
                 >
                     Mobile
@@ -199,15 +199,15 @@ function filterBy(type) {
                     :class="[
                         'px-3 py-1.5 rounded-lg text-xs font-medium transition',
                         filters.type === 'serial'
-                            ? 'bg-primary text-white'
-                            : 'bg-dark-700 text-dark-300 hover:text-white',
+                            ? 'bg-primary text-ink-900'
+                            : 'bg-surface-3 text-ink-500 hover:text-ink-900',
                     ]"
                 >
                     Serial
                 </button>
                 <a
                     href="/admin/allowed-numbers"
-                    class="px-3 py-1.5 rounded-lg text-xs font-medium bg-dark-700 text-dark-300 hover:text-white transition"
+                    class="px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-3 text-ink-500 hover:text-ink-900 transition"
                 >
                     All
                 </a>
@@ -215,48 +215,48 @@ function filterBy(type) {
 
             <!-- Table -->
             <div
-                class="bg-dark-800 rounded-2xl border border-dark-600 overflow-hidden"
+                class="bg-surface-2 rounded-2xl border border-surface-3 overflow-hidden"
             >
                 <table class="w-full">
                     <thead>
-                        <tr class="border-b border-dark-600">
+                        <tr class="border-b border-surface-3">
                             <th
-                                class="text-left text-xs text-dark-400 uppercase tracking-wider px-6 py-4"
+                                class="text-left text-xs text-ink-500 uppercase tracking-wider px-6 py-4"
                             >
                                 Number / Serial
                             </th>
                             <th
-                                class="text-left text-xs text-dark-400 uppercase tracking-wider px-6 py-4"
+                                class="text-left text-xs text-ink-500 uppercase tracking-wider px-6 py-4"
                             >
                                 Type
                             </th>
                             <th
-                                class="text-left text-xs text-dark-400 uppercase tracking-wider px-6 py-4"
+                                class="text-left text-xs text-ink-500 uppercase tracking-wider px-6 py-4"
                             >
                                 Operator
                             </th>
                             <th
-                                class="text-left text-xs text-dark-400 uppercase tracking-wider px-6 py-4"
+                                class="text-left text-xs text-ink-500 uppercase tracking-wider px-6 py-4"
                             >
                                 Country
                             </th>
                             <th
-                                class="text-left text-xs text-dark-400 uppercase tracking-wider px-6 py-4"
+                                class="text-left text-xs text-ink-500 uppercase tracking-wider px-6 py-4"
                             >
                                 Note
                             </th>
                             <th
-                                class="text-center text-xs text-dark-400 uppercase tracking-wider px-6 py-4"
+                                class="text-center text-xs text-ink-500 uppercase tracking-wider px-6 py-4"
                             >
                                 Status
                             </th>
                             <th
-                                class="text-center text-xs text-dark-400 uppercase tracking-wider px-6 py-4"
+                                class="text-center text-xs text-ink-500 uppercase tracking-wider px-6 py-4"
                             >
                                 Added
                             </th>
                             <th
-                                class="text-right text-xs text-dark-400 uppercase tracking-wider px-6 py-4"
+                                class="text-right text-xs text-ink-500 uppercase tracking-wider px-6 py-4"
                             >
                                 Actions
                             </th>
@@ -266,9 +266,9 @@ function filterBy(type) {
                         <tr
                             v-for="item in numbers.data"
                             :key="item.id"
-                            class="border-b border-dark-700 hover:bg-dark-700/50 transition"
+                            class="border-b border-surface-3 hover:bg-surface-2/70 transition"
                         >
-                            <td class="px-6 py-3 font-mono text-sm text-white">
+                            <td class="px-6 py-3 font-mono text-sm text-ink-900">
                                 {{ item.number }}
                             </td>
                             <td class="px-6 py-3">
@@ -287,13 +287,13 @@ function filterBy(type) {
                                     }}
                                 </span>
                             </td>
-                            <td class="px-6 py-3 text-sm text-dark-300">
+                            <td class="px-6 py-3 text-sm text-ink-500">
                                 {{ item.operator_name || "-" }}
                             </td>
-                            <td class="px-6 py-3 text-sm text-dark-300">
+                            <td class="px-6 py-3 text-sm text-ink-500">
                                 {{ item.country || "-" }}
                             </td>
-                            <td class="px-6 py-3 text-xs text-dark-400">
+                            <td class="px-6 py-3 text-xs text-ink-500">
                                 {{ item.note || "-" }}
                             </td>
                             <td class="px-6 py-3 text-center">
@@ -303,13 +303,13 @@ function filterBy(type) {
                                         'px-2 py-0.5 rounded text-xs font-medium transition',
                                         item.active
                                             ? 'bg-green-500/20 text-green-300'
-                                            : 'bg-red-500/20 text-red-300',
+                                            : 'bg-red-500/20 text-red-600',
                                     ]"
                                 >
                                     {{ item.active ? "Active" : "Inactive" }}
                                 </button>
                             </td>
-                            <td class="px-6 py-3 text-xs text-dark-400">
+                            <td class="px-6 py-3 text-xs text-ink-500">
                                 {{
                                     new Date(
                                         item.created_at,
@@ -319,13 +319,13 @@ function filterBy(type) {
                             <td class="px-6 py-3 text-right">
                                 <button
                                     @click="openEdit(item)"
-                                    class="text-xs text-blue-300 hover:text-white transition mr-2"
+                                    class="text-xs text-blue-300 hover:text-ink-900 transition mr-2"
                                 >
                                     Edit
                                 </button>
                                 <button
                                     @click="deleteItem(item.id)"
-                                    class="text-xs text-red-300 hover:text-white transition"
+                                    class="text-xs text-red-600 hover:text-ink-900 transition"
                                 >
                                     Delete
                                 </button>
@@ -334,7 +334,7 @@ function filterBy(type) {
                         <tr v-if="!numbers.data?.length">
                             <td
                                 colspan="8"
-                                class="text-center text-dark-400 py-8"
+                                class="text-center text-ink-500 py-8"
                             >
                                 No numbers found. Add your first number or
                                 import bulk.
@@ -357,14 +357,14 @@ function filterBy(type) {
                         :class="[
                             'px-3 py-1 rounded-lg text-xs',
                             link.active
-                                ? 'bg-primary text-white'
-                                : 'bg-dark-700 text-dark-300 hover:text-white',
+                                ? 'bg-primary text-ink-900'
+                                : 'bg-surface-3 text-ink-500 hover:text-ink-900',
                         ]"
                     ></a>
                     <span
                         v-else
                         v-html="link.label"
-                        class="px-3 py-1 rounded-lg text-xs text-dark-500"
+                        class="px-3 py-1 rounded-lg text-xs text-ink-500"
                     ></span>
                 </template>
             </div>
@@ -377,32 +377,32 @@ function filterBy(type) {
             @click.self="showAddForm = false"
         >
             <div
-                class="bg-dark-800 rounded-2xl border border-dark-600 p-6 max-w-lg w-full max-h-[90vh] flex flex-col"
+                class="bg-surface-2 rounded-2xl border border-surface-3 p-6 max-w-lg w-full max-h-[90vh] flex flex-col"
             >
-                <h3 class="text-lg font-bold text-white mb-4 shrink-0">
+                <h3 class="text-lg font-bold text-ink-900 mb-4 shrink-0">
                     {{ editingId ? "Edit Number" : "Add Number" }}
                 </h3>
                 <div class="space-y-4 overflow-y-auto flex-1 pr-1">
                     <div>
                         <label
-                            class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                            class="block text-xs text-ink-500 uppercase tracking-wider mb-1"
                             >Number / Serial</label
                         >
                         <input
                             v-model="form.number"
                             type="text"
-                            class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-2 text-white text-sm"
+                            class="w-full bg-surface-3 border border-surface-3 rounded-xl px-4 py-2 text-ink-900 text-sm"
                             placeholder="447700900123 or SERIAL-001"
                         />
                     </div>
                     <div>
                         <label
-                            class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                            class="block text-xs text-ink-500 uppercase tracking-wider mb-1"
                             >Type</label
                         >
                         <select
                             v-model="form.type"
-                            class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-2 text-white text-sm"
+                            class="w-full bg-surface-3 border border-surface-3 rounded-xl px-4 py-2 text-ink-900 text-sm"
                         >
                             <option value="mobile">Mobile Number</option>
                             <option value="serial">Serial Number</option>
@@ -410,38 +410,38 @@ function filterBy(type) {
                     </div>
                     <div>
                         <label
-                            class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                            class="block text-xs text-ink-500 uppercase tracking-wider mb-1"
                             >Operator</label
                         >
                         <input
                             v-model="form.operator_name"
                             type="text"
-                            class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-2 text-white text-sm"
+                            class="w-full bg-surface-3 border border-surface-3 rounded-xl px-4 py-2 text-ink-900 text-sm"
                             placeholder="e.g. giffgaff"
                         />
                     </div>
                     <div>
                         <label
-                            class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                            class="block text-xs text-ink-500 uppercase tracking-wider mb-1"
                             >Country</label
                         >
                         <input
                             v-model="form.country"
                             type="text"
-                            class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-2 text-white text-sm"
+                            class="w-full bg-surface-3 border border-surface-3 rounded-xl px-4 py-2 text-ink-900 text-sm"
                             placeholder="e.g. GB"
                             maxlength="10"
                         />
                     </div>
                     <div>
                         <label
-                            class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                            class="block text-xs text-ink-500 uppercase tracking-wider mb-1"
                             >Note</label
                         >
                         <input
                             v-model="form.note"
                             type="text"
-                            class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-2 text-white text-sm"
+                            class="w-full bg-surface-3 border border-surface-3 rounded-xl px-4 py-2 text-ink-900 text-sm"
                             placeholder="Optional note"
                         />
                     </div>
@@ -450,9 +450,9 @@ function filterBy(type) {
                             v-model="form.active"
                             type="checkbox"
                             id="active"
-                            class="rounded border-dark-600"
+                            class="rounded border-surface-3"
                         />
-                        <label for="active" class="text-sm text-dark-300"
+                        <label for="active" class="text-sm text-ink-500"
                             >Active</label
                         >
                     </div>
@@ -460,13 +460,13 @@ function filterBy(type) {
                 <div class="flex gap-3 mt-6 shrink-0">
                     <button
                         @click="submitForm"
-                        class="flex-1 py-2.5 bg-primary text-white rounded-xl font-medium hover:bg-primary-dark transition"
+                        class="flex-1 py-2.5 bg-primary text-ink-900 rounded-xl font-medium hover:bg-primary-dark transition"
                     >
                         {{ editingId ? "Update" : "Add" }}
                     </button>
                     <button
                         @click="showAddForm = false"
-                        class="flex-1 py-2.5 bg-dark-700 text-white rounded-xl font-medium hover:bg-dark-600 transition"
+                        class="flex-1 py-2.5 bg-surface-3 text-ink-900 rounded-xl font-medium hover:bg-surface-3 transition"
                     >
                         Cancel
                     </button>
@@ -481,12 +481,12 @@ function filterBy(type) {
             @click.self="showImportModal = false"
         >
             <div
-                class="bg-dark-800 rounded-2xl border border-dark-600 p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-dark-600 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-dark-500"
+                class="bg-surface-2 rounded-2xl border border-surface-3 p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-surface-3 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-surface-3"
             >
-                <h3 class="text-lg font-bold text-white mb-2">
+                <h3 class="text-lg font-bold text-ink-900 mb-2">
                     Bulk Import Numbers
                 </h3>
-                <p class="text-xs text-dark-400 mb-4">
+                <p class="text-xs text-ink-500 mb-4">
                     Import via CSV file or paste one number/serial per line.
                     Duplicates will be skipped automatically.
                 </p>
@@ -495,7 +495,7 @@ function filterBy(type) {
                     <button
                         type="button"
                         @click="downloadSample"
-                        class="text-xs px-3 py-1.5 bg-dark-700 border border-dark-600 text-dark-300 rounded-lg hover:text-white transition"
+                        class="text-xs px-3 py-1.5 bg-surface-3 border border-surface-3 text-ink-500 rounded-lg hover:text-ink-900 transition"
                     >
                         Download Sample CSV
                     </button>
@@ -505,12 +505,12 @@ function filterBy(type) {
                     <div v-if="!importFile" class="space-y-4">
                         <div>
                             <label
-                                class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                                class="block text-xs text-ink-500 uppercase tracking-wider mb-1"
                                 >Import Type</label
                             >
                             <select
                                 v-model="importForm.type"
-                                class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-2 text-white text-sm"
+                                class="w-full bg-surface-3 border border-surface-3 rounded-xl px-4 py-2 text-ink-900 text-sm"
                             >
                                 <option value="mobile">Mobile Number</option>
                                 <option value="serial">Serial Number</option>
@@ -518,34 +518,34 @@ function filterBy(type) {
                         </div>
                         <div>
                             <label
-                                class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                                class="block text-xs text-ink-500 uppercase tracking-wider mb-1"
                                 >Operator (optional)</label
                             >
                             <input
                                 v-model="importForm.operator_name"
                                 type="text"
-                                class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-2 text-white text-sm"
+                                class="w-full bg-surface-3 border border-surface-3 rounded-xl px-4 py-2 text-ink-900 text-sm"
                                 placeholder="Applied to all imported numbers"
                             />
                         </div>
                         <div>
                             <label
-                                class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                                class="block text-xs text-ink-500 uppercase tracking-wider mb-1"
                                 >Country (optional)</label
                             >
                             <input
                                 v-model="importForm.country"
                                 type="text"
-                                class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-2 text-white text-sm"
+                                class="w-full bg-surface-3 border border-surface-3 rounded-xl px-4 py-2 text-ink-900 text-sm"
                                 placeholder="e.g. GB"
                             />
                         </div>
                     </div>
 
                     <!-- File section -->
-                    <div class="border-t border-dark-600 pt-4">
+                    <div class="border-t border-surface-3 pt-4">
                         <label
-                            class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                            class="block text-xs text-ink-500 uppercase tracking-wider mb-1"
                             >Upload CSV File</label
                         >
                         <input
@@ -565,21 +565,21 @@ function filterBy(type) {
                             <button
                                 type="button"
                                 @click="clearImportFile"
-                                class="text-xs text-red-300 hover:text-white"
+                                class="text-xs text-red-600 hover:text-ink-900"
                             >
                                 Remove
                             </button>
                         </div>
-                        <p v-if="importFile" class="text-xs text-dark-400 mt-2">
+                        <p v-if="importFile" class="text-xs text-ink-500 mt-2">
                             Per-row values from the file will be used (header:
                             number, type, operator_name, country). The fields
                             above are ignored.
                         </p>
                     </div>
 
-                    <div class="border-t border-dark-600 pt-4">
+                    <div class="border-t border-surface-3 pt-4">
                         <label
-                            class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                            class="block text-xs text-ink-500 uppercase tracking-wider mb-1"
                             >Or paste numbers (one per line)</label
                         >
                         <textarea
@@ -587,14 +587,14 @@ function filterBy(type) {
                             rows="5"
                             :disabled="!!importFile"
                             :class="[
-                                'w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-2 text-white text-sm font-mono',
+                                'w-full bg-surface-3 border border-surface-3 rounded-xl px-4 py-2 text-ink-900 text-sm font-mono',
                                 importFile
                                     ? 'opacity-40 cursor-not-allowed'
                                     : '',
                             ]"
                             placeholder="447700900123&#10;447700900124"
                         ></textarea>
-                        <p v-if="importFile" class="text-xs text-dark-500 mt-1">
+                        <p v-if="importFile" class="text-xs text-ink-500 mt-1">
                             Ignored while a CSV file is selected.
                         </p>
                     </div>
@@ -602,13 +602,13 @@ function filterBy(type) {
                 <div class="flex gap-3 mt-6">
                     <button
                         @click="submitImport"
-                        class="flex-1 py-2.5 bg-primary text-white rounded-xl font-medium hover:bg-primary-dark transition"
+                        class="flex-1 py-2.5 bg-primary text-ink-900 rounded-xl font-medium hover:bg-primary-dark transition"
                     >
                         Import
                     </button>
                     <button
                         @click="showImportModal = false"
-                        class="flex-1 py-2.5 bg-dark-700 text-white rounded-xl font-medium hover:bg-dark-600 transition"
+                        class="flex-1 py-2.5 bg-surface-3 text-ink-900 rounded-xl font-medium hover:bg-surface-3 transition"
                     >
                         Cancel
                     </button>

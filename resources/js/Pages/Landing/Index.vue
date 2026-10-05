@@ -11,7 +11,7 @@ defineOptions({ layout: AppLayout });
         <Head title="MK Network - Mobile Top-Up Platform" />
         <FlashMessage />
         <!-- Hero Section -->
-        <section class="relative bg-dark-900 overflow-hidden">
+        <section class="relative bg-surface-0 overflow-hidden">
             <!-- Background Effects -->
             <div class="absolute inset-0">
                 <div
@@ -35,11 +35,11 @@ defineOptions({ layout: AppLayout });
                         class="text-5xl sm:text-7xl font-bold tracking-tight mb-6 animate-fade-in-up"
                     >
                         <span class="gradient-text">Mobile Top-Up</span><br />
-                        <span class="text-white">Distribution Platform</span>
+                        <span class="text-ink-900">Distribution Platform</span>
                     </h1>
 
                     <p
-                        class="text-xl text-dark-300 max-w-3xl mx-auto mb-10 animate-fade-in-up stagger-2"
+                        class="text-xl text-ink-500 max-w-3xl mx-auto mb-10 animate-fade-in-up stagger-2"
                     >
                         The complete B2B solution for retailers. Fund your
                         wallet, process recharges instantly, and grow your
@@ -51,7 +51,7 @@ defineOptions({ layout: AppLayout });
                     >
                         <Link
                             href="/login"
-                            class="btn-primary px-8 py-4 bg-primary text-white rounded-xl font-semibold text-lg text-center"
+                            class="btn-primary px-8 py-4 bg-primary text-ink-900 rounded-xl font-semibold text-lg text-center"
                         >
                             Retailer Login
                         </Link>
@@ -61,13 +61,13 @@ defineOptions({ layout: AppLayout });
         </section>
 
         <!-- Stats Section -->
-        <section class="py-20 bg-dark-800">
+        <section class="py-20 bg-surface-2">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                     <div
                         class="stat-gradient-1 rounded-2xl p-6 text-center card-hover"
                     >
-                        <div class="text-4xl font-bold text-white mb-2">
+                        <div class="text-4xl font-bold text-ink-900 mb-2">
                             500+
                         </div>
                         <div class="text-blue-100 text-sm">
@@ -77,7 +77,7 @@ defineOptions({ layout: AppLayout });
                     <div
                         class="stat-gradient-2 rounded-2xl p-6 text-center card-hover"
                     >
-                        <div class="text-4xl font-bold text-white mb-2">
+                        <div class="text-4xl font-bold text-ink-900 mb-2">
                             1L+
                         </div>
                         <div class="text-green-100 text-sm">Transactions</div>
@@ -85,7 +85,7 @@ defineOptions({ layout: AppLayout });
                     <div
                         class="stat-gradient-3 rounded-2xl p-6 text-center card-hover"
                     >
-                        <div class="text-4xl font-bold text-white mb-2">
+                        <div class="text-4xl font-bold text-ink-900 mb-2">
                             200+
                         </div>
                         <div class="text-blue-100 text-sm">Operators</div>
@@ -93,7 +93,7 @@ defineOptions({ layout: AppLayout });
                     <div
                         class="stat-gradient-4 rounded-2xl p-6 text-center card-hover"
                     >
-                        <div class="text-4xl font-bold text-white mb-2">
+                        <div class="text-4xl font-bold text-ink-900 mb-2">
                             50+
                         </div>
                         <div class="text-green-100 text-sm">Countries</div>
@@ -103,13 +103,13 @@ defineOptions({ layout: AppLayout });
         </section>
 
         <!-- Features Section -->
-        <section class="py-20 bg-dark-900">
+        <section class="py-20 bg-surface-0">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-16">
-                    <h2 class="text-4xl font-bold text-white mb-4">
+                    <h2 class="text-4xl font-bold text-ink-900 mb-4">
                         Why Choose MK Network?
                     </h2>
-                    <p class="text-lg text-dark-300">
+                    <p class="text-lg text-ink-500">
                         Everything you need to run a successful mobile recharge
                         business
                     </p>
@@ -117,7 +117,7 @@ defineOptions({ layout: AppLayout });
 
                 <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div
-                        class="bg-dark-800 rounded-2xl p-6 border border-dark-600 card-hover"
+                        class="bg-surface-2 rounded-2xl p-6 border border-surface-3 card-hover"
                     >
                         <div
                             class="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center mb-4"
@@ -136,17 +136,17 @@ defineOptions({ layout: AppLayout });
                                 />
                             </svg>
                         </div>
-                        <h3 class="text-xl font-semibold text-white mb-2">
+                        <h3 class="text-xl font-semibold text-ink-900 mb-2">
                             Instant Recharges
                         </h3>
-                        <p class="text-dark-300">
+                        <p class="text-ink-500">
                             Process mobile top-ups in seconds across all major
                             operators and countries.
                         </p>
                     </div>
 
                     <div
-                        class="bg-dark-800 rounded-2xl p-6 border border-dark-600 card-hover"
+                        class="bg-surface-2 rounded-2xl p-6 border border-surface-3 card-hover"
                     >
                         <div
                             class="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center mb-4"
@@ -165,17 +165,17 @@ defineOptions({ layout: AppLayout });
                                 />
                             </svg>
                         </div>
-                        <h3 class="text-xl font-semibold text-white mb-2">
+                        <h3 class="text-xl font-semibold text-ink-900 mb-2">
                             Secure & Reliable
                         </h3>
-                        <p class="text-dark-300">
+                        <p class="text-ink-500">
                             Bank-grade security with real-time transaction
                             tracking and instant notifications.
                         </p>
                     </div>
 
                     <div
-                        class="bg-dark-800 rounded-2xl p-6 border border-dark-600 card-hover"
+                        class="bg-surface-2 rounded-2xl p-6 border border-surface-3 card-hover"
                     >
                         <div
                             class="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center mb-4"
@@ -194,17 +194,17 @@ defineOptions({ layout: AppLayout });
                                 />
                             </svg>
                         </div>
-                        <h3 class="text-xl font-semibold text-white mb-2">
+                        <h3 class="text-xl font-semibold text-ink-900 mb-2">
                             Wallet Management
                         </h3>
-                        <p class="text-dark-300">
+                        <p class="text-ink-500">
                             Prepaid wallet system with multiple top-up options.
                             No minimum balance required.
                         </p>
                     </div>
 
                     <div
-                        class="bg-dark-800 rounded-2xl p-6 border border-dark-600 card-hover"
+                        class="bg-surface-2 rounded-2xl p-6 border border-surface-3 card-hover"
                     >
                         <div
                             class="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center mb-4"
@@ -223,10 +223,10 @@ defineOptions({ layout: AppLayout });
                                 />
                             </svg>
                         </div>
-                        <h3 class="text-xl font-semibold text-white mb-2">
+                        <h3 class="text-xl font-semibold text-ink-900 mb-2">
                             Business Insights
                         </h3>
-                        <p class="text-dark-300">
+                        <p class="text-ink-500">
                             Track your recharges, earnings, and performance with
                             detailed analytics.
                         </p>
@@ -236,13 +236,13 @@ defineOptions({ layout: AppLayout });
         </section>
 
         <!-- How It Works -->
-        <section class="py-20 bg-dark-800">
+        <section class="py-20 bg-surface-2">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-16">
-                    <h2 class="text-4xl font-bold text-white mb-4">
+                    <h2 class="text-4xl font-bold text-ink-900 mb-4">
                         How It Works
                     </h2>
-                    <p class="text-lg text-dark-300">
+                    <p class="text-lg text-ink-500">
                         Get started in 3 simple steps
                     </p>
                 </div>
@@ -250,42 +250,42 @@ defineOptions({ layout: AppLayout });
                 <div class="grid md:grid-cols-3 gap-8">
                     <div class="text-center">
                         <div
-                            class="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4"
+                            class="w-16 h-16 bg-primary text-ink-900 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4"
                         >
                             1
                         </div>
-                        <h3 class="text-xl font-semibold text-white mb-2">
+                        <h3 class="text-xl font-semibold text-ink-900 mb-2">
                             Register & Verify
                         </h3>
-                        <p class="text-dark-300">
+                        <p class="text-ink-500">
                             Sign up as a retailer and get your KYC verified in
                             24 hours.
                         </p>
                     </div>
                     <div class="text-center">
                         <div
-                            class="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4"
+                            class="w-16 h-16 bg-primary text-ink-900 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4"
                         >
                             2
                         </div>
-                        <h3 class="text-xl font-semibold text-white mb-2">
+                        <h3 class="text-xl font-semibold text-ink-900 mb-2">
                             Fund Your Wallet
                         </h3>
-                        <p class="text-dark-300">
+                        <p class="text-ink-500">
                             Load your prepaid wallet via UPI, cards, or bank
                             transfer.
                         </p>
                     </div>
                     <div class="text-center">
                         <div
-                            class="w-16 h-16 bg-accent text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4"
+                            class="w-16 h-16 bg-accent text-ink-900 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4"
                         >
                             3
                         </div>
-                        <h3 class="text-xl font-semibold text-white mb-2">
+                        <h3 class="text-xl font-semibold text-ink-900 mb-2">
                             Start Recharging
                         </h3>
-                        <p class="text-dark-300">
+                        <p class="text-ink-500">
                             Process instant recharges for any operator at
                             transparent pricing.
                         </p>
@@ -295,7 +295,7 @@ defineOptions({ layout: AppLayout });
         </section>
 
         <!-- CTA Section -->
-        <section class="py-20 bg-dark-900 relative overflow-hidden">
+        <section class="py-20 bg-surface-0 relative overflow-hidden">
             <div class="absolute inset-0">
                 <div
                     class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/20 rounded-full blur-3xl"
@@ -304,22 +304,22 @@ defineOptions({ layout: AppLayout });
             <div
                 class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10"
             >
-                <h2 class="text-4xl font-bold text-white mb-4">
+                <h2 class="text-4xl font-bold text-ink-900 mb-4">
                     Ready to Start Your Recharge Business?
                 </h2>
-                <p class="text-xl text-dark-300 mb-8">
+                <p class="text-xl text-ink-500 mb-8">
                     Contact us to become a partner retailer.
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
                     <Link
                         href="/contact"
-                        class="btn-primary px-8 py-4 bg-primary text-white rounded-xl font-semibold text-lg text-center"
+                        class="btn-primary px-8 py-4 bg-primary text-ink-900 rounded-xl font-semibold text-lg text-center"
                     >
                         Contact Us
                     </Link>
                     <Link
                         href="/login"
-                        class="px-8 py-4 border-2 border-white text-white rounded-xl font-semibold text-lg hover:bg-white/10 transition text-center"
+                        class="px-8 py-4 border-2 border-white text-ink-900 rounded-xl font-semibold text-lg hover:bg-white/10 transition text-center"
                     >
                         Retailer Login
                     </Link>

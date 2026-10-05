@@ -25,10 +25,10 @@ function submit() {
     <div class="py-20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
-                <h1 class="text-4xl sm:text-5xl font-bold text-white mb-4">
+                <h1 class="text-4xl sm:text-5xl font-bold text-ink-900 mb-4">
                     Contact Us
                 </h1>
-                <p class="text-xl text-dark-300 max-w-2xl mx-auto">
+                <p class="text-xl text-ink-500 max-w-2xl mx-auto">
                     Have questions? Get in touch with our team and we will help
                     you get started.
                 </p>
@@ -36,32 +36,32 @@ function submit() {
 
             <div class="grid lg:grid-cols-2 gap-12">
                 <!-- Contact Form -->
-                <div class="bg-dark-800 rounded-2xl p-8 border border-dark-600">
-                    <h2 class="text-2xl font-bold text-white mb-6">
+                <div class="bg-surface-2 rounded-2xl p-8 border border-surface-3">
+                    <h2 class="text-2xl font-bold text-ink-900 mb-6">
                         Send us a Message
                     </h2>
                     <form @submit.prevent="submit" class="space-y-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label
-                                    class="block text-sm font-medium text-dark-200 mb-2"
+                                    class="block text-sm font-medium text-ink-700 mb-2"
                                     >Full Name</label
                                 >
                                 <input
                                     type="text"
-                                    class="w-full border border-dark-600 rounded-lg px-4 py-3 bg-dark-700 text-white input-dark"
+                                    class="w-full border border-surface-3 rounded-lg px-4 py-3 bg-surface-3 text-ink-900 input-dark"
                                     placeholder="Your name"
                                     required
                                 />
                             </div>
                             <div>
                                 <label
-                                    class="block text-sm font-medium text-dark-200 mb-2"
+                                    class="block text-sm font-medium text-ink-700 mb-2"
                                     >Email</label
                                 >
                                 <input
                                     type="email"
-                                    class="w-full border border-dark-600 rounded-lg px-4 py-3 bg-dark-700 text-white input-dark"
+                                    class="w-full border border-surface-3 rounded-lg px-4 py-3 bg-surface-3 text-ink-900 input-dark"
                                     placeholder="your@email.com"
                                     required
                                 />
@@ -69,42 +69,42 @@ function submit() {
                         </div>
                         <div>
                             <label
-                                class="block text-sm font-medium text-dark-200 mb-2"
+                                class="block text-sm font-medium text-ink-700 mb-2"
                                 >Phone</label
                             >
                             <input
                                 type="tel"
-                                class="w-full border border-dark-600 rounded-lg px-4 py-3 bg-dark-700 text-white input-dark"
+                                class="w-full border border-surface-3 rounded-lg px-4 py-3 bg-surface-3 text-ink-900 input-dark"
                                 placeholder="+91 99999 99999"
                             />
                         </div>
                         <div>
                             <label
-                                class="block text-sm font-medium text-dark-200 mb-2"
+                                class="block text-sm font-medium text-ink-700 mb-2"
                                 >Subject</label
                             >
                             <input
                                 type="text"
-                                class="w-full border border-dark-600 rounded-lg px-4 py-3 bg-dark-700 text-white input-dark"
+                                class="w-full border border-surface-3 rounded-lg px-4 py-3 bg-surface-3 text-ink-900 input-dark"
                                 placeholder="How can we help?"
                                 required
                             />
                         </div>
                         <div>
                             <label
-                                class="block text-sm font-medium text-dark-200 mb-2"
+                                class="block text-sm font-medium text-ink-700 mb-2"
                                 >Message</label
                             >
                             <textarea
                                 rows="5"
-                                class="w-full border border-dark-600 rounded-lg px-4 py-3 bg-dark-700 text-white input-dark resize-none"
+                                class="w-full border border-surface-3 rounded-lg px-4 py-3 bg-surface-3 text-ink-900 input-dark resize-none"
                                 placeholder="Tell us more about your requirements..."
                                 required
                             ></textarea>
                         </div>
                         <button
                             type="submit"
-                            class="w-full py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition"
+                            class="w-full py-3 bg-primary text-ink-900 rounded-lg font-semibold hover:bg-primary-dark transition"
                         >
                             Send Message
                         </button>
@@ -114,7 +114,7 @@ function submit() {
                 <!-- Contact Info -->
                 <div class="space-y-6">
                     <div
-                        class="bg-dark-800 rounded-2xl p-6 border border-dark-600"
+                        class="bg-surface-2 rounded-2xl p-6 border border-surface-3"
                     >
                         <div class="flex items-start space-x-4">
                             <div
@@ -136,14 +136,14 @@ function submit() {
                             </div>
                             <div>
                                 <h3
-                                    class="text-lg font-semibold text-white mb-1"
+                                    class="text-lg font-semibold text-ink-900 mb-1"
                                 >
                                     Phone
                                 </h3>
-                                <p class="text-dark-300">
+                                <p class="text-ink-500">
                                     {{ contactInfo.phone }}
                                 </p>
-                                <p class="text-dark-400 text-sm mt-1">
+                                <p class="text-ink-500 text-sm mt-1">
                                     Mon - Sat, 9am - 7pm
                                 </p>
                             </div>
@@ -151,7 +151,7 @@ function submit() {
                     </div>
 
                     <div
-                        class="bg-dark-800 rounded-2xl p-6 border border-dark-600"
+                        class="bg-surface-2 rounded-2xl p-6 border border-surface-3"
                     >
                         <div class="flex items-start space-x-4">
                             <div
@@ -173,7 +173,7 @@ function submit() {
                             </div>
                             <div>
                                 <h3
-                                    class="text-lg font-semibold text-white mb-1"
+                                    class="text-lg font-semibold text-ink-900 mb-1"
                                 >
                                     Email
                                 </h3>
@@ -182,7 +182,7 @@ function submit() {
                                     class="text-primary-light hover:text-primary transition"
                                     >{{ contactInfo.email }}</a
                                 >
-                                <p class="text-dark-400 text-sm mt-1">
+                                <p class="text-ink-500 text-sm mt-1">
                                     We reply within 24 hours
                                 </p>
                             </div>
@@ -190,7 +190,7 @@ function submit() {
                     </div>
 
                     <div
-                        class="bg-dark-800 rounded-2xl p-6 border border-dark-600"
+                        class="bg-surface-2 rounded-2xl p-6 border border-surface-3"
                     >
                         <div class="flex items-start space-x-4">
                             <div
@@ -218,14 +218,14 @@ function submit() {
                             </div>
                             <div>
                                 <h3
-                                    class="text-lg font-semibold text-white mb-1"
+                                    class="text-lg font-semibold text-ink-900 mb-1"
                                 >
                                     Office
                                 </h3>
-                                <p class="text-dark-300">
+                                <p class="text-ink-500">
                                     {{ contactInfo.address }}
                                 </p>
-                                <p class="text-dark-400 text-sm mt-1">
+                                <p class="text-ink-500 text-sm mt-1">
                                     {{ contactInfo.city }}
                                 </p>
                             </div>
@@ -235,16 +235,16 @@ function submit() {
                     <div
                         class="bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl p-6 border border-primary/20"
                     >
-                        <h3 class="text-lg font-semibold text-white mb-2">
+                        <h3 class="text-lg font-semibold text-ink-900 mb-2">
                             Become a Retailer
                         </h3>
-                        <p class="text-dark-300 text-sm mb-4">
+                        <p class="text-ink-500 text-sm mb-4">
                             Join 500+ retailers already using MK Network for
                             their recharge business.
                         </p>
                         <Link
                             href="/register"
-                            class="btn-primary inline-block px-6 py-3 bg-primary text-white rounded-lg font-medium"
+                            class="btn-primary inline-block px-6 py-3 bg-primary text-ink-900 rounded-lg font-medium"
                             >Apply Now</Link
                         >
                     </div>

@@ -8,10 +8,10 @@ import MkLogo from '@/Components/MkLogo.vue'
             </a>
         </div>
 
-        <h2 class="text-3xl font-bold text-white text-center mb-2">
+        <h2 class="text-3xl font-bold text-ink-900 text-center mb-2">
             Reset Password
         </h2>
-        <p class="text-dark-300 text-center mb-8">
+        <p class="text-ink-500 text-center mb-8">
             Set a new password for your account
         </p>
 

@@ -36,9 +36,9 @@ onBeforeUnmount(() => clearTimeout(timer));
         <div
             v-if="message"
             :class="[
-                'fixed bottom-4 right-4 z-50 max-w-sm flex items-start gap-3 rounded-lg px-4 py-3 text-sm shadow-lg border bg-dark-800',
+                'fixed bottom-4 right-4 z-50 max-w-sm flex items-start gap-3 rounded-lg px-4 py-3 text-sm shadow-lg border bg-surface-2',
                 type === 'error'
-                    ? 'border-red-500/40 text-red-400'
+                    ? 'border-red-500/40 text-red-600'
                     : 'border-accent/40 text-accent-light',
             ]"
             role="alert"
@@ -46,7 +46,7 @@ onBeforeUnmount(() => clearTimeout(timer));
             <span class="flex-1">{{ message }}</span>
             <button
                 type="button"
-                class="hover:text-white leading-none"
+                class="hover:text-ink-900 leading-none"
                 aria-label="Dismiss"
                 @click="message = null"
             >

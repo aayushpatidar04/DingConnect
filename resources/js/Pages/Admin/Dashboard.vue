@@ -48,15 +48,15 @@ const showLabel = (index) =>
 
     <div class="space-y-6">
         <div>
-            <h1 class="text-3xl font-bold text-white mb-1">Dashboard</h1>
-            <p class="text-dark-300">Welcome to the MK Network Admin Panel</p>
+            <h1 class="text-3xl font-bold text-ink-900 mb-1">Dashboard</h1>
+            <p class="text-ink-500">Welcome to the MK Network Admin Panel</p>
         </div>
 
         <!-- Stats Grid -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="stat-gradient-1 rounded-2xl p-5 card-hover">
                 <div class="text-sm text-blue-100">Total Retailers</div>
-                <div class="text-3xl font-bold text-white mt-1">
+                <div class="text-3xl font-bold text-ink-900 mt-1">
                     {{ stats.total_retailers }}
                 </div>
                 <div class="text-xs text-blue-200 mt-1">
@@ -65,7 +65,7 @@ const showLabel = (index) =>
             </div>
             <div class="stat-gradient-2 rounded-2xl p-5 card-hover">
                 <div class="text-sm text-green-100">Today's Transactions</div>
-                <div class="text-3xl font-bold text-white mt-1">
+                <div class="text-3xl font-bold text-ink-900 mt-1">
                     {{ stats.today_transactions }}
                 </div>
                 <div class="text-xs text-green-200 mt-1">
@@ -74,7 +74,7 @@ const showLabel = (index) =>
             </div>
             <div class="stat-gradient-3 rounded-2xl p-5 card-hover">
                 <div class="text-sm text-blue-100">Today's Volume</div>
-                <div class="text-3xl font-bold text-white mt-1">
+                <div class="text-3xl font-bold text-ink-900 mt-1">
                     £ {{ Number(stats.today_volume).toFixed(2) }}
                 </div>
                 <div class="text-xs text-blue-200 mt-1">
@@ -83,7 +83,7 @@ const showLabel = (index) =>
             </div>
             <div class="stat-gradient-4 rounded-2xl p-5 card-hover">
                 <div class="text-sm text-green-100">Success Rate</div>
-                <div class="text-3xl font-bold text-white mt-1">
+                <div class="text-3xl font-bold text-ink-900 mt-1">
                     {{ stats.success_rate }}%
                 </div>
                 <div class="text-xs text-green-200 mt-1">
@@ -94,48 +94,48 @@ const showLabel = (index) =>
 
         <!-- Secondary analytics chips -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-dark-800 rounded-2xl p-4 border border-dark-600">
-                <div class="text-xs text-dark-400 uppercase tracking-wider">
+            <div class="bg-surface-2 rounded-2xl p-4 border border-surface-3">
+                <div class="text-xs text-ink-500 uppercase tracking-wider">
                     Monthly Revenue
                 </div>
-                <div class="text-xl font-bold text-white mt-1">
+                <div class="text-xl font-bold text-ink-900 mt-1">
                     £ {{ Number(stats.monthly_revenue).toFixed(2) }}
                 </div>
             </div>
-            <div class="bg-dark-800 rounded-2xl p-4 border border-dark-600">
-                <div class="text-xs text-dark-400 uppercase tracking-wider">
+            <div class="bg-surface-2 rounded-2xl p-4 border border-surface-3">
+                <div class="text-xs text-ink-500 uppercase tracking-wider">
                     Pending Top-ups
                 </div>
-                <div class="text-xl font-bold text-white mt-1">
+                <div class="text-xl font-bold text-ink-900 mt-1">
                     {{ stats.pending_topups }}
                 </div>
             </div>
-            <div class="bg-dark-800 rounded-2xl p-4 border border-dark-600">
-                <div class="text-xs text-dark-400 uppercase tracking-wider">
+            <div class="bg-surface-2 rounded-2xl p-4 border border-surface-3">
+                <div class="text-xs text-ink-500 uppercase tracking-wider">
                     Pending KYC
                 </div>
-                <div class="text-xl font-bold text-white mt-1">
+                <div class="text-xl font-bold text-ink-900 mt-1">
                     {{ stats.pending_kyc }}
                 </div>
             </div>
-            <div class="bg-dark-800 rounded-2xl p-4 border border-dark-600">
-                <div class="text-xs text-dark-400 uppercase tracking-wider">
+            <div class="bg-surface-2 rounded-2xl p-4 border border-surface-3">
+                <div class="text-xs text-ink-500 uppercase tracking-wider">
                     Total Transactions
                 </div>
-                <div class="text-xl font-bold text-white mt-1">
+                <div class="text-xl font-bold text-ink-900 mt-1">
                     {{ stats.total_transactions }}
                 </div>
             </div>
         </div>
 
         <!-- DingConnect Balance -->
-        <div class="bg-dark-800 rounded-2xl p-6 border border-dark-600">
+        <div class="bg-surface-2 rounded-2xl p-6 border border-surface-3">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-lg font-semibold text-white">
+                    <h3 class="text-lg font-semibold text-ink-900">
                         DingConnect Balance
                     </h3>
-                    <p class="text-dark-300 text-sm mt-1">
+                    <p class="text-ink-500 text-sm mt-1">
                         Your wholesale balance with DingConnect
                     </p>
                 </div>
@@ -156,10 +156,10 @@ const showLabel = (index) =>
         <!-- Top Retailers & Recent Transactions -->
         <div class="grid lg:grid-cols-2 gap-6">
             <div
-                class="bg-dark-800 rounded-2xl border border-dark-600 overflow-hidden"
+                class="bg-surface-2 rounded-2xl border border-surface-3 overflow-hidden"
             >
-                <div class="p-6 border-b border-dark-600">
-                    <h3 class="text-lg font-semibold text-white">
+                <div class="p-6 border-b border-surface-3">
+                    <h3 class="text-lg font-semibold text-ink-900">
                         Top Retailers This Month
                     </h3>
                 </div>
@@ -167,31 +167,31 @@ const showLabel = (index) =>
                     <div
                         v-for="retailer in topRetailers"
                         :key="retailer.id"
-                        class="p-4 flex items-center justify-between hover:bg-dark-700 transition"
+                        class="p-4 flex items-center justify-between hover:bg-surface-2 transition"
                     >
                         <div>
-                            <div class="font-medium text-white">
+                            <div class="font-medium text-ink-900">
                                 {{ retailer.shop_name || retailer.name }}
                             </div>
-                            <div class="text-sm text-dark-400">
+                            <div class="text-sm text-ink-500">
                                 {{ retailer.phone }}
                             </div>
                         </div>
                         <div class="text-right">
                             <div class="font-semibold text-primary-light">
                                 {{ retailer.month_success }}
-                                <span class="text-dark-400 font-normal"
+                                <span class="text-ink-500 font-normal"
                                     >/ {{ retailer.month_transactions }}</span
                                 >
                             </div>
-                            <div class="text-xs text-dark-400">
+                            <div class="text-xs text-ink-500">
                                 successful / total
                             </div>
                         </div>
                     </div>
                     <div
                         v-if="topRetailers && topRetailers.length === 0"
-                        class="p-6 text-center text-dark-400"
+                        class="p-6 text-center text-ink-500"
                     >
                         No data yet
                     </div>
@@ -199,12 +199,12 @@ const showLabel = (index) =>
             </div>
 
             <div
-                class="bg-dark-800 rounded-2xl border border-dark-600 overflow-hidden"
+                class="bg-surface-2 rounded-2xl border border-surface-3 overflow-hidden"
             >
                 <div
-                    class="p-6 border-b border-dark-600 flex items-center justify-between"
+                    class="p-6 border-b border-surface-3 flex items-center justify-between"
                 >
-                    <h3 class="text-lg font-semibold text-white">
+                    <h3 class="text-lg font-semibold text-ink-900">
                         Recent Transactions
                     </h3>
                     <Link
@@ -221,19 +221,19 @@ const showLabel = (index) =>
                                 8,
                             )"
                             :key="txn.id"
-                            class="p-4 flex items-center justify-between hover:bg-dark-700 transition"
+                            class="p-4 flex items-center justify-between hover:bg-surface-2 transition"
                         >
                             <div class="flex items-center space-x-3">
                                 <div
-                                    class="w-8 h-8 bg-dark-700 rounded-lg flex items-center justify-center text-sm font-semibold text-primary-light"
+                                    class="w-8 h-8 bg-surface-3 rounded-lg flex items-center justify-center text-sm font-semibold text-primary-light"
                                 >
                                     {{ (txn.operator || "?").charAt(0) }}
                                 </div>
                                 <div>
-                                    <div class="text-sm font-medium text-white">
+                                    <div class="text-sm font-medium text-ink-900">
                                         {{ txn.mobile }}
                                     </div>
-                                    <div class="text-xs text-dark-400">
+                                    <div class="text-xs text-ink-500">
                                         {{ txn.retailer || "Unknown" }}
                                         <span v-if="txn.country">
                                             · {{ txn.country }}</span
@@ -243,7 +243,7 @@ const showLabel = (index) =>
                                 </div>
                             </div>
                             <div class="text-right">
-                                <div class="text-sm font-medium text-white">
+                                <div class="text-sm font-medium text-ink-900">
                                     £ {{ Number(txn.amount).toFixed(2) }}
                                 </div>
                                 <span
@@ -252,8 +252,8 @@ const showLabel = (index) =>
                                         txn.status === 'success'
                                             ? 'bg-accent/20 text-accent-light'
                                             : txn.status === 'failed'
-                                              ? 'bg-red-500/20 text-red-400'
-                                              : 'bg-yellow-500/20 text-yellow-400',
+                                              ? 'bg-red-500/20 text-red-600'
+                                              : 'bg-yellow-500/20 text-yellow-600',
                                     ]"
                                 >
                                     {{ txn.status }}
@@ -265,7 +265,7 @@ const showLabel = (index) =>
                                 !recentTransactions ||
                                 recentTransactions.length === 0
                             "
-                            class="p-6 text-center text-dark-400"
+                            class="p-6 text-center text-ink-500"
                         >
                             No transactions yet
                         </div>
@@ -277,27 +277,27 @@ const showLabel = (index) =>
         <!-- Revenue Chart -->
         <div
             v-if="chartData && chartData.length"
-            class="bg-dark-800 rounded-2xl border border-dark-600 p-6"
+            class="bg-surface-2 rounded-2xl border border-surface-3 p-6"
         >
             <div class="flex items-start justify-between mb-6">
                 <div>
-                    <h3 class="text-lg font-semibold text-white">Revenue</h3>
-                    <p class="text-xs text-dark-400">
+                    <h3 class="text-lg font-semibold text-ink-900">Revenue</h3>
+                    <p class="text-xs text-ink-500">
                         Last 30 days · successful transactions
                     </p>
                 </div>
                 <div class="text-right">
-                    <p class="text-xl font-bold text-white">
+                    <p class="text-xl font-bold text-ink-900">
                         {{ formatCurrency(totalRevenue) }}
                     </p>
-                    <p class="text-xs text-dark-400">Total</p>
+                    <p class="text-xs text-ink-500">Total</p>
                 </div>
             </div>
 
             <div class="flex gap-3">
                 <!-- Y axis -->
                 <div
-                    class="flex flex-col justify-between h-48 text-[10px] text-dark-400 text-right w-10"
+                    class="flex flex-col justify-between h-48 text-[10px] text-ink-500 text-right w-10"
                 >
                     <span>{{ formatCompact(maxRevenue) }}</span>
                     <span>{{ formatCompact(maxRevenue / 2) }}</span>
@@ -307,11 +307,11 @@ const showLabel = (index) =>
                 <!-- Bars -->
                 <div class="flex-1">
                     <div
-                        class="relative flex items-end gap-1 h-48 border-b border-l border-dark-600"
+                        class="relative flex items-end gap-1 h-48 border-b border-l border-surface-3"
                     >
                         <!-- gridlines -->
                         <div
-                            class="absolute inset-x-0 top-1/2 border-t border-dashed border-dark-600/60"
+                            class="absolute inset-x-0 top-1/2 border-t border-dashed border-surface-3/60"
                         ></div>
 
                         <div
@@ -326,13 +326,13 @@ const showLabel = (index) =>
 
                             <!-- Tooltip -->
                             <div
-                                class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10 whitespace-nowrap rounded-lg bg-dark-900 border border-dark-600 px-3 py-2 text-xs text-white shadow-lg"
+                                class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10 whitespace-nowrap rounded-lg bg-surface-0 border border-surface-3 px-3 py-2 text-xs text-ink-900 shadow-lg"
                             >
                                 <p class="font-semibold">
                                     {{ formatDate(point.date) }}
                                 </p>
                                 <p>{{ formatCurrency(point.revenue) }}</p>
-                                <p class="text-dark-400">
+                                <p class="text-ink-500">
                                     {{ point.count }} transaction{{
                                         point.count === 1 ? "" : "s"
                                     }}
@@ -350,7 +350,7 @@ const showLabel = (index) =>
                         >
                             <span
                                 v-if="showLabel(i)"
-                                class="text-[10px] text-dark-400 whitespace-nowrap"
+                                class="text-[10px] text-ink-500 whitespace-nowrap"
                             >
                                 {{ formatDate(point.date) }}
                             </span>

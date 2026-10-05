@@ -33,10 +33,10 @@ const submit = () => {
             </Link>
         </div>
 
-        <h2 class="text-3xl font-bold text-white text-center mb-2">
+        <h2 class="text-3xl font-bold text-ink-900 text-center mb-2">
             Forgot Password?
         </h2>
-        <p class="text-dark-300 text-center mb-8">
+        <p class="text-ink-500 text-center mb-8">
             No problem. Just let us know your email address and we will email
             you a password reset link.
         </p>

@@ -94,7 +94,7 @@ const categoryConfig = {
         color: "yellow",
         bgClass: "bg-yellow-500/10 border-yellow-500/30",
         iconBg: "bg-yellow-500/20",
-        textColor: "text-yellow-400",
+        textColor: "text-yellow-600",
         checkBenefits: (b, r, t) =>
             t === "DTH" &&
             r === "Immediate" &&
@@ -228,13 +228,13 @@ function formatValidity(iso) {
                 :class="[
                     'px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2 border',
                     categoryConfig[category]?.bgClass ||
-                        'bg-dark-700 border-dark-600',
-                    categoryConfig[category]?.textColor || 'text-white',
+                        'bg-surface-3 border-surface-3',
+                    categoryConfig[category]?.textColor || 'text-ink-900',
                 ]"
             >
                 <span>{{ categoryConfig[category]?.icon }}</span>
                 {{ category }}
-                <span class="bg-dark-700/50 px-2 py-0.5 rounded-full text-xs">
+                <span class="bg-surface-3/70 px-2 py-0.5 rounded-full text-xs">
                     {{ categorizedProducts[category].products.length }}
                 </span>
             </button>
@@ -269,15 +269,15 @@ function formatValidity(iso) {
                     :key="product.sku_code"
                     @click="selectProduct(product)"
                     :class="[
-                        'bg-dark-800 border rounded-2xl p-5 text-left transition group relative',
+                        'bg-surface-2 border rounded-2xl p-5 text-left transition group relative',
                         product.is_denomination
-                            ? 'border-dark-600 hover:border-primary'
+                            ? 'border-surface-3 hover:border-primary'
                             : 'border-primary/30 hover:border-primary bg-primary/5',
                     ]"
                 >
 
                     <!-- Display Text -->
-                    <div class="font-semibold text-white mb-2 pr-16">
+                    <div class="font-semibold text-ink-900 mb-2 pr-16">
                         {{ product.display_text || product.sku_code }}
                     </div>
 
@@ -289,7 +289,7 @@ function formatValidity(iso) {
                         <span
                             v-for="benefit in product.benefits"
                             :key="benefit"
-                            class="text-xs bg-dark-700 text-dark-300 px-2 py-0.5 rounded-full"
+                            class="text-xs bg-surface-3 text-ink-500 px-2 py-0.5 rounded-full"
                         >
                             {{ benefit }}
                         </span>
@@ -297,7 +297,7 @@ function formatValidity(iso) {
 
                     <!-- Pricing -->
                     <div class="flex items-baseline gap-2 mb-2">
-                        <span class="text-xl font-bold text-white">
+                        <span class="text-xl font-bold text-ink-900">
                             £{{ product.send_value.toFixed(2) }}
                         </span>
                         <!-- <span v-if="product.receive_value && product.receive_value !== product.send_value" class="text-sm text-green-400">
@@ -308,7 +308,7 @@ function formatValidity(iso) {
                     <!-- Validity Period -->
                     <div
                         v-if="product.validity_period"
-                        class="text-xs text-dark-400"
+                        class="text-xs text-ink-500"
                     >
                         {{ formatValidity(product.validity_period) }}
                     </div>
@@ -319,7 +319,7 @@ function formatValidity(iso) {
                         class="mt-2"
                     >
                         <span
-                            class="text-xs bg-yellow-500/10 text-yellow-300 px-2 py-1 rounded-full"
+                            class="text-xs bg-yellow-500/10 text-yellow-600 px-2 py-1 rounded-full"
                         >
                             📋 PIN/Voucher required
                         </span>
@@ -334,11 +334,11 @@ function formatValidity(iso) {
         <div
             class="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"
         ></div>
-        <p class="mt-4 text-dark-300">Loading products...</p>
+        <p class="mt-4 text-ink-500">Loading products...</p>
     </div>
 
     <!-- Empty State -->
-    <div v-else class="text-center py-12 text-dark-400">
+    <div v-else class="text-center py-12 text-ink-500">
         No products available. Please select an operator first.
     </div>
 </template>

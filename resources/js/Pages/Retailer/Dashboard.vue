@@ -15,8 +15,8 @@ const props = defineProps({
 
     <div class="space-y-6">
         <div>
-            <h1 class="text-3xl font-bold text-white mb-1">Dashboard</h1>
-            <p class="text-dark-300 mt-1">
+            <h1 class="text-3xl font-bold text-ink-900 mb-1">Dashboard</h1>
+            <p class="text-ink-500 mt-1">
                 Welcome back, {{ $page.props.auth.user.name }}!
             </p>
         </div>
@@ -28,7 +28,7 @@ const props = defineProps({
         >
             <div class="flex items-center">
                 <svg
-                    class="w-5 h-5 text-red-400 mr-2"
+                    class="w-5 h-5 text-red-600 mr-2"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -41,17 +41,17 @@ const props = defineProps({
                     />
                 </svg>
                 <div>
-                    <h3 class="text-sm font-medium text-red-400">
+                    <h3 class="text-sm font-medium text-red-600">
                         Low Wallet Balance
                     </h3>
-                    <p class="text-sm text-red-300 mt-1">
+                    <p class="text-sm text-red-600 mt-1">
                         Your available balance (£
                         {{ stats.available_balance.toFixed(2) }}) is below the
                         minimum threshold.
                     </p>
                     <a
                         href="/retailer/wallet"
-                        class="mt-2 inline-block text-sm font-medium text-red-400 underline hover:text-red-300"
+                        class="mt-2 inline-block text-sm font-medium text-red-600 underline hover:text-red-600"
                         >Top Up Now</a
                     >
                 </div>
@@ -62,7 +62,7 @@ const props = defineProps({
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="stat-gradient-1 rounded-2xl p-5 card-hover">
                 <div class="text-sm text-blue-100">Wallet Balance</div>
-                <div class="text-2xl font-bold text-white mt-1">
+                <div class="text-2xl font-bold text-ink-900 mt-1">
                     £ {{ stats.wallet_balance.toFixed(2) }}
                 </div>
                 <div class="text-xs text-blue-200 mt-1">
@@ -71,7 +71,7 @@ const props = defineProps({
             </div>
             <div class="stat-gradient-2 rounded-2xl p-5 card-hover">
                 <div class="text-sm text-green-100">Success Rate</div>
-                <div class="text-2xl font-bold text-white mt-1">
+                <div class="text-2xl font-bold text-ink-900 mt-1">
                     {{ stats.success_rate }}%
                 </div>
                 <div class="text-xs text-green-200 mt-1">
@@ -80,7 +80,7 @@ const props = defineProps({
             </div>
             <div class="stat-gradient-3 rounded-2xl p-5 card-hover">
                 <div class="text-sm text-blue-100">This Month</div>
-                <div class="text-2xl font-bold text-white mt-1">
+                <div class="text-2xl font-bold text-ink-900 mt-1">
                     £ {{ stats.this_month_volume.toFixed(2) }}
                 </div>
                 <div class="text-xs text-blue-200 mt-1">
@@ -89,7 +89,7 @@ const props = defineProps({
             </div>
             <div class="stat-gradient-4 rounded-2xl p-5 card-hover">
                 <div class="text-sm text-green-100">Today</div>
-                <div class="text-2xl font-bold text-white mt-1">
+                <div class="text-2xl font-bold text-ink-900 mt-1">
                     {{ stats.today_transactions }}
                 </div>
                 <div class="text-xs text-green-200 mt-1">transactions</div>
@@ -97,15 +97,15 @@ const props = defineProps({
         </div>
 
         <!-- Chart -->
-        <div class="bg-dark-800 rounded-2xl p-6 border border-dark-600">
-            <h3 class="text-lg font-semibold text-white mb-4">Last 7 Days</h3>
+        <div class="bg-surface-2 rounded-2xl p-6 border border-surface-3">
+            <h3 class="text-lg font-semibold text-ink-900 mb-4">Last 7 Days</h3>
             <div class="grid grid-cols-7 gap-2">
                 <div
                     v-for="day in chartData"
                     :key="day.date"
                     class="text-center"
                 >
-                    <div class="text-xs text-dark-300">
+                    <div class="text-xs text-ink-500">
                         {{
                             new Date(day.date).toLocaleDateString("en-US", {
                                 weekday: "short",
@@ -119,7 +119,7 @@ const props = defineProps({
                             {{ day.count }}
                         </div>
                     </div>
-                    <div class="text-xs text-dark-400 mt-1">
+                    <div class="text-xs text-ink-500 mt-1">
                         {{ day.count }}
                     </div>
                 </div>
@@ -128,11 +128,11 @@ const props = defineProps({
 
         <!-- Recent Transactions -->
         <div
-            class="bg-dark-800 rounded-2xl border border-dark-600 overflow-hidden"
+            class="bg-surface-2 rounded-2xl border border-surface-3 overflow-hidden"
         >
-            <div class="p-6 border-b border-dark-600">
+            <div class="p-6 border-b border-surface-3">
                 <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-white">
+                    <h3 class="text-lg font-semibold text-ink-900">
                         Recent Transactions
                     </h3>
                     <a
@@ -146,26 +146,26 @@ const props = defineProps({
                 <div
                     v-for="txn in recentTransactions.slice(0, 8)"
                     :key="txn.id"
-                    class="p-4 flex items-center justify-between hover:bg-dark-700 transition"
+                    class="p-4 flex items-center justify-between hover:bg-surface-2 transition"
                 >
                     <div class="flex items-center space-x-3">
                         <div
-                            class="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center text-sm font-semibold text-primary-light"
+                            class="w-10 h-10 bg-surface-3 rounded-lg flex items-center justify-center text-sm font-semibold text-primary-light"
                         >
                             {{ txn.operator?.name?.charAt(0) || "?" }}
                         </div>
                         <div>
-                            <div class="font-medium text-white">
+                            <div class="font-medium text-ink-900">
                                 {{ txn.mobile_number }}
                             </div>
-                            <div class="text-xs text-dark-400">
+                            <div class="text-xs text-ink-500">
                                 {{ txn.operator?.name || "Unknown" }} ·
                                 {{ txn.created_at }}
                             </div>
                         </div>
                     </div>
                     <div class="text-right">
-                        <div class="font-medium text-white">
+                        <div class="font-medium text-ink-900">
                             £ {{ txn.amount.toFixed(2) }}
                         </div>
                         <span
@@ -174,8 +174,8 @@ const props = defineProps({
                                 txn.status === 'success'
                                     ? 'bg-accent/20 text-accent-light'
                                     : txn.status === 'failed'
-                                      ? 'bg-red-500/20 text-red-400'
-                                      : 'bg-yellow-500/20 text-yellow-400',
+                                      ? 'bg-red-500/20 text-red-600'
+                                      : 'bg-yellow-500/20 text-yellow-600',
                             ]"
                         >
                             {{ txn.status }}
@@ -184,7 +184,7 @@ const props = defineProps({
                 </div>
                 <div
                     v-if="!recentTransactions.length"
-                    class="p-8 text-center text-dark-400"
+                    class="p-8 text-center text-ink-500"
                 >
                     No transactions yet
                 </div>

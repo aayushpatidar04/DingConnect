@@ -34,37 +34,37 @@ const exportUrl = computed(() => {
     <Head title="Transactions - Admin" />
     <div class="space-y-6">
         <div>
-            <h1 class="text-3xl font-bold text-white mb-1">Transactions</h1>
-            <p class="text-dark-300">All platform transactions</p>
+            <h1 class="text-3xl font-bold text-ink-900 mb-1">Transactions</h1>
+            <p class="text-ink-500">All platform transactions</p>
         </div>
 
         <!-- Stats -->
         <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
-            <div class="bg-dark-800 rounded-2xl p-4 border border-dark-600">
-                <div class="text-sm text-dark-300">Total</div>
-                <div class="text-xl font-bold text-white">
+            <div class="bg-surface-2 rounded-2xl p-4 border border-surface-3">
+                <div class="text-sm text-ink-500">Total</div>
+                <div class="text-xl font-bold text-ink-900">
                     {{ stats.total }}
                 </div>
             </div>
-            <div class="bg-dark-800 rounded-2xl p-4 border border-dark-600">
-                <div class="text-sm text-dark-300">Success</div>
+            <div class="bg-surface-2 rounded-2xl p-4 border border-surface-3">
+                <div class="text-sm text-ink-500">Success</div>
                 <div class="text-xl font-bold text-accent-light">
                     {{ stats.success }}
                 </div>
             </div>
-            <div class="bg-dark-800 rounded-2xl p-4 border border-dark-600">
-                <div class="text-sm text-dark-300">Failed</div>
-                <div class="text-xl font-bold text-red-400">
+            <div class="bg-surface-2 rounded-2xl p-4 border border-surface-3">
+                <div class="text-sm text-ink-500">Failed</div>
+                <div class="text-xl font-bold text-red-600">
                     {{ stats.failed }}
                 </div>
             </div>
-            <div class="bg-dark-800 rounded-2xl p-4 border border-dark-600">
-                <div class="text-sm text-dark-300">Pending</div>
-                <div class="text-xl font-bold text-yellow-400">
+            <div class="bg-surface-2 rounded-2xl p-4 border border-surface-3">
+                <div class="text-sm text-ink-500">Pending</div>
+                <div class="text-xl font-bold text-yellow-600">
                     {{ stats.pending }}
                 </div>
             </div>
-            <div class="bg-dark-800 rounded-2xl p-4 border border-dark-600">
+            <div class="bg-surface-2 rounded-2xl p-4 border border-surface-3">
                 <div class="text-sm text-blue-100">Total Volume</div>
                 <div class="text-xl font-bold text-primary-light">
                     £ {{ Number(stats.total_volume).toFixed(2) }}
@@ -75,13 +75,13 @@ const exportUrl = computed(() => {
         <!-- Filters -->
         <form
             method="GET"
-            class="bg-dark-800 rounded-2xl p-4 border border-dark-600 flex flex-wrap gap-3 items-end"
+            class="bg-surface-2 rounded-2xl p-4 border border-surface-3 flex flex-wrap gap-3 items-end"
         >
             <div>
-                <label class="text-xs text-dark-300 block mb-1">Status</label
+                <label class="text-xs text-ink-500 block mb-1">Status</label
                 ><select
                     name="status" v-model="filters.status"
-                    class="border border-dark-600 rounded-lg px-3 py-2 text-sm bg-dark-700 text-white input-dark"
+                    class="border border-surface-3 rounded-lg px-3 py-2 text-sm bg-surface-3 text-ink-900 input-dark"
                 >
                     <option value="">All</option>
                     <option value="success">Success</option>
@@ -90,10 +90,10 @@ const exportUrl = computed(() => {
                 </select>
             </div>
             <div>
-                <label class="text-xs text-dark-300 block mb-1">Retailer</label
+                <label class="text-xs text-ink-500 block mb-1">Retailer</label
                 ><select
                     name="retailer_id" v-model="filters.retailer_id"
-                    class="border border-dark-600 rounded-lg px-3 py-2 text-sm bg-dark-700 text-white input-dark"
+                    class="border border-surface-3 rounded-lg px-3 py-2 text-sm bg-surface-3 text-ink-900 input-dark"
                 >
                     <option value="">All</option>
                     <option v-for="r in retailers" :value="r.id" :key="r.id">
@@ -102,30 +102,30 @@ const exportUrl = computed(() => {
                 </select>
             </div>
             <div>
-                <label class="text-xs text-dark-300 block mb-1">From</label
+                <label class="text-xs text-ink-500 block mb-1">From</label
                 ><input v-model="filters.from"
                     type="date"
                     name="from"
-                    class="border border-dark-600 rounded-lg px-3 py-2 text-sm bg-dark-700 text-white input-dark"
+                    class="border border-surface-3 rounded-lg px-3 py-2 text-sm bg-surface-3 text-ink-900 input-dark"
                 />
             </div>
             <div>
-                <label class="text-xs text-dark-300 block mb-1">To</label
+                <label class="text-xs text-ink-500 block mb-1">To</label
                 ><input v-model="filters.to"
                     type="date"
                     name="to"
-                    class="border border-dark-600 rounded-lg px-3 py-2 text-sm bg-dark-700 text-white input-dark"
+                    class="border border-surface-3 rounded-lg px-3 py-2 text-sm bg-surface-3 text-ink-900 input-dark"
                 />
             </div>
             <button
                 type="submit"
-                class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition text-sm"
+                class="px-4 py-2 bg-primary text-ink-900 rounded-lg hover:bg-primary-dark transition text-sm"
             >
                 Filter
             </button>
             <a
                 :href="exportUrl"
-                class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition text-sm"
+                class="px-4 py-2 bg-accent text-ink-900 rounded-lg hover:bg-accent-dark transition text-sm"
             >
                 Export
             </a>
@@ -133,49 +133,49 @@ const exportUrl = computed(() => {
 
         <!-- Table -->
         <div
-            class="bg-dark-800 rounded-2xl border border-dark-600 overflow-hidden"
+            class="bg-surface-2 rounded-2xl border border-surface-3 overflow-hidden"
         >
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-dark-600">
-                    <thead class="bg-dark-700">
+                    <thead class="bg-surface-3">
                         <tr>
                             <th
-                                class="px-4 py-3 text-left text-xs font-medium text-dark-200 uppercase"
+                                class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase"
                             >
                                 ID
                             </th>
                             <th
-                                class="px-4 py-3 text-left text-xs font-medium text-dark-200 uppercase"
+                                class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase"
                             >
                                 Date
                             </th>
                             <th
-                                class="px-4 py-3 text-left text-xs font-medium text-dark-200 uppercase"
+                                class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase"
                             >
                                 Retailer
                             </th>
                             <th
-                                class="px-4 py-3 text-left text-xs font-medium text-dark-200 uppercase"
+                                class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase"
                             >
                                 Mobile
                             </th>
                             <th
-                                class="px-4 py-3 text-left text-xs font-medium text-dark-200 uppercase"
+                                class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase"
                             >
                                 Operator
                             </th>
                             <th
-                                class="px-4 py-3 text-left text-xs font-medium text-dark-200 uppercase"
+                                class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase"
                             >
                                 Amount
                             </th>
                             <th
-                                class="px-4 py-3 text-left text-xs font-medium text-dark-200 uppercase"
+                                class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase"
                             >
                                 Status
                             </th>
                             <th
-                                class="px-4 py-3 text-left text-xs font-medium text-dark-200 uppercase"
+                                class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase"
                             >
                                 Receipt
                             </th>
@@ -185,27 +185,27 @@ const exportUrl = computed(() => {
                         <tr
                             v-for="txn in transactions.data"
                             :key="txn.id"
-                            class="hover:bg-dark-700 transition"
+                            class="hover:bg-surface-2 transition"
                         >
-                            <td class="px-4 py-3 text-sm text-dark-200">
+                            <td class="px-4 py-3 text-sm text-ink-700">
                                 {{ txn.id }}
                             </td>
-                            <td class="px-4 py-3 text-sm text-dark-200">
+                            <td class="px-4 py-3 text-sm text-ink-700">
                                 {{ txn.created_at }}
                             </td>
-                            <td class="px-4 py-3 text-sm text-dark-200">
+                            <td class="px-4 py-3 text-sm text-ink-700">
                                 {{ txn.user?.name || "-" }}
                             </td>
                             <td
-                                class="px-4 py-3 text-sm font-mono text-dark-200"
+                                class="px-4 py-3 text-sm font-mono text-ink-700"
                             >
                                 {{ txn.mobile_number }}
                             </td>
-                            <td class="px-4 py-3 text-sm text-dark-200">
+                            <td class="px-4 py-3 text-sm text-ink-700">
                                 {{ txn.operator?.name || "-" }}
                             </td>
                             <td
-                                class="px-4 py-3 text-sm font-medium text-white"
+                                class="px-4 py-3 text-sm font-medium text-ink-900"
                             >
                                 £ {{ Number(txn.amount).toFixed(2) }}
                             </td>
@@ -216,20 +216,20 @@ const exportUrl = computed(() => {
                                         txn.status === 'success'
                                             ? 'bg-accent/20 text-accent-light'
                                             : txn.status === 'failed'
-                                              ? 'bg-red-500/20 text-red-400'
-                                              : 'bg-yellow-500/20 text-yellow-400',
+                                              ? 'bg-red-500/20 text-red-600'
+                                              : 'bg-yellow-500/20 text-yellow-600',
                                     ]"
                                     >{{ txn.status }}</span
                                 >
                             </td>
-                            <td class="px-4 py-3 text-sm text-dark-200">
+                            <td class="px-4 py-3 text-sm text-ink-700">
                                 {{ txn.receipt_number || "-" }}
                             </td>
                         </tr>
                         <tr v-if="!transactions.data?.length">
                             <td
                                 colspan="9"
-                                class="px-4 py-8 text-center text-dark-400"
+                                class="px-4 py-8 text-center text-ink-500"
                             >
                                 No transactions found
                             </td>
@@ -247,17 +247,17 @@ const exportUrl = computed(() => {
                         v-if="link.url"
                         :href="link.url"
                         v-html="link.label"
-                        class="px-3 py-1 rounded-lg text-sm border border-dark-600 transition"
+                        class="px-3 py-1 rounded-lg text-sm border border-surface-3 transition"
                         :class="
                             link.active
-                                ? 'bg-primary text-white border-primary'
-                                : 'bg-dark-800 text-dark-300 hover:bg-dark-700'
+                                ? 'bg-primary text-ink-900 border-primary'
+                                : 'bg-surface-2 text-ink-500 hover:bg-surface-2'
                         "
                     />
                     <span
                         v-else
                         v-html="link.label"
-                        class="px-3 py-1 rounded-lg text-sm bg-dark-800 text-dark-500"
+                        class="px-3 py-1 rounded-lg text-sm bg-surface-2 text-ink-500"
                     />
                 </template>
             </div>

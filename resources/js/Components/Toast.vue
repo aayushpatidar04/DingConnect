@@ -20,13 +20,13 @@ function getIcon(type) {
 function getColors(type) {
     switch (type) {
         case "success":
-            return "bg-accent/90 border-accent text-white";
+            return "bg-accent/90 border-accent text-ink-900";
         case "error":
-            return "bg-red-500/90 border-red-400 text-white";
+            return "bg-red-500/90 border-red-400 text-ink-900";
         case "warning":
-            return "bg-yellow-500/90 border-yellow-400 text-white";
+            return "bg-yellow-500/90 border-yellow-400 text-ink-900";
         default:
-            return "bg-primary/90 border-primary text-white";
+            return "bg-primary/90 border-primary text-ink-900";
     }
 }
 </script>

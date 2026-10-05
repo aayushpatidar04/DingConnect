@@ -39,10 +39,10 @@ const submit = () => {
             </Link>
         </div>
 
-        <h2 class="text-3xl font-bold text-white text-center mb-2">
+        <h2 class="text-3xl font-bold text-ink-900 text-center mb-2">
             Welcome Back
         </h2>
-        <p class="text-dark-300 text-center mb-8">
+        <p class="text-ink-500 text-center mb-8">
             Sign in to your retailer account
         </p>
 
@@ -86,9 +86,9 @@ const submit = () => {
                     <Checkbox
                         name="remember"
                         v-model:checked="form.remember"
-                        class="rounded border-dark-600 bg-dark-700 text-primary"
+                        class="rounded border-surface-3 bg-surface-3 text-primary"
                     />
-                    <span class="ml-2 text-sm text-dark-300">Remember me</span>
+                    <span class="ml-2 text-sm text-ink-500">Remember me</span>
                 </label>
 
                 <Link

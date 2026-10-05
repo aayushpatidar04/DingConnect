@@ -15,57 +15,57 @@ const exportRetailers = () => {
     <div class="space-y-6">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-3xl font-bold text-white mb-1">Retailers</h1>
-                <p class="text-dark-300">Manage registered retailers</p>
+                <h1 class="text-3xl font-bold text-ink-900 mb-1">Retailers</h1>
+                <p class="text-ink-500">Manage registered retailers</p>
             </div>
             <div class="flex gap-2">
                 <button
                     @click="exportRetailers"
-                    class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark text-sm font-medium transition"
+                    class="px-4 py-2 bg-accent text-ink-900 rounded-lg hover:bg-accent-dark text-sm font-medium transition"
                     >Export CSV</button
                 >
                 <Link
                     href="/admin/retailers/create"
-                    class="px-4 py-2 btn-primary text-white rounded-lg text-sm font-medium"
+                    class="px-4 py-2 btn-primary text-ink-900 rounded-lg text-sm font-medium"
                     >Add Retailer</Link
                 >
             </div>
         </div>
 
         <div
-            class="bg-dark-800 rounded-2xl border border-dark-600 overflow-hidden"
+            class="bg-surface-2 rounded-2xl border border-surface-3 overflow-hidden"
         >
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-dark-600">
-                    <thead class="bg-dark-700">
+                    <thead class="bg-surface-3">
                         <tr>
                             <th
-                                class="px-6 py-3 text-left text-xs font-medium text-dark-200 uppercase tracking-wider"
+                                class="px-6 py-3 text-left text-xs font-medium text-ink-700 uppercase tracking-wider"
                             >
                                 Retailer
                             </th>
                             <th
-                                class="px-6 py-3 text-left text-xs font-medium text-dark-200 uppercase tracking-wider"
+                                class="px-6 py-3 text-left text-xs font-medium text-ink-700 uppercase tracking-wider"
                             >
                                 Shop
                             </th>
                             <th
-                                class="px-6 py-3 text-left text-xs font-medium text-dark-200 uppercase tracking-wider"
+                                class="px-6 py-3 text-left text-xs font-medium text-ink-700 uppercase tracking-wider"
                             >
                                 Wallet
                             </th>
                             <th
-                                class="px-6 py-3 text-left text-xs font-medium text-dark-200 uppercase tracking-wider"
+                                class="px-6 py-3 text-left text-xs font-medium text-ink-700 uppercase tracking-wider"
                             >
                                 KYC
                             </th>
                             <th
-                                class="px-6 py-3 text-left text-xs font-medium text-dark-200 uppercase tracking-wider"
+                                class="px-6 py-3 text-left text-xs font-medium text-ink-700 uppercase tracking-wider"
                             >
                                 Status
                             </th>
                             <th
-                                class="px-6 py-3 text-right text-xs font-medium text-dark-200 uppercase tracking-wider"
+                                class="px-6 py-3 text-right text-xs font-medium text-ink-700 uppercase tracking-wider"
                             >
                                 Actions
                             </th>
@@ -75,24 +75,24 @@ const exportRetailers = () => {
                         <tr
                             v-for="retailer in retailers.data"
                             :key="retailer.id"
-                            class="hover:bg-dark-700 transition"
+                            class="hover:bg-surface-2 transition"
                         >
                             <td class="px-6 py-4">
-                                <div class="font-medium text-white">
+                                <div class="font-medium text-ink-900">
                                     {{ retailer.name }}
                                 </div>
-                                <div class="text-sm text-dark-400">
+                                <div class="text-sm text-ink-500">
                                     {{ retailer.email }}
                                 </div>
-                                <div class="text-sm text-dark-400">
+                                <div class="text-sm text-ink-500">
                                     {{ retailer.phone }}
                                 </div>
                             </td>
-                            <td class="px-6 py-4 text-sm text-dark-200">
+                            <td class="px-6 py-4 text-sm text-ink-700">
                                 {{ retailer.shop_name || "-" }}
                             </td>
                             <td
-                                class="px-6 py-4 text-sm font-medium text-white"
+                                class="px-6 py-4 text-sm font-medium text-ink-900"
                             >
                                 £
                                 {{
@@ -105,11 +105,11 @@ const exportRetailers = () => {
                                 <span
                                     class="px-2 py-1 text-xs rounded-full font-medium"
                                     :class="{
-                                        'bg-yellow-500/20 text-yellow-400':
+                                        'bg-yellow-500/20 text-yellow-600':
                                             retailer.kyc_status === 'pending',
                                         'bg-accent/20 text-accent-light':
                                             retailer.kyc_status === 'approved',
-                                        'bg-red-500/20 text-red-400':
+                                        'bg-red-500/20 text-red-600':
                                             retailer.kyc_status === 'rejected',
                                     }"
                                     >{{ retailer.kyc_status }}</span
@@ -121,7 +121,7 @@ const exportRetailers = () => {
                                     :class="
                                         retailer.is_active
                                             ? 'bg-accent/20 text-accent-light'
-                                            : 'bg-red-500/20 text-red-400'
+                                            : 'bg-red-500/20 text-red-600'
                                     "
                                 >
                                     {{
@@ -162,7 +162,7 @@ const exportRetailers = () => {
             </div>
             <div
                 v-if="!retailers.data?.length"
-                class="p-8 text-center text-dark-400"
+                class="p-8 text-center text-ink-500"
             >
                 No retailers found
             </div>
@@ -175,17 +175,17 @@ const exportRetailers = () => {
                         v-if="link.url"
                         :href="link.url"
                         v-html="link.label"
-                        class="px-3 py-1 rounded-lg text-sm border border-dark-600 transition"
+                        class="px-3 py-1 rounded-lg text-sm border border-surface-3 transition"
                         :class="
                             link.active
-                                ? 'bg-primary text-white border-primary'
-                                : 'bg-dark-800 text-dark-300 hover:bg-dark-700'
+                                ? 'bg-primary text-ink-900 border-primary'
+                                : 'bg-surface-2 text-ink-500 hover:bg-surface-2'
                         "
                     />
                     <span
                         v-else
                         v-html="link.label"
-                        class="px-3 py-1 rounded-lg text-sm bg-dark-800 text-dark-500"
+                        class="px-3 py-1 rounded-lg text-sm bg-surface-2 text-ink-500"
                     />
                 </template>
             </div>

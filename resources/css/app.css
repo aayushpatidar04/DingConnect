@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-    /* Brand Colors from MK Networks Logo */
+    /* Brand Colors */
     --color-primary: #0077b6;
     --color-primary-light: #00a8e8;
     --color-primary-dark: #005f8a;
@@ -11,16 +11,18 @@
     --color-accent-light: #66bb6a;
     --color-accent-dark: #388e3c;
 
-    /* Dark Theme */
-    --color-dark-900: #0b1120;
-    --color-dark-800: #111827;
-    --color-dark-700: #1f2937;
-    --color-dark-600: #374151;
-    --color-dark-500: #4b5563;
-    --color-dark-400: #6b7280;
-    --color-dark-300: #9ca3af;
-    --color-dark-200: #d1d5db;
-    --color-dark-100: #f3f4f6;
+    /* Light Theme Surface Palette */
+    --color-surface-0: #ffffff;
+    --color-surface-1: #f9fafb;
+    --color-surface-2: #f3f4f6;
+    --color-surface-3: #e5e7eb;
+
+    /* Ink Palette */
+    --color-ink-900: #111827;
+    --color-ink-700: #374151;
+    --color-ink-500: #6b7280;
+    --color-ink-300: #9ca3af;
+    --color-ink-100: #f3f4f6;
 }
 
 /* ============ ANIMATIONS ============ */
@@ -166,7 +168,7 @@
     background: linear-gradient(
         90deg,
         transparent,
-        rgba(255, 255, 255, 0.1),
+        rgba(0, 0, 0, 0.06),
         transparent
     );
     background-size: 200% 100%;
@@ -201,15 +203,15 @@
 
 /* Glass effect */
 .glass {
-    background: rgba(17, 24, 39, 0.7);
+    background: rgba(243, 244, 246, 0.9);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .glass-light {
-    background: rgba(31, 41, 55, 0.6);
+    background: rgba(229, 231, 235, 0.8);
     backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 /* Custom scrollbar */
@@ -219,16 +221,16 @@
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--color-dark-800);
+    background: var(--color-surface-1);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--color-dark-600);
+    background: var(--color-surface-3);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-dark-500);
+    background: var(--color-ink-300);
 }
 
 /* Gradient text */
@@ -249,7 +251,7 @@
 }
 .card-hover:hover {
     transform: translateY(-4px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
 }
 
 /* Signal animation for logo */
@@ -271,7 +273,7 @@
 }
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(0, 119, 182, 0.4);
+    box-shadow: 0 10px 25px rgba(0, 119, 182, 0.35);
 }
 
 .btn-accent {
@@ -284,14 +286,14 @@
 }
 .btn-accent:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(76, 175, 80, 0.4);
+    box-shadow: 0 10px 25px rgba(76, 175, 80, 0.35);
 }
 
 /* Input styles */
 .input-dark {
-    background: var(--color-dark-700);
-    border: 1px solid var(--color-dark-600);
-    color: white;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-surface-3);
+    color: var(--color-ink-900);
     transition: all 0.3s ease;
 }
 .input-dark:focus {
@@ -300,7 +302,7 @@
     outline: none;
 }
 .input-dark::placeholder {
-    color: var(--color-dark-400);
+    color: var(--color-ink-300);
 }
 
 /* Stat card gradient backgrounds */
@@ -319,21 +321,21 @@
 
 /* Table styles */
 .table-dark {
-    background: var(--color-dark-700);
+    background: var(--color-surface-2);
 }
 .table-dark thead {
-    background: var(--color-dark-800);
+    background: var(--color-surface-0);
 }
 .table-dark th {
-    color: var(--color-dark-200);
+    color: var(--color-ink-900);
     font-weight: 600;
     text-transform: uppercase;
     font-size: 0.75rem;
     letter-spacing: 0.05em;
 }
 .table-dark td {
-    color: var(--color-dark-200);
-    border-top: 1px solid var(--color-dark-600);
+    color: var(--color-ink-700);
+    border-top: 1px solid var(--color-surface-3);
 }
 
 /* Notification badge pulse */
