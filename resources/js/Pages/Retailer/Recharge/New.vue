@@ -249,6 +249,7 @@ async function selectProvider(provider) {
 async function proceedToProducts() {
     if (!selectedProvider.value) return;
     errorMessage.value = "";
+    submitting.value = true;
 
     // Skip DingConnect provider-status for VT-only providers
     if (selectedProvider.value.source !== "valuetopup_only") {
@@ -261,6 +262,7 @@ async function proceedToProducts() {
             if (!providerLive.value) {
                 errorMessage.value =
                     "Selected provider is down at this moment, please try after some time.";
+                submitting.value = false;
                 return;
             }
         } catch (e) {
@@ -270,8 +272,11 @@ async function proceedToProducts() {
         providerLive.value = true;
     }
 
-    await loadProducts();
+    // Flip to Step 3 first so the product shimmer is visible
+    // during the long load (DingConnect + Valuetopup SKUs).
     currentStep.value = 3;
+    await loadProducts();
+    submitting.value = false;
 }
 
 async function loadProducts() {
@@ -826,17 +831,27 @@ onMounted(() => {
                 </button>
             </div>
 
-            <div v-if="loadingProviders" class="text-center py-16">
+            <!-- Provider skeletons while loading -->
+            <div
+                v-if="loadingProviders"
+                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+            >
                 <div
-                    class="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"
-                ></div>
-                <p class="mt-4 text-dark-300">Loading providers...</p>
+                    v-for="n in 6"
+                    :key="n"
+                    class="rounded-2xl p-5 border border-dark-700 bg-dark-800/60"
+                >
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-dark-700 rounded-lg animate-pulse shrink-0"></div>
+                        <div class="flex-1 space-y-2">
+                            <div class="h-4 bg-dark-700 rounded w-3/4 animate-pulse"></div>
+                            <div class="h-3 bg-dark-700 rounded w-1/2 animate-pulse"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div
-                v-else-if="providers.length === 0 && !loadingProviders"
-                class="text-center py-16"
-            >
+            <div v-else-if="providers.length === 0" class="text-center py-16">
                 <p class="text-dark-300 text-lg mb-2">
                     No operators found for this country.
                 </p>
@@ -849,7 +864,7 @@ onMounted(() => {
             </div>
 
             <div
-                v-if="providers.length > 0"
+                v-else
                 class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
             >
                 <button
@@ -967,7 +982,30 @@ onMounted(() => {
                 </button>
             </div>
 
+            <!-- Loading skeletons -->
+            <div v-if="loadingProducts" class="space-y-8">
+                <!-- Category skeleton: tabs -->
+                <div class="flex gap-2 mb-6">
+                    <div v-for="n in 4" :key="n" class="h-9 bg-dark-700/60 rounded-xl w-20 animate-pulse"></div>
+                </div>
+                <!-- Category skeleton: products -->
+                <div v-for="n in 2" :key="n" class="mb-8">
+                    <div class="h-7 bg-dark-700/60 rounded-lg w-32 mb-4 animate-pulse"></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div v-for="m in 6" :key="m" class="rounded-2xl p-5 border border-dark-700/60 bg-dark-800/40">
+                            <div class="h-5 bg-dark-700 rounded w-3/4 mb-3 animate-pulse"></div>
+                            <div class="flex gap-1.5 mb-3">
+                                <div class="h-5 bg-dark-700 rounded-full w-14 animate-pulse"></div>
+                                <div class="h-5 bg-dark-700 rounded-full w-10 animate-pulse"></div>
+                            </div>
+                            <div class="h-8 bg-dark-700 rounded-lg w-24 animate-pulse"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <ProductCategories
+                v-else
                 :products="allProducts"
                 :loading="loadingProducts"
                 @select-product="selectProduct"
@@ -1052,12 +1090,16 @@ onMounted(() => {
                 ></div>
             </div>
 
-            <div class="bg-dark-800 border border-dark-600 rounded-2xl p-6">
+            <div class="bg-dark-800 border border-dark-600 rounded-2xl p-6 relative">
+                <div v-if="validatingNumber" class="absolute inset-0 bg-dark-900/40 rounded-2xl flex items-center justify-center z-10">
+                    <div class="inline-block w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                </div>
                 <label class="text-sm text-dark-300 mb-2 block">
                     Mobile Number ({{ selectedCountry?.name }})
                 </label>
                 <div
                     class="flex items-center bg-dark-700 border border-dark-600 rounded-xl overflow-hidden"
+                    :class="{ 'opacity-50': validatingNumber }"
                 >
                     <span
                         class="px-4 py-3 text-white font-semibold border-r border-dark-600"
@@ -1070,6 +1112,7 @@ onMounted(() => {
                         placeholder="Enter phone number"
                         class="flex-1 bg-transparent px-4 py-3 text-white outline-none"
                         @input="validatePhone"
+                        :disabled="validatingNumber"
                     />
                 </div>
                 <p v-if="phoneError" class="text-xs text-red-400 mt-2">
