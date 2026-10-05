@@ -275,33 +275,6 @@ function formatValidity(iso) {
                             : 'border-primary/30 hover:border-primary bg-primary/5',
                     ]"
                 >
-                    <!-- Gateway Source Badge -->
-                    <div
-                        v-if="product._source === 'valuetopup'"
-                        class="absolute top-3 right-3"
-                    >
-                        <span
-                            class="bg-yellow-500/20 text-yellow-300 text-xs px-2 py-1 rounded-full font-medium"
-                        >
-                            VT
-                        </span>
-                    </div>
-
-                    <!-- Badges container -->
-                    <div class="absolute top-3 right-3 flex flex-col gap-1">
-                        <!-- VT Source Badge -->
-                        <div v-if="product._source === 'valuetopup'">
-                            <span class="bg-yellow-500/20 text-yellow-300 text-[10px] px-2 py-0.5 rounded-full font-medium">
-                                VT
-                            </span>
-                        </div>
-                        <!-- Free Range Badge -->
-                        <div v-if="!product.is_denomination">
-                            <span class="bg-primary/20 text-primary-light text-[10px] px-2 py-0.5 rounded-full font-medium">
-                                Free Range
-                            </span>
-                        </div>
-                    </div>
 
                     <!-- Display Text -->
                     <div class="font-semibold text-white mb-2 pr-16">
@@ -350,14 +323,6 @@ function formatValidity(iso) {
                         >
                             📋 PIN/Voucher required
                         </span>
-                    </div>
-
-                    <!-- Product Type -->
-                    <div
-                        v-if="product.product_type"
-                        class="text-xs text-dark-500 mt-1"
-                    >
-                        {{ product.product_type }}
                     </div>
                 </button>
             </div>

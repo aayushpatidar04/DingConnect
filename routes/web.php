@@ -117,7 +117,6 @@ Route::prefix('retailer')->name('retailer.')->middleware(['auth', 'retailer', 'k
     Route::get('/recharge/product-description', [RechargeController::class, 'productDescription'])->name('recharge.productDescription');
 
     Route::get('/recharge/valuetopup/operators', [RechargeController::class, 'getValuetopupOperators'])->name('recharge.valuetopup.operators');
-    Route::get('/recharge/valuetopup/products', [RechargeController::class, 'getValuetopupProducts'])->name('recharge.valuetopup.products');
     Route::post('/recharge/estimate-cost', [RechargeController::class, 'estimateCost'])->name('recharge.estimate-cost');
 
     Route::get('/profile', [RetailerProfileController::class, 'index'])->name('profile.index');

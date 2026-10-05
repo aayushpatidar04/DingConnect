@@ -35,7 +35,6 @@ const errorMessage = ref("");
 
 // Dual-API state
 const vtProducts = ref([]);
-const loadingVtProducts = ref(false);
 const selectedProductSource = ref("ding"); // "ding" or "valuetopup"
 const valuetopupSkuId = ref(null);
 
@@ -277,9 +276,7 @@ async function proceedToProducts() {
 
 async function loadProducts() {
     loadingProducts.value = true;
-    loadingVtProducts.value = false;
     products.value = [];
-    vtProducts.value = [];
     selectedProduct.value = null;
     productDescription.value = "";
     productReadmore.value = "";
@@ -288,54 +285,47 @@ async function loadProducts() {
     const provider = selectedProvider.value;
     const country = currentCountryIso.value;
 
-    // DingConnect products (skip for VT-only providers)
-    let dingPromise = Promise.resolve({ success: true, products: [] });
-    if (provider.source !== "valuetopup_only") {
-        const dingParams = new URLSearchParams();
-        dingParams.append("country_iso", country);
-        dingParams.append("provider_code", provider.provider_code);
-        dingPromise = fetch(
-            `/retailer/recharge/products?${dingParams.toString()}`,
-        ).then((r) => r.json());
+    // Single merged endpoint: DingConnect products + Valuetopup products
+    // (backend handles VT chain + dedup; Ding takes priority)
+    const params = new URLSearchParams();
+    params.append("country_iso", country);
+    params.append("provider_code", provider.provider_code);
+    // Pass valuetopup_id so backend can also fetch VT products
+    if (provider.valuetopup_id || provider.source === "valuetopup_only") {
+        params.append("valuetopup_id", provider.valuetopup_id || provider.provider_id);
     }
 
-    // Valuetopup products (always for VT-only, or if linked via valuetopup_id)
-    const vtOperatorId = provider.valuetopup_id;
-    let vtPromise = Promise.resolve({ success: true, products: [] });
-    if (vtOperatorId || provider.source === "valuetopup_only") {
-        loadingVtProducts.value = true;
-        const vtParams = new URLSearchParams();
-        vtParams.append("country_iso", country);
-        // For VT-only providers use provider_id as the operator id
-        const operatorId =
-            vtOperatorId || provider.provider_id;
-        vtParams.append("valuetopup_id", operatorId);
-        vtPromise = fetch(
-            `/retailer/recharge/valuetopup/products?${vtParams.toString()}`,
-        ).then((r) => r.json());
-    }
+    try {
+        const res = await fetch(
+            `/retailer/recharge/products?${params.toString()}`,
+        );
+        const data = await res.json();
 
-    const [dingRes, vtRes] = await Promise.allSettled([dingPromise, vtPromise]);
+        if (data.success) {
+            const dingItems = [];
+            const vtItems = [];
 
-    if (dingRes.status === "fulfilled" && dingRes.value.success) {
-        products.value = (dingRes.value.products || []).map((p) => ({
-            ...p,
-            _source: "ding",
-        }));
-    }
+            for (const p of (data.products || [])) {
+                if (p._source === "valuetopup") {
+                    vtItems.push(p);
+                } else {
+                    dingItems.push(p);
+                }
+            }
 
-    if (vtRes.status === "fulfilled" && vtRes.value.success) {
-        vtProducts.value = (vtRes.value.products || []).map((p) => ({
-            ...p,
-            _source: "valuetopup",
-        }));
-    }
+            products.value = dingItems;
+            vtProducts.value = vtItems;
 
-    loadingProducts.value = false;
-    loadingVtProducts.value = false;
-
-    if (products.value.length === 0 && vtProducts.value.length === 0) {
-        errorMessage.value = "No products available for this operator.";
+            if (products.value.length === 0 && vtProducts.value.length === 0) {
+                errorMessage.value = "No products available for this operator.";
+            }
+        } else {
+            errorMessage.value = data.error || "Failed to load products.";
+        }
+    } catch (e) {
+        errorMessage.value = "Network error. Please try again.";
+    } finally {
+        loadingProducts.value = false;
     }
 
     await loadPromotions();
@@ -670,7 +660,6 @@ function resetFlow() {
     providers.value = [];
     selectedProvider.value = null;
     products.value = [];
-    vtProducts.value = [];
     selectedProduct.value = null;
     selectedSkuCode.value = "";
     selectedProductSource.value = "ding";
@@ -958,12 +947,6 @@ onMounted(() => {
                 <div>
                     <div class="text-sm font-medium text-white">
                         {{ selectedProvider.name }}
-                        <span
-                            v-if="selectedProvider.source === 'valuetopup_only'"
-                            class="text-[10px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded-full ml-2"
-                        >
-                            VT Only
-                        </span>
                     </div>
                     <div class="text-xs text-dark-400">
                         {{ selectedCountry?.name }}
@@ -985,16 +968,12 @@ onMounted(() => {
 
             <ProductCategories
                 :products="allProducts"
-                :loading="loadingProducts || loadingVtProducts"
+                :loading="loadingProducts"
                 @select-product="selectProduct"
             />
 
             <div
-                v-if="
-                    !loadingProducts &&
-                    !loadingVtProducts &&
-                    allProducts.length === 0
-                "
+                v-if="!loadingProducts && allProducts.length === 0"
                 class="text-center py-12"
             >
                 <p class="text-dark-300">

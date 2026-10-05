@@ -345,6 +345,31 @@ class ValuetopupService
 
         $category = strtolower($sku['category'] ?? 'rtr');
         $isPin = $category === 'pin';
+        $isBundle = $category === 'bundle';
+        $isData = $category === 'data';
+        $isTopup = $category === 'rtr' || $category === 'topup';
+
+        // Build benefits array matching DingConnect's format so the shared
+        // frontend categorizer (TopUp/Data/Bundle/PIN/LDI/Voucher/DTH)
+        // classifies VT products correctly.
+        $benefits = [];
+        if ($isBundle) {
+            $benefits = ['Mobile', 'Minutes', 'Data'];
+        } elseif ($isPin) {
+            $benefits = ['Mobile', 'Minutes', 'Data'];
+        } elseif ($isData) {
+            $benefits = ['Mobile', 'Data'];
+        } else {
+            $benefits = ['Mobile', 'Minutes'];
+        }
+
+        // Parse benefitType string if available (format: "Mobile+Minutes+Data")
+        if (!empty($sku['benefitType']) && is_string($sku['benefitType'])) {
+            $parsed = array_map('ucfirst', explode('+', $sku['benefitType']));
+            if (!empty($parsed)) {
+                $benefits = $parsed;
+            }
+        }
 
         return [
             'sku_code' => 'vt-' . ($sku['skuId'] ?? ''),
@@ -360,7 +385,7 @@ class ValuetopupService
             'commission_rate' => 0,
             'commission_applied' => 0,
             'validity_period' => $sku['validity'] ?? '',
-            'benefits' => $sku['benefitType'] ? [$sku['benefitType']] : [],
+            'benefits' => $benefits,
             'payment_types' => [],
             'processing_mode' => 'Instant',
             'redemption_type' => $isPin ? 'ReadReceipt' : 'Immediate',

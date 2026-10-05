@@ -261,52 +261,116 @@ class RechargeController extends Controller
         return null;
     }
     /**
-     * Fetch Valuetopup products + SKUs for an operator and return them
-     * in the same shape as getProducts so the frontend can merge them.
-     * GET /recharge/valuetopup/products?country_iso=GB&operator_id=67
+     * Fetch merged products for an operator: DingConnect + Valuetopup.
+     *
+     * - Ding products are fetched first and get priority.
+     * - VT products are fetched via getProducts → loop → getSkus.
+     * - If a VT product has the same send_value + product_type (category)
+     *   as an existing Ding product, the VT one is dropped (dedup by category).
+     *
+     * GET /retailer/recharge/products?country_iso=GB&provider_code=vodafone
      */
-    public function getValuetopupProducts(Request $request, ValuetopupService $vt): JsonResponse
+    public function getProducts(Request $request, DingConnectService $dingService, ValuetopupService $vt): JsonResponse
     {
         $request->validate([
             'country_iso' => 'required|string|size:2',
-            'operator_id' => 'required_without:valuetopup_id|integer',
-            'valuetopup_id' => 'required_without:operator_id|integer',
+            'provider_code' => 'required|string',
+            'valuetopup_id' => 'nullable|integer',
         ]);
 
         $countryIso = $request->query('country_iso');
+        $providerCode = $request->query('provider_code');
+        $allProducts = [];
 
-        // Resolve the VT operator ID either directly or via the operator DB id
+        // =========================================================================
+        // 1. Fetch DingConnect products (these always take priority)
+        // =========================================================================
+        $dingResult = $dingService->getProducts($countryIso, $providerCode);
+
+        if ($dingResult['success'] && !empty($dingResult['data']['Items'] ?? [])) {
+            $dingProducts = collect($dingResult['data']['Items'] ?? [])->map(function ($item) {
+                return $this->transformProduct($item);
+            })->values();
+
+            // Fetch product descriptions
+            $skuCodes = $dingProducts->pluck('sku_code')->filter()->unique()->values()->all();
+            $descriptions = [];
+            if (!empty($skuCodes)) {
+                $descResult = $dingService->getProductDescriptions($skuCodes);
+                if ($descResult['success'] && !empty($descResult['data'])) {
+                    foreach ($descResult['data'] as $descItem) {
+                        $sku = $descItem['SkuCode'] ?? null;
+                        if ($sku) {
+                            $descriptions[$sku] = [
+                                'description_markdown' => $descItem['DescriptionMarkdown'] ?? '',
+                                'readmore_markdown'    => $descItem['ReadMoreMarkdown'] ?? '',
+                            ];
+                        }
+                    }
+                }
+            }
+
+            foreach ($dingProducts as $product) {
+                $sku = $product['sku_code'];
+                if (isset($descriptions[$sku])) {
+                    $product['description_markdown'] = $descriptions[$sku]['description_markdown'];
+                    $product['readmore_markdown']    = $descriptions[$sku]['readmore_markdown'];
+                }
+                $product['_source'] = 'ding';
+                $allProducts[] = $product;
+            }
+        }
+
+        // =========================================================================
+        // 2. Build dedup key set from Ding products
+        //    Key = product_type + ':' + send_value (e.g. "rtr:5.00")
+        // =========================================================================
+        $dingKeys = [];
+        foreach ($allProducts as $p) {
+            $key = strtolower($p['product_type'] ?? 'rtr') . ':' . round((float) ($p['send_value'] ?? 0), 2);
+            $dingKeys[$key] = true;
+        }
+
+        // =========================================================================
+        // 3. Fetch Valuetopup products and SKUs
+        // =========================================================================
         $valuetopupId = (int) $request->query('valuetopup_id');
         if (!$valuetopupId) {
-            $operator = Operator::findOrFail((int) $request->query('operator_id'));
+            $operator = Operator::where('provider_code', $providerCode)->first();
             $valuetopupId = (int) ($operator->valuetopup_operator_id ?? 0);
         }
 
-        if (!$valuetopupId) {
-            return response()->json(['success' => true, 'products' => []]);
-        }
+        if ($valuetopupId > 0) {
+            $productsResult = $vt->products($valuetopupId);
 
-        $productsResult = $vt->products($valuetopupId);
+            if (($productsResult['responseCode'] ?? '') === '000' && !empty($productsResult['payLoad'])) {
+                foreach ($productsResult['payLoad'] as $product) {
+                    $productId = $product['productId'];
 
-        if (!($productsResult['responseCode'] ?? '') === '000' || empty($productsResult['payLoad'])) {
-            return response()->json(['success' => true, 'products' => []]);
-        }
+                    $skusResult = $vt->skus($productId);
+                    if (($skusResult['responseCode'] ?? '') !== '000' || empty($skusResult['payLoad'])) {
+                        continue;
+                    }
 
-        $products = [];
-        foreach ($productsResult['payLoad'] as $product) {
-            $productId = $product['productId'];
+                    foreach ($skusResult['payLoad'] as $sku) {
+                        $transformed = $vt->transformValuetopupProduct($sku);
+                        $transformed['_source'] = 'valuetopup';
 
-            $skusResult = $vt->skus($productId);
-            if (!($skusResult['responseCode'] ?? '') !== '000' || empty($skusResult['payLoad'])) {
-                continue;
+                        // =============================================================
+                        // 4. Dedup: skip VT product if Ding already has same
+                        //    category + denomination
+                        // =============================================================
+                        $vtKey = strtolower($transformed['product_type'] ?? 'rtr') . ':' . round((float) ($transformed['send_value'] ?? 0), 2);
+                        if (isset($dingKeys[$vtKey])) {
+                            continue; // Ding already has this plan
+                        }
+
+                        $allProducts[] = $transformed;
+                    }
+                }
             }
-
-            foreach ($skusResult['payLoad'] as $sku) {
-                $products[] = $vt->transformValuetopupProduct($sku);
-            }
         }
-
-        return response()->json(['success' => true, 'products' => $products]);
+        return response()->json(['success' => true, 'products' => $allProducts]);
     }
 
     /**
@@ -350,60 +414,6 @@ class RechargeController extends Controller
                 'sales_tax'       => (float) ($payload['salesTaxAmount'] ?? 0),
             ],
         ]);
-    }
-
-    public function getProducts(Request $request, DingConnectService $dingService): JsonResponse
-    {
-        $request->validate([
-            'country_iso' => 'required|string|size:2',
-            'provider_code' => 'required|string',
-            'account_number' => 'nullable|string',
-        ]);
-
-        $result = $dingService->getProducts(
-            $request->country_iso,
-            $request->provider_code,
-            $request->account_number
-        );
-
-        if (!$result['success']) {
-            return response()->json(['success' => false, 'error' => $result['error']], 400);
-        }
-
-        $products = collect($result['data']['Items'] ?? [])->map(function ($item) {
-            return $this->transformProduct($item);
-        })->values();
-
-        // Fetch product descriptions from DingConnect API for all returned SKUs
-        $skuCodes = $products->pluck('sku_code')->filter()->unique()->values()->all();
-        $descriptions = [];
-
-        if (!empty($skuCodes)) {
-            $descResult = $dingService->getProductDescriptions($skuCodes);
-            if ($descResult['success'] && !empty($descResult['data'])) {
-                foreach ($descResult['data'] as $descItem) {
-                    $sku = $descItem['SkuCode'] ?? null;
-                    if ($sku) {
-                        $descriptions[$sku] = [
-                            'description_markdown' => $descItem['DescriptionMarkdown'] ?? '',
-                            'readmore_markdown'    => $descItem['ReadMoreMarkdown'] ?? '',
-                        ];
-                    }
-                }
-            }
-        }
-
-        // Merge descriptions into each product
-        $products = $products->map(function ($product) use ($descriptions) {
-            $sku = $product['sku_code'];
-            if (isset($descriptions[$sku])) {
-                $product['description_markdown'] = $descriptions[$sku]['description_markdown'];
-                $product['readmore_markdown']    = $descriptions[$sku]['readmore_markdown'];
-            }
-            return $product;
-        });
-
-        return response()->json(['success' => true, 'products' => $products]);
     }
 
     /**
