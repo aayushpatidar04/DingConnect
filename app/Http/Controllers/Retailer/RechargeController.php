@@ -9,6 +9,7 @@ use App\Models\Operator;
 use App\Models\Transaction;
 use App\Models\AllowedNumber;
 use App\Services\DingConnectService;
+use App\Services\ValuetopupService;
 use App\Services\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -149,10 +150,137 @@ class RechargeController extends Controller
     }
 
     /**
+     * Fetch Valuetopup operators for a country and return them in the same
+     * shape as getProvidersSimple so the frontend can merge them transparently.
+     * GET /recharge/valuetopup/operators?country_iso=GB
+     */
+    public function getValuetopupOperators(Request $request, ValuetopupService $vt): JsonResponse
+    {
+        $request->validate([
+            'country_iso' => 'required|string|size:2',
+        ]);
+
+        $countryIso = $request->query('country_iso');
+        $result = $vt->operators();
+
+        if (!($result['responseCode'] ?? '') === '000' || empty($result['payLoad'])) {
+            return response()->json(['success' => true, 'providers' => []]);
+        }
+
+        $country = Country::where('iso_code', $countryIso)->first();
+
+        $providers = collect($result['payLoad'])->map(function ($item) use ($country, $countryIso) {
+            $operator = Operator::updateOrCreate(
+                [
+                    'provider_code' => 'vt-' . $item['operatorId'],
+                ],
+                [
+                    'name' => $item['operatorName'],
+                    'slug' => Str::slug($item['operatorName']),
+                    'country_id' => $country?->id,
+                    'logo_url' => $item['imageUrl'] ?? null,
+                    'region_codes' => json_encode([]),
+                    'payment_types' => json_encode(['valuetopup']),
+                    'is_premium' => false,
+                    'is_active' => true,
+                ]
+            );
+
+            return [
+                'provider_code'  => $operator->provider_code,
+                'provider_id'    => $operator->id,
+                'name'           => $operator->name,
+                'logo_url'       => $operator->logo_url,
+                'country_iso'    => $countryIso,
+                'source'         => 'valuetopup',
+                'valuetopup_id'  => $item['operatorId'],
+            ];
+        })->filter(fn($p) => !empty($p['provider_code']))->values()->all();
+
+        return response()->json(['success' => true, 'providers' => $providers]);
+    }
+
+    /**
+     * Fetch Valuetopup products + SKUs for an operator and return them
+     * in the same shape as getProducts so the frontend can merge them.
+     * GET /recharge/valuetopup/products?country_iso=GB&operator_id=67
+     */
+    public function getValuetopupProducts(Request $request, ValuetopupService $vt): JsonResponse
+    {
+        $request->validate([
+            'country_iso' => 'required|string|size:2',
+            'operator_id' => 'required|integer',
+        ]);
+
+        $countryIso = $request->query('country_iso');
+        $operatorId = (int) $request->query('operator_id');
+
+        $productsResult = $vt->products($operatorId);
+
+        if (!($productsResult['responseCode'] ?? '') === '000' || empty($productsResult['payLoad'])) {
+            return response()->json(['success' => true, 'products' => []]);
+        }
+
+        $products = [];
+        foreach ($productsResult['payLoad'] as $product) {
+            $productId = $product['productId'];
+
+            $skusResult = $vt->skus($productId);
+            if (!($skusResult['responseCode'] ?? '') !== '000' || empty($skusResult['payLoad'])) {
+                continue;
+            }
+
+            foreach ($skusResult['payLoad'] as $sku) {
+                $products[] = $vt->transformValuetopupProduct($sku);
+            }
+        }
+
+        return response()->json(['success' => true, 'products' => $products]);
+    }
+
+    /**
      * Get products for selected operator.
      * Always fetches from API and merges product descriptions.
      * GET /api/V1/GetProducts?countryIsos=<>&providerCodes=<>&accountNumber=<>
      */
+
+    /**
+     * Estimate cost for a Valuetopup SKU.
+     * POST /recharge/estimate-cost
+     */
+    public function estimateCost(Request $request, ValuetopupService $vt): JsonResponse
+    {
+        $request->validate([
+            'sku_id' => ['required', 'integer'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+        ]);
+
+        $result = $vt->estimateCost(
+            (int) $request->sku_id,
+            (float) $request->amount,
+            $request->currency ?? 'GBP'
+        );
+
+        if (!($result['responseCode'] ?? '') === '000' || empty($result['payLoad'])) {
+            return response()->json(['success' => false, 'error' => $result['responseMessage'] ?? 'Could not estimate cost'], 400);
+        }
+
+        $payload = $result['payLoad'];
+
+        return response()->json([
+            'success' => true,
+            'pricing' => [
+                'send_value'      => (float) ($payload['invoiceAmount'] ?? 0),
+                'send_currency'   => 'GBP',
+                'receive_value'   => (float) ($payload['localCurrencyAmount'] ?? 0),
+                'receive_currency' => $payload['destinationCurrency'] ?? 'GBP',
+                'face_value'      => (float) ($payload['faceValue'] ?? 0),
+                'face_value_currency' => $payload['faceValueCurrency'] ?? 'GBP',
+                'sales_tax'       => (float) ($payload['salesTaxAmount'] ?? 0),
+            ],
+        ]);
+    }
+
     public function getProducts(Request $request, DingConnectService $dingService): JsonResponse
     {
         $request->validate([
@@ -375,9 +503,10 @@ class RechargeController extends Controller
     /**
      * Initiate recharge (unified flow — Immediate + ReadReceipt)
      */
-    public function initiate(Request $request, DingConnectService $dingService)
+    public function initiate(Request $request, DingConnectService $dingService, ValuetopupService $vtService)
     {
         $isPin = $request->redemption_type === 'ReadReceipt';
+        $gateway = $request->input('gateway', 'ding');
 
         $request->validate([
             'sku_code' => ['required', 'string'],
@@ -399,6 +528,8 @@ class RechargeController extends Controller
             'mobile_number' => $isPin ? ['nullable', 'string'] : ['required', 'string', 'min:7', 'max:20'],
             'country_id' => ['required', 'exists:countries,id'],
             'operator_id' => ['required', 'exists:operators,id'],
+            'gateway' => ['nullable', 'string', 'in:ding,valuetopup'],
+            'valuetopup_sku_id' => ['nullable', 'integer'],
         ]);
 
         $user = $request->user();
@@ -431,8 +562,14 @@ class RechargeController extends Controller
         if ($request->redemption_type) {
             $settings['RedemptionMechanism'] = $request->redemption_type;
         }
+        if ($gateway === 'valuetopup') {
+            $settings['Gateway'] = 'valuetopup';
+            if ($request->valuetopup_sku_id) {
+                $settings['ValuetopupSkuId'] = (int) $request->valuetopup_sku_id;
+            }
+        }
 
-        $transaction = DB::transaction(function () use ($user, $operator, $country, $request, $retailerCharged, $orderReference, $receiptNumber, $accountNumber, $settings, $isPin) {
+        $transaction = DB::transaction(function () use ($user, $operator, $country, $request, $retailerCharged, $orderReference, $receiptNumber, $accountNumber, $settings, $isPin, $gateway) {
             $transaction = Transaction::create([
                 'user_id' => $user->id,
                 'mobile_number' => $accountNumber ?: ($request->mobile_number ?? ''),
@@ -461,6 +598,8 @@ class RechargeController extends Controller
                 'readmore_markdown' => $request->readmore_markdown,
                 'ding_order_reference' => $orderReference,
                 'receipt_number' => $receiptNumber,
+                'gateway' => $gateway,
+                'valuetopup_correlation_id' => $gateway === 'valuetopup' ? 'VT-' . strtoupper(Str::random(16)) : null,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);

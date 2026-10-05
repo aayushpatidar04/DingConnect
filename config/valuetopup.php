@@ -1,3 +1,5 @@
+<?php
+
 return [
     'base_url' => env('VALUETOPUP_BASE_URL', 'https://sandbox.valuetopup.com'),
     'username' => env('VALUETOPUP_USERNAME'),

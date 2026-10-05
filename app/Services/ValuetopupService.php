@@ -296,4 +296,120 @@ class ValuetopupService
             "/api/v2/esim/status/{$iccid}"
         );
     }
+
+    // =========================================================================
+    // DATA TRANSFORMERS
+    // =========================================================================
+
+    /**
+     * Convert a Valuetopup SKU payload into the same normalized format
+     * used by DingConnect's transformProduct(), so the frontend and
+     * transaction flow do not need to change.
+     *
+     * @param  array  $sku  Raw SKU object from /catalog/skus or /catalog/getproducts
+     * @return array
+     */
+    public function transformValuetopupProduct(array $sku): array
+    {
+        $min = $sku['min'] ?? [];
+        $max = $sku['max'] ?? [];
+
+        $sendValue       = (float) ($max['cost'] ?? $min['cost'] ?? 0);
+        $receiveValue    = (float) ($max['faceValue'] ?? $min['faceValue'] ?? 0);
+        $sendCurrency    = $min['costCurrency'] ?? 'GBP';
+        $receiveCurrency = $max['faceValueCurrency'] ?? $min['faceValueCurrency'] ?? 'GBP';
+
+        $category = strtolower($sku['category'] ?? 'rtr');
+        $isPin    = $category === 'pin';
+
+        return [
+            'sku_code'                    => 'vt-' . ($sku['skuId'] ?? ''),
+            'provider_code'               => 'vt-' . ($sku['operatorId'] ?? ''),
+            'region_code'                 => $sku['region'] ?? '',
+            'display_text'                => $sku['skuName'] ?? $sku['productName'] ?? '',
+            'localization_key'            => '',
+            'send_value'                  => $sendValue,
+            'receive_value'               => $receiveValue,
+            'send_currency'               => $sendCurrency,
+            'receive_currency'            => $receiveCurrency,
+            'receive_value_excluding_tax' => $receiveValue,
+            'commission_rate'             => 0,
+            'commission_applied'          => 0,
+            'validity_period'             => $sku['validity'] ?? '',
+            'benefits'                    => $sku['benefitType'] ? [$sku['benefitType']] : [],
+            'payment_types'               => [],
+            'processing_mode'             => 'Instant',
+            'redemption_type'             => $isPin ? 'ReadReceipt' : 'Immediate',
+            'product_type'                => $category,
+            'requires_receipt'            => $isPin,
+            'min_send_value'              => $sendValue,
+            'max_send_value'              => $sendValue,
+            'is_denomination'             => true,
+            'description_markdown'        => $sku['productDescription'] ?? '',
+            'readmore_markdown'           => $sku['additionalInformation'] ?? '',
+            '_valuetopup'                 => [
+                'skuId'       => $sku['skuId'] ?? null,
+                'productId'   => $sku['productId'] ?? null,
+                'operatorId'  => $sku['operatorId'] ?? null,
+                'productName' => $sku['productName'] ?? '',
+                'category'    => $category,
+            ],
+        ];
+    }
+
+    /**
+     * Normalize a Valuetopup transaction response into a flat array
+     * for saving to the transaction record.
+     *
+     * @param  array  $response
+     * @return array
+     */
+    public function normalizeValuetopupResponse(array $response): array
+    {
+        $payload = $response['payLoad'] ?? [];
+
+        $pinNumbers = [];
+        if (!empty($payload['pins']) && is_array($payload['pins'])) {
+            foreach ($payload['pins'] as $pin) {
+                $pinNumbers[] = [
+                    'pinNumber'             => $pin['pinNumber'] ?? '',
+                    'controlNumber'         => $pin['controlNumber'] ?? '',
+                    'deliveredAmount'       => $pin['deliveredAmount'] ?? 0,
+                    'deliveredCurrencyCode' => $pin['deliveredCurrencyCode'] ?? '',
+                    'expirationDate'        => $pin['expirationDate'] ?? null,
+                ];
+            }
+        }
+
+        $receiptText = null;
+        if (!empty($pinNumbers)) {
+            $lines = [];
+            foreach ($pinNumbers as $pin) {
+                $lines[] = "PIN: {$pin['pinNumber']}";
+                if ($pin['controlNumber']) {
+                    $lines[] = "Control: {$pin['controlNumber']}";
+                }
+            }
+            $receiptText = implode("\n", $lines);
+        }
+
+        return [
+            'valuetopup_transaction_id' => $payload['transactionId'] ?? null,
+            'valuetopup_response'       => $response,
+            'receipt_text'              => $receiptText,
+            'send_value'                => (float) ($payload['invoiceAmount'] ?? 0),
+            'receive_value'             => (float) ($payload['faceValue'] ?? 0),
+            'ding_transaction_id'       => $payload['topupDetail']['operatorTransactionId'] ?? null,
+        ];
+    }
+
+    public function isValuetopupSuccess(array $response): bool
+    {
+        return ($response['responseCode'] ?? '') === '000';
+    }
+
+    public function isValuetopupInProgress(array $response): bool
+    {
+        return ($response['responseCode'] ?? '') === '852';
+    }
 }

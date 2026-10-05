@@ -18,11 +18,13 @@ class Transaction extends Model
         'display_text', 'receipt_text', 'validity_period', 'benefits',
         'region_code', 'provider_code', 'free_range', 'receive_value_excluding_tax',
         'description_markdown', 'readmore_markdown',
+        'gateway', 'valuetopup_transaction_id', 'valuetopup_correlation_id', 'valuetopup_response',
     ];
 
     protected $casts = [
         'ding_response'              => 'array',
         'benefits'                   => 'array',
+        'valuetopup_response'        => 'array',
         'ip_address'                 => 'string',
         'callback_received'          => 'boolean',
         'callback_received_at'       => 'datetime',
