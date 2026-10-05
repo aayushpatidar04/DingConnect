@@ -373,16 +373,16 @@ function filterBy(type) {
         <!-- Add/Edit Modal -->
         <div
             v-if="showAddForm"
-            class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+            class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto"
             @click.self="showAddForm = false"
         >
             <div
-                class="bg-dark-800 rounded-2xl border border-dark-600 p-6 max-w-lg w-full"
+                class="bg-dark-800 rounded-2xl border border-dark-600 p-6 max-w-lg w-full max-h-[90vh] flex flex-col"
             >
-                <h3 class="text-lg font-bold text-white mb-4">
+                <h3 class="text-lg font-bold text-white mb-4 shrink-0">
                     {{ editingId ? "Edit Number" : "Add Number" }}
                 </h3>
-                <div class="space-y-4">
+                <div class="space-y-4 overflow-y-auto flex-1 pr-1">
                     <div>
                         <label
                             class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
@@ -457,7 +457,7 @@ function filterBy(type) {
                         >
                     </div>
                 </div>
-                <div class="flex gap-3 mt-6">
+                <div class="flex gap-3 mt-6 shrink-0">
                     <button
                         @click="submitForm"
                         class="flex-1 py-2.5 bg-primary text-white rounded-xl font-medium hover:bg-primary-dark transition"

@@ -1,0 +1,1076 @@
+{
+  "info": {
+    "_postman_id": "b74e6d6d-1426-43c2-81a8-a4c68a712aaa",
+    "name": "Valuetopup API",
+    "description": "</br><!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n<meta charset=\"UTF-8\">\r\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\r\n<p style=\"font-style: italic; color: red;\"></p>\r\n\r\n</body>\r\n</html>\r\n\r\n# Overview\r\nThis is the gateway of the Valuetopup system that allows other hosts to connect to it and perform transactions. This API is based on REST principles and uses JSON as the format for data interchange.\r\n\r\n## Authentication\r\nEach call to the API is authenticated via UserId and Password. Authentication to the API is performed by HTTP Basic Authentication. Prepay Nation will provide a user id and password.\r\nConsumers send credentials in **userId:password** base64-encoded format in the Authorization header.\r\n\r\nFor example, let’s assume User Id = testuser and Password = test1234.\r\nBase64 format of “testuser:test1234” is dGVzdHVzZXI6dGVzdDEyMzQ=\r\nThis must be in the header of each request – Authorization: {{basic_auth}}               \r\n\r\n\r\n## Response Model Structure\r\nIf the Valuetopup API and a response with the HTTP status code of 200, response will be provided in the following format:\r\n\r\n```\r\n{\r\n    \"responseCode\": \"string\",\r\n    \"responseMessage\": \"string\",\r\n    \"payLoad\": object\r\n}\r\n```\r\nFollowing is the field description:\r\n\r\n| Field         | Example value1      | Example value2       |\r\n|---------------|----------------------|----------------------|\r\n| responseCode  | 000                  | 501                |\r\n| responseMessage | null | The Subscriber number is not valid     |\r\n| payload       | It will show request information only if responseCode is 000. Otherwise, it is always null. | null          |\r\n| Transaction Status     | Successful           | Failed - It means the transaction is failed as the subscriber number is not valid.             |\r\n\r\n\r\n\r\n### ***<span style=\"color:red;\">IMPORTANT: Check for successful transaction you must check for 2 condition:***\r\n 1. The HTTP status code : 200 OK and\r\n 2. responseCode in the body of the response is \"000\". If the status code is 200 and responseCode is not \"000\" then you must follow the API documentation for subsequent actions. If the HTTP status code is other than 200 then consider the transaction as failed.\r\n\r\n***Successful Transaction Example:*** \r\n\r\nAs we can see in the below response, we got ```HTTP status code: 200 OK``` Success from the server and also ```responseCode = \"000\"```. So we can say the transaction has been success.\r\n```\r\n***Http Status Code: 200 OK Success***\r\nResponse Body\r\n{\r\n    \"responseCode\": \"000\",\r\n    \"responseMessage\": null,\r\n    \"payLoad\": object\r\n}\r\n```\r\n\r\n***Failed Transaction Example:*** \r\n\r\nAs we can see in the below response, we got ```HTTP status code: 200 OK``` Success from the server but we got the ```responseCode = \"501\"``` Invalid Subscriber.So this is a Failed Transaction as subscriber number is not valid.\r\n```\r\n***Http Status Code: 200 OK Success***\r\nResponse Body\r\n{\r\n    \"responseCode\": \"501\",\r\n    \"responseMessage\": \"The Subscriber number is not valid\",\r\n    \"payLoad\": null\r\n}\r\n```\r\n\r\n## Environment\r\nTo facilitate integration to the API and for testing, two distinct environments are provided:\r\n\r\n- Sandbox  API: https://sandbox.valuetopup.com/api/v2\r\n\r\n- Production API: https://www.valuetopup.com/api/v2\r\n\r\nSandbox environment can be used to access all API methods and perform transactions to test scenarios based on Integration test scenario sheet.\r\n\r\n**Production environment** – *actual transactions are performed, and it will charge to your account*.\r\n\r\n## Timeout Mitigation\r\n\r\nAn exceptional scenario might occur in which the recharge transaction does not return a response within the timeout duration set by your system. This might cause your system to throw a timeout error and think that there was not response from Prepay Nation API. The timeout error does not mean that the original transaction has failed in the Prepay Nation system. It means that your system could not wait any longer than the set timeout duration for the response from Prepay nation API.\r\nIf the original transaction is successful then your account will be charged.\r\n\r\nTo know the correct and final status of the original transaction we recommend that you implement the Check Status of transaction by customer unique correlation ID API method. This method will return you the final status of the original transaction.\r\n\r\nPlease follow the steps below:\r\nSend the corelationId value with every RTR or PIN transaction. This is the unique id from your system which will help us to identify the original transaction.\r\nIn case of a request timeout error, call \"\"Transaction API -> Check Status of transaction by customer unique correlation ID\"\" method and pass the correlation id from step #1.\r\nYou should call the Check Status of transaction by customer unique correlation ID method multiple times until you get a definite response of a success or a failure. Please refer to the documentation of \"\"Transaction API -> Check Status of transaction by customer unique correlation ID\"\" method.\r\n\r\n## Test simulation for Sandbox Environment\r\n\r\n### Scenarios to generate Timeout mitigation:\r\n\r\n1.) To generate Timeout error for 120 seconds, follow the below steps:\r\n    a.) Initiate Top-up: Start the process to top up the mobile number ending with \"666666\".\r\n    b.) Wait for 120 seconds: Allow the system 175 seconds to process the transaction.\r\n    c.) Check Transaction Status: Use the \"Transaction API → Check Status of transaction by customer unique correlation ID\" to check the status of the transaction. This API likely requires a unique correlation ID associated with the transaction to identify and retrieve its status.\r\n    d.) Get Final Result: After the 120 seconds timeout, use the unique correlation ID to query the status of the transaction via the \"Transaction API\". This should give you the final result of the top-up transaction.\r\n\r\n2.) To generate Timeout error for 90 seconds, follow the below steps:\r\n    a.) Initiate Top-up: Start the process to top up the mobile number ending with \"555555\".\r\n    b.) Wait for 90 Seconds: Allow the system 90 seconds to process the transaction.\r\n    c.) Check Transaction Status: Use the \"Transaction API → Check Status of transaction by customer unique correlation ID\" to check the status of the transaction. This API requires a unique correlation ID associated with the transaction to identify and retrieve its status.\r\n    d.) Get Final Result: After the 90-second timeout, use the unique correlation ID to query the status of the transaction via the \"Transaction API → Check Status of transaction by customer unique correlation ID\". This should give you the final result of the top-up transaction.\r\n\r\n### Scenarios to generate other errors:\r\n\r\n3.) Out of Stock sku Error: Mobile Number should end with \"510\" to generate \"Out of Stock\" Error\r\nRequest:\r\n```\r\nPOST https://{HostName}/api/v1/transaction/topup HTTP/1.1\r\nAuthorization: {{basic_auth}}\r\nContent-Type: application/json\r\n\r\n{\r\n    \"skuId\": 1451,\r\n    \"correlationId\": \"dinesh666677\",\r\n    \"mobile\": \"93989876510\",\r\n    \"amount\": 9,\r\n    \"transactionCurrencyCode\": \"USD\"\r\n}\r\n```\r\nResponse:\r\n```\r\n{\r\n    \"responseCode\": \"510\",\r\n    \"responseMessage\": \"The Sku is out of stock\",\r\n    \"payLoad\": null\r\n}\r\n```\r\n\r\n\r\n4.) Invalid Denomination Error: mobile number start with \"1876\" and end with \"888\" having skuid=193 and amount < 4\r\n\r\nRequest:\r\n```\r\nPOST https://{HostName}/api/v1/transaction/topup HTTP/1.1\r\nAuthorization: {{basic_auth}}\r\nContent-Type: application/json\r\n\r\n{\r\n    \"skuId\": 193,\r\n    \"correlationId\": \"dinesh666677\",\r\n    \"mobile\": \"18763351888\",\r\n    \"amount\": 4,\r\n    \"transactionCurrencyCode\": \"USD\"\r\n}\r\n```\r\n\r\nResponse:\r\n```\r\n{\r\n    \"responseCode\": \"001\",\r\n    \"responseMessage\": \"The charge amount for Denomination Digicel Jamaica should be between 5.00 USD and 100.00 USD\",\r\n    \"payLoad\": null\r\n}\r\n```\r\n\r\n\r\n5.) Account Not Activated Error: Mobile Number ending with \"500\"\r\nRequest:\r\n```\r\nPOST https://{HostName}/api/v1/transaction/topup HTTP/1.1\r\nAuthorization: {{basic_auth}}\r\nContent-Type: application/json                \r\n{\r\n    \"skuId\": 1451,\r\n    \"correlationId\": \"dinesh666677\",\r\n    \"mobile\": \"93989876500\",\r\n    \"amount\": 9,\r\n    \"transactionCurrencyCode\": \"USD\"\r\n}\r\n```\r\n\r\nResponse:\r\n```\r\n {\r\n    \"responseCode\": \"500\",\r\n    \"responseMessage\": \"The Account was not activated. a) Possible reasons are: Subscriber number is not found. b) Subscriber account is suspended c) Carrier's experienced internal error. Please try again\",\r\n    \"payLoad\": null\r\n }\r\n ```\r\n \r\n \r\n## Versioning\r\n\r\nThe API endpoints are prefixed with a version number to ensure seamless integration and to guarantee that future major changes to the API won't disrupt existing integrations. Within a major version, no breaking changes will be introduced, thus ensuring stability and compatibility. Further details regarding this distinction are elaborated in the subsequent subsection.\r\n\r\n### Non-Breaking Changes\r\nAlso referred to as backward-compatible alterations, these changes enable your integration to function seamlessly without necessitating additional adjustments on your end. They do not mandate a new version number and are implemented without prior notification.\r\n\r\nChanges falling under this category are primarily \"additive\" in nature, as exemplified below:\r\n- Introduction of new API endpoints\r\n- Inclusion of optional fields in the request body and/or header\r\n- Addition of fields to the response body and/or header\r\n- Data modifications, including:\r\n     - Addition of new Countries / Operators / Products / Services\r\n     - Alteration of text and/or numeric field values, such as:\r\n          - Country / Operator / Product / Service Names\r\n          - Wholesale / Retail Prices and/or Rates\r\n          - Status and Error Descriptions\r\n\r\n💡 Before deploying, it is crucial to ensure that your integration is capable of accommodating non-breaking API changes to minimize potential disruptions to your service.\r\n\r\n### Breaking Changes\r\nConversely, breaking changes requires adjustments to how your integration functions. These adjustments usually happen when there are significant updates to the API, aimed at improving features or the platform. However, with the endpoints of the API prefixed with a corresponding version number, your existing integration is protected from any disruption due to the complete isolation of implementation differences between versions.\r\n\r\nExamples of changes falling under this category include:\r\n- Removal and/or renaming of API endpoints\r\n- Addition of required fields to request body and/or header\r\n- Removal and/or renaming of fields from request body and/or header\r\n- Removal and/or renaming of fields from response body and/or header\r\n\r\n💡 Upon the availability of a new API version, it is advisable to conduct testing in a sandbox environment to ensure seamless compatibility with your implementation before transitioning to the production environment.\r\n\r\n## Two-Step Bundle Purchase Flow with Loan Requirement\r\nSome operators require customers to pay their outstanding loan amount during a bundle purchase. This scenario follows a specific transaction flow, referred to as a **two-step process**.\r\n\r\n### Step 1: Fetch Bundle API\r\n\r\nBegin by calling the `/catalog/bundles/` API. This API returns:\r\n\r\n- Bundles applicable to the customer's number\r\n- Loan information, if the customer has any outstanding dues\r\n\r\nThis ensures that the system can determine whether a loan payment is required before proceeding with the bundle purchase.\r\n\r\n### Step 2: Perform Bundle Purchase\r\n\r\nIf the response from Step 1 indicates that a loan payment is necessary, the bundle purchase must be executed in two steps:\r\n\r\n- The amount must include both the Face Value and Loan Amount\r\n- Pass this information along with the correct skuId, mobile number and transaction Currency to the `/transaction/topup/` API\r\n\r\n### Reference Document\r\n\r\nWe’ve prepared a detailed document outlining:\r\n\r\n- Step-by-step instructions\r\n- Sequence diagram for the two-step flow\r\n\r\n👉 [Click here to open this document](https://sandbox.valuetopup.com/docs/two_step_process.docx)\r\n\r\n\r\n## Localization and Multilingual Response Support\r\nThe following APIs now support localization:\r\n\r\n1. Catalog SKUs: `/api/v2/catalog/skus`\r\n2. Catalog GiftCards: `/api/v2/catalog/skus/giftcards`\r\n3. Mobile Number Lookup: `/api/v2/lookup/mobile/{mobile}`\r\n\r\nThe fields below are returned in a localized format based on the requested language:\r\n\r\n- SkuName\r\n- ProductName\r\n- BenefitType\r\n- ProductDescription\r\n- OperatorName\r\n- AdditionalInformation\r\n\r\nBy default, API responses are provided in **English**. \r\nHowever, the system now supports additional languages such as **Arabic**.\r\n\r\nTo receive the response in another supported language (e.g., Arabic), the client must include the \"Accept-Language\" in header with the appropriate language code.\r\n\r\nFor Arabic, use 'ar'\r\n",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "28872285",
+    "_collection_link": "https://go.postman.co/collection/28872285-b74e6d6d-1426-43c2-81a8-a4c68a712aaa?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "api",
+      "item": [
+        {
+          "name": "v2",
+          "item": [
+            {
+              "name": "account",
+              "item": [
+                {
+                  "name": "balance",
+                  "item": [
+                    {
+                      "name": "Check Balance",
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v2/account/balance",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v2",
+                            "account",
+                            "balance"
+                          ]
+                        },
+                        "description": "This method provides a real-time balance. For prepaid terms with Prepay Nation, the balance is returned with a negative sign to indicate available funds. For credit terms, the balance indicates the amount owed.\r\n\r\nThe transaction will only proceed if your wallet contains sufficient funds. We strongly advise utilizing this API method to monitor your wallet."
+                      },
+                      "response": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "catalog",
+              "item": [
+                {
+                  "name": "countries",
+                  "item": [
+                    {
+                      "name": "Get a list of Countries",
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v2/catalog/countries",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v2",
+                            "catalog",
+                            "countries"
+                          ]
+                        },
+                        "description": "This method can be utilized to retrieve a list of all available countries."
+                      },
+                      "response": []
+                    }
+                  ]
+                },
+                {
+                  "name": "operators",
+                  "item": [
+                    {
+                      "name": "Get Operators List",
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v2/catalog/operators?countryCode=GB",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v2",
+                            "catalog",
+                            "operators"
+                          ],
+                          "query": [
+                            {
+                              "key": "operatorId",
+                              "value": "54",
+                              "description": "Operator Id",
+                              "disabled": true
+                            },
+                            {
+                              "key": "countryCode",
+                              "value": "GB",
+                              "description": "Country Code"
+                            }
+                          ]
+                        },
+                        "description": "Return the operators list"
+                      },
+                      "response": []
+                    }
+                  ]
+                },
+                {
+                  "name": "getproducts",
+                  "item": [
+                    {
+                      "name": "Get a list of Products",
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v2/catalog/getproducts?operatorId=67&countryCode=GB",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v2",
+                            "catalog",
+                            "getproducts"
+                          ],
+                          "query": [
+                            {
+                              "key": "operatorId",
+                              "value": "67",
+                              "description": "Operator Id"
+                            },
+                            {
+                              "key": "categoryId",
+                              "value": "integer",
+                              "description": "Category Id",
+                              "disabled": true
+                            },
+                            {
+                              "key": "countryCode",
+                              "value": "GB",
+                              "description": "Country Code"
+                            }
+                          ]
+                        },
+                        "description": "Get a list of products available to the agent. You can use OperatorId to get a list of products from /getproducts API.\r\nAvailable Category Id Values: Pin = 1, Rtr = 2, Bill Pay = 4, Sim = 5, Gift Card = 6, eSim = 7."
+                      },
+                      "response": []
+                    }
+                  ]
+                },
+                {
+                  "name": "skus",
+                  "item": [
+                    {
+                      "name": "giftcards",
+                      "item": [
+                        {
+                          "name": "Get list of Gift Card Skus",
+                          "request": {
+                            "method": "GET",
+                            "header": [
+                              {
+                                "key": "Accept-Language",
+                                "value": "string",
+                                "description": "Language code for localized responses (for eg 'ar').\r\n\r\nRefer [Localization and Multilingual Response Support](#section/Overview/Localization-and-Multilingual-Response-Support) section for more details."
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              }
+                            ],
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v2/catalog/skus/giftcards?cursor=integer&pageSize=integer&productId=integer&skuId=integer&countryCode=string",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v2",
+                                "catalog",
+                                "skus",
+                                "giftcards"
+                              ],
+                              "query": [
+                                {
+                                  "key": "cursor",
+                                  "value": "integer",
+                                  "description": "The cursor is used to retrieve the next set of SKUs. For example, cursor=10, will retrieve SKUs starting from skuId : 10 based on the specified page size."
+                                },
+                                {
+                                  "key": "pageSize",
+                                  "value": "integer",
+                                  "description": "The number of items to retrieve starting with the cursor. The page size must be at least 1 and not more than 100."
+                                },
+                                {
+                                  "key": "productId",
+                                  "value": "integer",
+                                  "description": "Product Id - The ProductId can be obtained by the “/catalog/getproducts/” API."
+                                },
+                                {
+                                  "key": "skuId",
+                                  "value": "integer",
+                                  "description": "Sku Id of denomination"
+                                },
+                                {
+                                  "key": "countryCode",
+                                  "value": "string",
+                                  "description": "ISO Country Code e.g. IN for India"
+                                }
+                              ]
+                            },
+                            "description": "This operation retrieves all Gift Card products along with their SKU IDs.                \r\n\r\nNote: If neither cursor nor a pageSize is provided, the default response will display only 100 Gift Card SKUs."
+                          },
+                          "response": []
+                        }
+                      ]
+                    },
+                    {
+                      "name": "skus",
+                      "item": []
+                    },
+                    {
+                      "name": "Get list of Skus",
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept-Language",
+                            "value": "string",
+                            "description": "Language code for localized responses (for eg 'ar').\r\n\r\nRefer [Localization and Multilingual Response Support](#section/Overview/Localization-and-Multilingual-Response-Support) section for more details."
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v2/catalog/skus?productId=2186",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v2",
+                            "catalog",
+                            "skus"
+                          ],
+                          "query": [
+                            {
+                              "key": "productId",
+                              "value": "2186"
+                            },
+                            {
+                              "key": "skuId",
+                              "value": "integer",
+                              "disabled": true
+                            }
+                          ]
+                        },
+                        "description": "This operation retrieves all products except **Gift Card** along with their SKU IDs."
+                      },
+                      "response": []
+                    }
+                  ]
+                },
+                {
+                  "name": "sku",
+                  "item": [
+                    {
+                      "name": "exchangeRate",
+                      "item": [
+                        {
+                          "name": "{skuId}",
+                          "item": [
+                            {
+                              "name": "Get Exchange Rate",
+                              "request": {
+                                "method": "GET",
+                                "header": [
+                                  {
+                                    "key": "Accept",
+                                    "value": "application/json"
+                                  }
+                                ],
+                                "url": {
+                                  "raw": "{{baseUrl}}/api/v2/catalog/sku/exchangeRate/:skuId",
+                                  "host": [
+                                    "{{baseUrl}}"
+                                  ],
+                                  "path": [
+                                    "api",
+                                    "v2",
+                                    "catalog",
+                                    "sku",
+                                    "exchangeRate",
+                                    ":skuId"
+                                  ],
+                                  "variable": [
+                                    {
+                                      "key": "skuId",
+                                      "value": "integer",
+                                      "description": "Sku Id"
+                                    }
+                                  ]
+                                },
+                                "description": "Return the most current exchange of a Sku"
+                              },
+                              "response": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "errors",
+                  "item": [
+                    {
+                      "name": "Get a list of Error Codes",
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v2/catalog/errors",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v2",
+                            "catalog",
+                            "errors"
+                          ]
+                        }
+                      },
+                      "response": []
+                    }
+                  ]
+                },
+                {
+                  "name": "bundles",
+                  "item": [
+                    {
+                      "name": "{productId}",
+                      "item": [
+                        {
+                          "name": "{mobileNumber}",
+                          "item": [
+                            {
+                              "name": "Get list of Bundles",
+                              "request": {
+                                "method": "GET",
+                                "header": [
+                                  {
+                                    "key": "Accept",
+                                    "value": "application/json"
+                                  }
+                                ],
+                                "url": {
+                                  "raw": "{{baseUrl}}/api/v2/catalog/bundles/:productId/:mobileNumber",
+                                  "host": [
+                                    "{{baseUrl}}"
+                                  ],
+                                  "path": [
+                                    "api",
+                                    "v2",
+                                    "catalog",
+                                    "bundles",
+                                    ":productId",
+                                    ":mobileNumber"
+                                  ],
+                                  "variable": [
+                                    {
+                                      "key": "productId",
+                                      "value": "integer"
+                                    },
+                                    {
+                                      "key": "mobileNumber",
+                                      "value": "string"
+                                    }
+                                  ]
+                                },
+                                "description": "This operation returns list of dynamic bundles"
+                              },
+                              "response": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "esim",
+              "item": [
+                {
+                  "name": "order",
+                  "item": [
+                    {
+                      "name": "eSIM Transaction",
+                      "request": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"correlationId\": \"string\",\n  \"skuId\": 0\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v2/esim/order",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v2",
+                            "esim",
+                            "order"
+                          ]
+                        },
+                        "description": "This operation is used to buy eSIM products"
+                      },
+                      "response": []
+                    }
+                  ]
+                },
+                {
+                  "name": "status",
+                  "item": [
+                    {
+                      "name": "{Iccid}",
+                      "item": [
+                        {
+                          "name": "Get Remaining Data Balance of Bundle",
+                          "request": {
+                            "method": "GET",
+                            "header": [
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              }
+                            ],
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v2/esim/status/:Iccid",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v2",
+                                "esim",
+                                "status",
+                                ":Iccid"
+                              ],
+                              "variable": [
+                                {
+                                  "key": "Iccid",
+                                  "value": "string",
+                                  "description": "Iccid which you received from eSIM order response"
+                                }
+                              ]
+                            },
+                            "description": "This operation is used to check the current data balance of eSIM"
+                          },
+                          "response": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "lookup",
+              "item": [
+                {
+                  "name": "mobile",
+                  "item": [
+                    {
+                      "name": "{mobile}",
+                      "item": [
+                        {
+                          "name": "Mobile Number Lookup",
+                          "request": {
+                            "method": "GET",
+                            "header": [
+                              {
+                                "key": "Accept-Language",
+                                "value": "string",
+                                "description": "Language code for localized responses (for eg 'ar').\r\n\r\nRefer [Localization and Multilingual Response Support](#section/Overview/Localization-and-Multilingual-Response-Support) section for more details."
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              }
+                            ],
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v2/lookup/mobile/:mobile",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v2",
+                                "lookup",
+                                "mobile",
+                                ":mobile"
+                              ],
+                              "variable": [
+                                {
+                                  "key": "mobile",
+                                  "value": "integer",
+                                  "description": "Mobile Number with country code"
+                                }
+                              ]
+                            },
+                            "description": "Get operator and product information for a specific mobile number. Pass mobile number along with country code to validate MSISDN.\r\n\r\n**Sandbox environment** - We only support phone number lookup for Jamaica, India, Pakistan, and Mexico. Please utilize any phone number with a valid country code from these countries for testing purposes in the Sandbox environment. \r\n\r\n**Production environment** - We provide support for all countries excluding the United States and Spain.\r\n\r\n**Note**: Providing end users with the choice to make a final operator selection is crucial. Occasionally, the results obtained from a lookup request may not accurately reflect the most up-to-date information, particularly after a recent porting of the mobile number to a new operator. Introducing this extra step enhances accuracy and enhances the user experience as a whole."
+                          },
+                          "response": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "billpay",
+                  "item": [
+                    {
+                      "name": "fetch-account-detail",
+                      "item": [
+                        {
+                          "name": "Bill Payment",
+                          "request": {
+                            "method": "GET",
+                            "header": [
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              }
+                            ],
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v2/lookup/billpay/fetch-account-detail?skuId=integer&accountNumber=string",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v2",
+                                "lookup",
+                                "billpay",
+                                "fetch-account-detail"
+                              ],
+                              "query": [
+                                {
+                                  "key": "skuId",
+                                  "value": "integer",
+                                  "description": "Sku Id of Product"
+                                },
+                                {
+                                  "key": "accountNumber",
+                                  "value": "string",
+                                  "description": "bill account number"
+                                }
+                              ]
+                            },
+                            "description": "This operation is used to fetch bill detail"
+                          },
+                          "response": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "promotion",
+              "item": [
+                {
+                  "name": "current",
+                  "item": [
+                    {
+                      "name": "Get a List of current promotions",
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v2/promotion/current",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v2",
+                            "promotion",
+                            "current"
+                          ]
+                        },
+                        "description": "Retrieve a list of all currently active promotions."
+                      },
+                      "response": []
+                    }
+                  ]
+                },
+                {
+                  "name": "upcoming",
+                  "item": [
+                    {
+                      "name": "Get a List of Upcoming promotions",
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v2/promotion/upcoming",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v2",
+                            "promotion",
+                            "upcoming"
+                          ]
+                        },
+                        "description": "Retrieve a list of all future promotions."
+                      },
+                      "response": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "transaction",
+              "item": [
+                {
+                  "name": "topup",
+                  "item": [
+                    {
+                      "name": "Mobile Topup",
+                      "request": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"amount\": 0.1,\n  \"correlationId\": \"string\",\n  \"mobile\": \"string\",\n  \"skuId\": 0,\n  \"transactionCurrencyCode\": \"\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v2/transaction/topup",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v2",
+                            "transaction",
+                            "topup"
+                          ]
+                        },
+                        "description": "This operation facilitates mobile number top-up. Agents can initiate this request by providing the *SkuId*, obtained from the Product API, along with the *amount*, *mobile*, and *correlationId*. It's crucial for the agent to include a correlationId, serving as a unique transaction identifier within their system, which can be utilized for reconciliation purposes.     \r\n\r\n**Sandbox Environment**: For testing purposes, any number can be passed. However, it's essential to ensure that the mobile number adheres to country-specific formatting guidelines. For example, in Jamaica, the country code is 1876, and the number length is 7 digits. Thus, any number in the format 1876XXXXXXX can be used."
+                      },
+                      "response": []
+                    }
+                  ]
+                },
+                {
+                  "name": "pin",
+                  "item": [
+                    {
+                      "name": "Pin Transaction",
+                      "request": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"correlationId\": \"string\",\n  \"skuId\": 0,\n  \"recipient\": \"\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v2/transaction/pin",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v2",
+                            "transaction",
+                            "pin"
+                          ]
+                        },
+                        "description": "This operation is used to buy PIN products"
+                      },
+                      "response": []
+                    }
+                  ]
+                },
+                {
+                  "name": "billpay",
+                  "item": [
+                    {
+                      "name": "Bill Payment",
+                      "request": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"accountNumber\": \"string\",\n  \"amount\": 0.1,\n  \"correlationId\": \"string\",\n  \"skuId\": 0,\n  \"transactionCurrencyCode\": \"\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v2/transaction/billpay",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v2",
+                            "transaction",
+                            "billpay"
+                          ]
+                        },
+                        "description": "This operation is used to perform Bill Payment"
+                      },
+                      "response": []
+                    }
+                  ]
+                },
+                {
+                  "name": "status",
+                  "item": [
+                    {
+                      "name": "{correlationId}",
+                      "item": [
+                        {
+                          "name": "Check Status of transaction by correlation ID",
+                          "request": {
+                            "method": "GET",
+                            "header": [
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              }
+                            ],
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v2/transaction/status/:correlationId",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v2",
+                                "transaction",
+                                "status",
+                                ":correlationId"
+                              ],
+                              "variable": [
+                                {
+                                  "key": "correlationId",
+                                  "value": "string",
+                                  "description": "Correlation ID which you send in actual topup api method."
+                                }
+                              ]
+                            },
+                            "description": "This operation is used to check status of Transaction Status. This is very useful API method to check status of original transaction in case if you don't get response of original transaction within \r\nthe timeout set by your system.\r\nTo know the correct and final status of the original transaction we recommend that you to implement this API method to check status. This method will return you final status of the original transaction.\r\n\r\nPlease follow the steps below -\r\n    1.\tSend the corelationId value with every RTR or PIN transaction. This is the unique id from your system \r\n        which will help us to identify the original transaction.\r\n    2.\tIn case of a request timeout error, call Transaction Check Status (/transaction/status) method and pass the correlation id from step #1.\r\n    3.\tYou should call the Transaction Check Status (/transaction/status) method multiple times until you get a definite response of a success or\r\n        a failure. Please refer to the documentation of Transaction Check Status (/transaction/status) method.\r\n          \r\n\r\nIf the response code is \"852,\" it means the transaction is still in progress. Any other response code should be considered the final status of the transaction. This could either be successful (\"000\") or failed (any code other than \"000\"). \r\n            \r\n```Prepay nation Timeout = 2 minute```"
+                          },
+                          "response": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "giftcard",
+                  "item": [
+                    {
+                      "name": "order",
+                      "item": [
+                        {
+                          "name": "Gift Card",
+                          "request": {
+                            "method": "POST",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"amount\": 0.1,\n  \"correlationId\": \"string\",\n  \"skuId\": 0,\n  \"recipient\": \"\",\n  \"transactionCurrencyCode\": \"\"\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v2/transaction/giftcard/order",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v2",
+                                "transaction",
+                                "giftcard",
+                                "order"
+                              ]
+                            },
+                            "description": "This operation is used to buy Gift card.\r\n\r\n**Important Note:** Gift card processing may take longer than usual. If you receive response code **852** with the message \"Gift card processing is in progress.\" it means the transaction is still being processed. In this case, you **must** check the transaction status using the **Check Status API** (`/transaction/status/{correlationId}`) to obtain the final result. Please refer to the \"Check Status of transaction by correlation ID\" endpoint documentation for more details.\r\n\r\nResponse code **852** indicates the transaction is in progress. Any other response code represents the final transaction status - either success (**000**) or failure (any code other than **000**)."
+                          },
+                          "response": []
+                        }
+                      ]
+                    },
+                    {
+                      "name": "fetch",
+                      "item": [
+                        {
+                          "name": "{id}",
+                          "item": [
+                            {
+                              "name": "Fetch Gift card information",
+                              "request": {
+                                "method": "GET",
+                                "header": [
+                                  {
+                                    "key": "Accept",
+                                    "value": "application/json"
+                                  }
+                                ],
+                                "url": {
+                                  "raw": "{{baseUrl}}/api/v2/transaction/giftcard/fetch/:id",
+                                  "host": [
+                                    "{{baseUrl}}"
+                                  ],
+                                  "path": [
+                                    "api",
+                                    "v2",
+                                    "transaction",
+                                    "giftcard",
+                                    "fetch",
+                                    ":id"
+                                  ],
+                                  "variable": [
+                                    {
+                                      "key": "id",
+                                      "value": "integer",
+                                      "description": "Transaction Id which you receive in Gift card Operation"
+                                    }
+                                  ]
+                                }
+                              },
+                              "response": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "estimatecost",
+                  "item": [
+                    {
+                      "name": "Estimated Cost",
+                      "request": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"amount\": 0.1,\n  \"skuId\": 0,\n  \"transactionCurrencyCode\": \"\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v2/transaction/estimatecost",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v2",
+                            "transaction",
+                            "estimatecost"
+                          ]
+                        },
+                        "description": "This operation is used to get the estimate cost of product"
+                      },
+                      "response": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "password",
+        "value": "{{Password}}",
+        "type": "string"
+      },
+      {
+        "key": "username",
+        "value": "{{UserId}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "/"
+    },
+    {
+      "key": "UserId",
+      "value": ""
+    },
+    {
+      "key": "Password",
+      "secret": true
+    }
+  ]
+}

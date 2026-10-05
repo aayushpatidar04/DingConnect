@@ -928,7 +928,11 @@ onMounted(() => {
                     :disabled="!canProceedFromPhone || validatingNumber"
                     class="mt-6 w-full btn-primary text-white py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {{ validatingNumber ? "Verifying number..." : "Continue to Review →" }}
+                    {{
+                        validatingNumber
+                            ? "Verifying number..."
+                            : "Continue to Review →"
+                    }}
                 </button>
             </div>
         </div>
@@ -1156,12 +1160,12 @@ onMounted(() => {
         <div
             v-if="showPromotionsModal"
             @click.self="closePromotionsModal"
-            class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
         >
             <div
-                class="bg-dark-800 border border-dark-600 rounded-2xl max-w-md w-full p-6"
+                class="bg-dark-800 border border-dark-600 rounded-2xl max-w-md w-full max-h-[90vh] flex flex-col"
             >
-                <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center justify-between mb-4 shrink-0">
                     <h3 class="text-lg font-semibold text-white">
                         🎁 Available Promotions
                     </h3>
@@ -1172,7 +1176,7 @@ onMounted(() => {
                         &times;
                     </button>
                 </div>
-                <div class="space-y-3 max-h-96 overflow-y-auto">
+                <div class="space-y-3 overflow-y-auto flex-1 pr-1">
                     <div
                         v-for="promo in promotions"
                         :key="promo.localization_key"
@@ -1196,7 +1200,7 @@ onMounted(() => {
                 </div>
                 <button
                     @click="closePromotionsModal"
-                    class="mt-6 w-full btn-primary text-white py-3 rounded-xl font-semibold"
+                    class="mt-6 w-full btn-primary text-white py-3 rounded-xl font-semibold shrink-0"
                 >
                     Got it
                 </button>
@@ -1209,13 +1213,13 @@ onMounted(() => {
         <div
             v-if="showReviewModal"
             @click.self="cancelReview"
-            class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
         >
             <div
-                class="bg-dark-800 border border-dark-600 rounded-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto"
+                class="bg-dark-800 border border-dark-600 rounded-2xl max-w-md w-full p-6 max-h-[90vh] flex flex-col"
             >
                 <div
-                    class="text-center border-b border-dashed border-dark-600 pb-4 mb-4"
+                    class="text-center border-b border-dashed border-dark-600 pb-4 mb-4 shrink-0"
                 >
                     <h3 class="text-lg font-bold text-white">Review Order</h3>
                     <p class="text-xs text-dark-400 font-mono mt-1">
@@ -1224,142 +1228,155 @@ onMounted(() => {
                     <p class="text-xs text-dark-400">{{ reviewTimestamp }}</p>
                 </div>
 
-                <div class="space-y-2 text-sm mb-4">
-                    <div class="flex justify-between">
-                        <span class="text-dark-300">Country</span>
-                        <span class="text-white"
-                            >{{ selectedCountry?.name }} ({{
-                                currentCountryIso
-                            }})</span
-                        >
-                    </div>
-                    <div v-if="!isPinProduct" class="flex justify-between">
-                        <span class="text-dark-300">Phone</span>
-                        <span class="text-white">+{{ cleanedPhone }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-dark-300">Operator</span>
-                        <span class="text-white">{{
-                            selectedProvider?.name
-                        }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-dark-300">Product</span>
-                        <span class="text-white">{{
-                            selectedProduct?.display_text || selectedSkuCode
-                        }}</span>
-                    </div>
-                    <div
-                        v-if="selectedProduct?.validity_period"
-                        class="flex justify-between"
-                    >
-                        <span class="text-dark-300">Validity</span>
-                        <span class="text-green-400">{{
-                            parseValidityPeriod(selectedProduct.validity_period)
-                        }}</span>
-                    </div>
-                </div>
-
-                <div class="border-t border-dashed border-dark-600 pt-3 mb-4">
-                    <div class="flex justify-between items-baseline">
-                        <span class="text-dark-300">You Pay</span>
-                        <span class="text-xl font-bold text-white">
-                            {{ form.send_currency }}
-                            {{ form.send_value.toFixed(2) }}
-                        </span>
-                    </div>
-                    <div class="flex justify-between text-sm mt-1">
-                        <span class="text-dark-300">Customer Gets</span>
-                        <span class="text-green-400">
-                            {{ form.receive_currency }}
-                            {{ form.receive_value.toFixed(2) }}
-                        </span>
-                    </div>
-                </div>
-
-                <div
-                    v-if="productReadmore || productDescription"
-                    class="mb-4 text-xs text-dark-300"
-                >
-                    <div v-html="productReadmore || productDescription"></div>
-                </div>
-
-                <div class="flex gap-3">
-                    <button
-                        @click="cancelReview"
-                        :disabled="submitting"
-                        class="flex-1 border border-dark-600 text-white py-3 rounded-xl font-semibold hover:bg-dark-700 disabled:opacity-50"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        @click="submitRecharge('buy')"
-                        :disabled="submitting"
-                        class="flex-1 btn-primary text-white py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {{
-                            submitting
-                                ? "Processing..."
-                                : isPinProduct
-                                  ? "Purchase PIN"
-                                  : "Proceed with Recharge"
-                        }}
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- =================================================================
-             PIN / VOUCHER MODAL
-             ================================================================= -->
-        <div
-            v-if="showPinModal"
-            @click.self="closePinModal"
-            class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-        >
-            <div
-                class="bg-dark-800 border border-green-500/30 rounded-2xl max-w-md w-full p-6"
-            >
-                <div class="text-center">
-                    <div
-                        class="w-12 h-12 mx-auto bg-green-500/20 rounded-full flex items-center justify-center mb-4"
-                    >
-                        &#10003;
-                    </div>
-                    <h3 class="text-xl font-bold text-white mb-2">
-                        Recharge Successful!
-                    </h3>
-                    <p class="text-sm text-dark-300 mb-4">
-                        Please share this PIN with your customer
-                    </p>
-                </div>
-                <div class="bg-dark-700 rounded-xl p-4 mb-4">
-                    <div class="text-xs text-dark-400 mb-1">Receipt Number</div>
-                    <div class="text-white font-mono text-sm mb-3">
-                        {{ receiptNumber }}
-                    </div>
-                    <div class="text-xs text-dark-400 mb-1">
-                        PIN / Voucher Code
-                    </div>
-                    <div class="flex items-center gap-2">
+                <div class="overflow-y-auto flex-1 pr-1">
+                    <div class="space-y-2 text-sm mb-4">
+                        <div class="flex justify-between">
+                            <span class="text-dark-300">Country</span>
+                            <span class="text-white"
+                                >{{ selectedCountry?.name }} ({{
+                                    currentCountryIso
+                                }})</span
+                            >
+                        </div>
+                        <div v-if="!isPinProduct" class="flex justify-between">
+                            <span class="text-dark-300">Phone</span>
+                            <span class="text-white">+{{ cleanedPhone }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-dark-300">Operator</span>
+                            <span class="text-white">{{
+                                selectedProvider?.name
+                            }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-dark-300">Product</span>
+                            <span class="text-white">{{
+                                selectedProduct?.display_text || selectedSkuCode
+                            }}</span>
+                        </div>
                         <div
-                            class="flex-1 bg-dark-900 rounded-lg p-3 border border-primary/30 text-primary-light font-bold break-all"
-                            v-html="receiptText.replace(/\n/g, '<br>')"
-                        ></div>
-                        <button
-                            @click="copyPin"
-                            class="text-xs bg-dark-700 px-3 py-2 rounded text-dark-300 hover:text-white transition whitespace-nowrap"
+                            v-if="selectedProduct?.validity_period"
+                            class="flex justify-between"
                         >
-                            📋 Copy
+                            <span class="text-dark-300">Validity</span>
+                            <span class="text-green-400">{{
+                                parseValidityPeriod(
+                                    selectedProduct.validity_period,
+                                )
+                            }}</span>
+                        </div>
+                    </div>
+
+                    <div
+                        class="border-t border-dashed border-dark-600 pt-3 mb-4"
+                    >
+                        <div class="flex justify-between items-baseline">
+                            <span class="text-dark-300">You Pay</span>
+                            <span class="text-xl font-bold text-white">
+                                {{ form.send_currency }}
+                                {{ form.send_value.toFixed(2) }}
+                            </span>
+                        </div>
+                        <div class="flex justify-between text-sm mt-1">
+                            <span class="text-dark-300">Customer Gets</span>
+                            <span class="text-green-400">
+                                {{ form.receive_currency }}
+                                {{ form.receive_value.toFixed(2) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div
+                        v-if="productReadmore || productDescription"
+                        class="mb-4 text-xs text-dark-300"
+                    >
+                        <div
+                            v-html="productReadmore || productDescription"
+                        ></div>
+                    </div>
+                    <div class="flex gap-3 mt-4 shrink-0">
+                        <button
+                            @click="cancelReview"
+                            :disabled="submitting"
+                            class="flex-1 border border-dark-600 text-white py-3 rounded-xl font-semibold hover:bg-dark-700 disabled:opacity-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            @click="submitRecharge('buy')"
+                            :disabled="submitting"
+                            class="flex-1 btn-primary text-white py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {{
+                                submitting
+                                    ? "Processing..."
+                                    : isPinProduct
+                                      ? "Purchase PIN"
+                                      : "Proceed with Recharge"
+                            }}
                         </button>
                     </div>
                 </div>
-                <button
-                    @click="closePinModal"
-                    class="w-full btn-primary text-white py-3 rounded-xl font-semibold"
+
+                <!-- =================================================================
+             PIN / VOUCHER MODAL
+             ================================================================= -->
+                <div
+                    v-if="showPinModal"
+                    @click.self="closePinModal"
+                    class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
                 >
-                    Close
-                </button>
+                    <div
+                        class="bg-dark-800 border border-green-500/30 rounded-2xl max-w-md w-full p-6 max-h-[90vh] flex flex-col"
+                    >
+                        <div class="text-center shrink-0">
+                            <div
+                                class="w-12 h-12 mx-auto bg-green-500/20 rounded-full flex items-center justify-center mb-4"
+                            >
+                                &#10003;
+                            </div>
+                            <h3 class="text-xl font-bold text-white mb-2">
+                                Recharge Successful!
+                            </h3>
+                            <p class="text-sm text-dark-300 mb-4">
+                                Please share this PIN with your customer
+                            </p>
+                        </div>
+                        <div class="overflow-y-auto flex-1 pr-1">
+                            <div class="bg-dark-700 rounded-xl p-4 mb-4">
+                                <div class="text-xs text-dark-400 mb-1">
+                                    Receipt Number
+                                </div>
+                                <div class="text-white font-mono text-sm mb-3">
+                                    {{ receiptNumber }}
+                                </div>
+                                <div class="text-xs text-dark-400 mb-1">
+                                    PIN / Voucher Code
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div
+                                        class="flex-1 bg-dark-900 rounded-lg p-3 border border-primary/30 text-primary-light font-bold break-all"
+                                        v-html="
+                                            receiptText.replace(/\n/g, '<br>')
+                                        "
+                                    ></div>
+                                    <button
+                                        @click="copyPin"
+                                        class="text-xs bg-dark-700 px-3 py-2 rounded text-dark-300 hover:text-white transition whitespace-nowrap"
+                                    >
+                                        📋 Copy
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button
+                            @click="closePinModal"
+                            class="w-full btn-primary text-white py-3 rounded-xl font-semibold shrink-0 mt-4"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
