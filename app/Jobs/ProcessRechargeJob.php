@@ -176,6 +176,9 @@ class ProcessRechargeJob implements ShouldQueue
             $result = $vt->pin($skuId, $recipient, $correlationId);
         } else {
             $mobile = preg_replace('/[^0-9]/', '', $this->transaction->mobile_number);
+            if (str_starts_with($mobile, '44')) {
+                $mobile = substr($mobile, 2);
+            }
             $result = $vt->topup($skuId, $mobile, $sendValue, $correlationId, $currency);
         }
 

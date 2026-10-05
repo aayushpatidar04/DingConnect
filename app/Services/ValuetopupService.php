@@ -447,7 +447,6 @@ class ValuetopupService
             'valuetopup_response' => $response,
             'receipt_text' => $receiptText,
             'send_value' => (float) ($payload['invoiceAmount'] ?? 0),
-            'receive_value' => (float) ($payload['faceValue'] ?? 0),
             'ding_transaction_id' => $payload['topupDetail']['operatorTransactionId'] ?? null,
         ];
     }

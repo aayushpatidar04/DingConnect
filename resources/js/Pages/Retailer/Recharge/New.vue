@@ -463,6 +463,7 @@ async function proceedToConfirmFromNumber() {
         const params = new URLSearchParams({
             mobile_number: cleanedPhone.value,
             provider_code: selectedProvider.value.provider_code,
+            gateway: selectedProductSource.value === "valuetopup" ? "valuetopup" : "ding",
         });
         const res = await fetch(
             `/retailer/recharge/validate-number?${params.toString()}`,
@@ -474,7 +475,7 @@ async function proceedToConfirmFromNumber() {
             return;
         }
 
-        // Use the canonical number Ding verified
+        // Use the canonical number the gateway verified
         if (data.account_number) cleanedPhone.value = data.account_number;
     } catch (e) {
         errorMessage.value = "Network error. Please try again.";

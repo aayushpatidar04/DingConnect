@@ -504,20 +504,24 @@ class RechargeController extends Controller
      * Phone: 12 digits starting with 44 → checks DB with/without 44, then AccountLookup.
      * Serial: not 12-digit 44 → exact DB match, no AccountLookup.
      */
-    public function validateNumber(Request $request, DingConnectService $dingService)
+    public function validateNumber(Request $request, DingConnectService $dingService, ValuetopupService $vtService)
     {
         $request->validate([
             'mobile_number' => ['required', 'string', 'min:3', 'max:30'],
             'provider_code' => ['required', 'string'],
+            'gateway' => ['nullable', 'string', 'in:ding,valuetopup'],
         ]);
 
+        $gateway = $request->input('gateway', 'ding');
         $digits = preg_replace('/[^0-9]/', '', $request->mobile_number);
 
+        // =====================================================================
+        // STEP 1 — AllowedNumber check (same for both gateways)
+        // =====================================================================
         $isPhone = strlen($digits) === 12 && str_starts_with($digits, '44');
         $bareNumber = substr($digits, 2);
 
         if ($isPhone) {
-            // Match DB entry with 44 (449982414226) or without (9982414226)
             $allowed = AllowedNumber::where('active', true)
                 ->where(function ($q) use ($digits, $bareNumber) {
                     $q->where('number', $digits)
@@ -531,8 +535,100 @@ class RechargeController extends Controller
                     'error' => 'This number is not registered for recharges on this portal.',
                 ], 422);
             }
+        } else {
+            $allowed = AllowedNumber::where('active', true)
+                ->where('number', $digits)
+                ->first();
 
-            // AccountLookup with full 44-prefixed number
+            if (!$allowed) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'This number is not registered for recharges on this portal.',
+                ], 422);
+            }
+        }
+
+        // =====================================================================
+        // STEP 2 — Gateway-specific lookup
+        // =====================================================================
+        if ($gateway === 'valuetopup') {
+            // Resolve VT operator ID from the selected operator
+            $operator = Operator::where('provider_code', $request->provider_code)
+                ->orWhere('provider_code', $request->input('valuetopup_id'))
+                ->first();
+
+            $valuetopupId = null;
+            if ($operator) {
+                $valuetopupId = (int) ($operator->valuetopup_operator_id ?? 0);
+            }
+
+            if (!$valuetopupId) {
+                // Fallback: try to infer from provider_code "vt-123"
+                if (str_starts_with($request->provider_code, 'vt-')) {
+                    $valuetopupId = (int) substr($request->provider_code, 3);
+                }
+            }
+
+            if (!$valuetopupId) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Could not resolve operator for validation.',
+                ], 400);
+            }
+
+            // VT Mobile Lookup
+            try {
+                $result = $vtService->lookupMobile($digits);
+            } catch (\Throwable $e) {
+                Log::error('VT Mobile Lookup failed for ' . $digits . ': ' . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Could not verify this number right now. Please try again.',
+                ], 500);
+            }
+
+            if (($result['responseCode'] ?? '') !== '000' || empty($result['payLoad'])) {
+                return response()->json([
+                    'success' => false,
+                    'error' => $result['responseMessage'] ?? 'This number could not be verified. Please check it and try again.',
+                ], 422);
+            }
+
+            $payload = $result['payLoad'];
+
+            // Check if the selected operator appears in the lookup results
+            // VT lookup returns operatorId(s) — check if our operator matches
+            $lookupOperatorId = (int) ($payload['operatorId'] ?? 0);
+            $lookupOperatorIds = [];
+
+            // Some responses may return multiple operators
+            if (isset($payload['operators']) && is_array($payload['operators'])) {
+                foreach ($payload['operators'] as $op) {
+                    $lookupOperatorIds[] = (int) ($op['operatorId'] ?? $op['id'] ?? 0);
+                }
+            }
+
+            $allIds = $lookupOperatorIds ?: [$lookupOperatorId];
+
+            if (!in_array($valuetopupId, $allIds)) {
+                $operatorName = $operator->name ?? $request->provider_code;
+                return response()->json([
+                    'success' => false,
+                    'error' => "This number does not belong to {$operatorName}. Please check the number or change provider.",
+                ], 422);
+            }
+
+            return response()->json([
+                'success' => true,
+                'account_number' => $digits,
+                'gateway' => 'valuetopup',
+            ]);
+        }
+
+        // =====================================================================
+        // DINGCONNECT — AccountLookup with full 44-prefixed number
+        // =====================================================================
+        if ($isPhone) {
             try {
                 $result = $dingService->getAccountLookup($digits);
             } catch (\Throwable $e) {
@@ -561,24 +657,13 @@ class RechargeController extends Controller
                 ], 422);
             }
 
-            return response()->json(['success' => true, 'account_number' => $digits]);
+            return response()->json(['success' => true, 'account_number' => $digits, 'gateway' => 'ding']);
         }
 
-        // =========================================================
-        // SERIAL NUMBER — exact match, no AccountLookup
-        // =========================================================
-        $allowed = AllowedNumber::where('active', true)
-            ->where('number', $digits)
-            ->first();
-
-        if (!$allowed) {
-            return response()->json([
-                'success' => false,
-                'error' => 'This number is not registered for recharges on this portal.',
-            ], 422);
-        }
-
-        return response()->json(['success' => true, 'account_number' => $digits]);
+        // =====================================================================
+        // SERIAL NUMBER — exact match, no lookup (both gateways)
+        // =====================================================================
+        return response()->json(['success' => true, 'account_number' => $digits, 'gateway' => $gateway]);
     }
 
     /**
