@@ -160,7 +160,6 @@ class DingConnectService
                     return false;
                 }));
                 $result['data']['Items'] = $filtered;
-                $result['data'] = $filtered;
             }
         }
 
@@ -171,7 +170,7 @@ class DingConnectService
     private function allowedProviders(string $countryIso): ?array
     {
         return match ($countryIso) {
-            'GB' => ['Vodafone United Kingdom', 'O2 United Kingdom', 'Lebara United Kingdom', 'giffgaff United Kingdom', 'Lyca Mobile United Kingdom', '3 United Kingdom'],
+            'GB' => ['Vodafone United Kingdom', 'O2 United Kingdom', 'Lebara United Kingdom', 'giffgaff United Kingdom', 'Lyca Mobile United Kingdom', '3 United Kingdom', 'EE United Kingdom', 'Voxi United Kingdom', 'Smarty United Kingdom'],
             default => null,
         };
     }

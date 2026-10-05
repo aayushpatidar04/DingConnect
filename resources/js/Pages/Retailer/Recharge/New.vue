@@ -559,7 +559,7 @@ onMounted(() => {
         <div class="mb-6">
             <h1 class="text-3xl font-bold text-white mb-1">New Recharge</h1>
             <p class="text-dark-300">
-                Instant mobile top-up powered by DingConnect
+                Instant mobile top-up powered by MK Network
             </p>
         </div>
 

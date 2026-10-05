@@ -430,7 +430,7 @@ onMounted(async () => {
                 class="flex items-center justify-between"
             >
                 <div class="text-xs text-dark-400 uppercase tracking-wider">
-                    DingConnect ID
+                    Transaction ID
                 </div>
                 <button
                     @click="copyToClipboard(transaction.ding_transaction_id)"

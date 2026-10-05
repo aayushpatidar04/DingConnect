@@ -1,5 +1,6 @@
 <script setup>
 import { Head, Link } from "@inertiajs/vue3";
+import { computed, reactive } from "vue";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
 defineOptions({ layout: AdminLayout });
 
@@ -7,6 +8,25 @@ const props = defineProps({
     transactions: Object,
     stats: Object,
     retailers: Array,
+    filters: { type: Object, default: () => ({}) },
+});
+
+const filters = reactive({
+    status: props.filters.status ?? "",
+    retailer_id: props.filters.retailer_id ?? "",
+    from: props.filters.from ?? "",
+    to: props.filters.to ?? "",
+});
+
+const exportUrl = computed(() => {
+    const params = new URLSearchParams();
+    if (filters.from) params.set("from", filters.from);
+    if (filters.to) params.set("to", filters.to);
+    if (filters.status) params.set("status", filters.status);
+    if (filters.retailer_id) params.set("retailer_id", filters.retailer_id);
+
+    const qs = params.toString();
+    return "/admin/transactions/export" + (qs ? "?" + qs : "");
 });
 </script>
 
@@ -60,7 +80,7 @@ const props = defineProps({
             <div>
                 <label class="text-xs text-dark-300 block mb-1">Status</label
                 ><select
-                    name="status"
+                    name="status" v-model="filters.status"
                     class="border border-dark-600 rounded-lg px-3 py-2 text-sm bg-dark-700 text-white input-dark"
                 >
                     <option value="">All</option>
@@ -72,7 +92,7 @@ const props = defineProps({
             <div>
                 <label class="text-xs text-dark-300 block mb-1">Retailer</label
                 ><select
-                    name="retailer_id"
+                    name="retailer_id" v-model="filters.retailer_id"
                     class="border border-dark-600 rounded-lg px-3 py-2 text-sm bg-dark-700 text-white input-dark"
                 >
                     <option value="">All</option>
@@ -83,7 +103,7 @@ const props = defineProps({
             </div>
             <div>
                 <label class="text-xs text-dark-300 block mb-1">From</label
-                ><input
+                ><input v-model="filters.from"
                     type="date"
                     name="from"
                     class="border border-dark-600 rounded-lg px-3 py-2 text-sm bg-dark-700 text-white input-dark"
@@ -91,7 +111,7 @@ const props = defineProps({
             </div>
             <div>
                 <label class="text-xs text-dark-300 block mb-1">To</label
-                ><input
+                ><input v-model="filters.to"
                     type="date"
                     name="to"
                     class="border border-dark-600 rounded-lg px-3 py-2 text-sm bg-dark-700 text-white input-dark"
@@ -103,11 +123,12 @@ const props = defineProps({
             >
                 Filter
             </button>
-            <Link
-                href="/admin/transactions/export"
+            <a
+                :href="exportUrl"
                 class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark transition text-sm"
-                >Export</Link
             >
+                Export
+            </a>
         </form>
 
         <!-- Table -->

@@ -4,6 +4,10 @@ import AdminLayout from "@/Layouts/AdminLayout.vue";
 defineOptions({ layout: AdminLayout });
 
 const props = defineProps({ retailers: Object });
+
+const exportRetailers = () => {
+    window.location.href = route('admin.retailers.export') // use your route name
+}
 </script>
 
 <template>
@@ -15,10 +19,10 @@ const props = defineProps({ retailers: Object });
                 <p class="text-dark-300">Manage registered retailers</p>
             </div>
             <div class="flex gap-2">
-                <Link
-                    href="/admin/retailers/export"
+                <button
+                    @click="exportRetailers"
                     class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-dark text-sm font-medium transition"
-                    >Export CSV</Link
+                    >Export CSV</button
                 >
                 <Link
                     href="/admin/retailers/create"

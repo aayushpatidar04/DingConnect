@@ -2,13 +2,14 @@
 import { Head, Link } from "@inertiajs/vue3";
 import AppLayout from "@/Layouts/AppLayout.vue";
 import MkLogo from "@/Components/MkLogo.vue";
+import FlashMessage from "@/Components/FlashMessage.vue";
 defineOptions({ layout: AppLayout });
 </script>
 
 <template>
     <div>
         <Head title="MK Network - Mobile Top-Up Platform" />
-
+        <FlashMessage />
         <!-- Hero Section -->
         <section class="relative bg-dark-900 overflow-hidden">
             <!-- Background Effects -->

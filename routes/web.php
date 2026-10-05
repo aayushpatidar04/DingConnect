@@ -60,6 +60,10 @@ Route::post('/logout', [AuthController::class, 'logout'])
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
+    Route::get('/retailers/export', [AdminRetailerController::class, 'export'])->name('retailers.export');
+    Route::get('/retailers/create', [AdminRetailerController::class, 'create'])->name('retailers.create');
+    Route::post('/retailers/store', [AdminRetailerController::class, 'store'])->name('retailers.store');
+    Route::get('/retailers/{retailer}', [AdminRetailerController::class, 'show'])->name('retailers.show');
     Route::post('/retailers/{retailer}/approve', [AdminRetailerController::class, 'approve'])->name('retailers.approve');
     Route::post('/retailers/{retailer}/block', [AdminRetailerController::class, 'block'])->name('retailers.block');
     Route::post('/retailers/{retailer}/credit', [AdminRetailerController::class, 'creditWallet'])->name('retailers.credit');
@@ -67,6 +71,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::resource('retailers', AdminRetailerController::class)->except(['show', 'approve', 'block', 'credit', 'kyc']);
 
     Route::get('/transactions', [AdminTransactionController::class, 'index'])->name('transactions.index');
+    Route::get('/transactions/export', [AdminTransactionController::class, 'export'])->name('transactions.export');
     Route::get('/transactions/{transaction}', [AdminTransactionController::class, 'show'])->name('transactions.show');
     Route::post('/transactions/{transaction}/refund', [AdminTransactionController::class, 'refund'])->name('transactions.refund');
 
@@ -79,13 +84,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     // AllowedNumbers management
     Route::resource('allowed-numbers', \App\Http\Controllers\Admin\AllowedNumberController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::post('allowed-numbers/import', [\App\Http\Controllers\Admin\AllowedNumberController::class, 'import'])->name('allowed-numbers.import');
+    Route::post('allowed-numbers/import-file', [\App\Http\Controllers\Admin\AllowedNumberController::class, 'importFile'])->name('allowed-numbers.import-file');
+    Route::get('allowed-numbers/sample', [\App\Http\Controllers\Admin\AllowedNumberController::class, 'downloadSample'])->name('allowed-numbers.sample');
 });
 
 // ==========================================================================
 // RETAILER
 // ==========================================================================
 
-Route::prefix('retailer')->name('retailer.')->middleware(['auth', 'retailer'])->group(function () {
+Route::prefix('retailer')->name('retailer.')->middleware(['auth', 'retailer', 'kyc.approved'])->group(function () {
     Route::get('/dashboard', [RetailerDashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/wallet', [RetailerWalletController::class, 'index'])->name('wallet.index');

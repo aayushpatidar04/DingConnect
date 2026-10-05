@@ -82,6 +82,8 @@ class RetailerController extends Controller
             'email_verified_at' => now(), // Auto-verify admin-created accounts
         ]);
 
+        $user->assignRole('retailer');
+
         // Create wallet
         $user->wallet()->create();
 
@@ -126,6 +128,8 @@ class RetailerController extends Controller
             'kyc_verified_at' => now(),
             'is_active' => true,
         ]);
+
+        $retailer->assignRole('retailer');
 
         return back()->with('success', 'Retailer KYC approved!');
     }

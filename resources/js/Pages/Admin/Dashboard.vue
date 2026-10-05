@@ -1,5 +1,6 @@
 <script setup>
-import { Head } from "@inertiajs/vue3";
+import { Head, Link } from "@inertiajs/vue3";
+import { computed } from 'vue';
 import AdminLayout from "@/Layouts/AdminLayout.vue";
 defineOptions({ layout: AdminLayout });
 
@@ -9,6 +10,37 @@ const props = defineProps({
     recentTransactions: Array,
     chartData: Array,
 });
+
+const maxRevenue = computed(() =>
+    Math.max(...props.chartData.map((p) => p.revenue), 1),
+);
+
+const totalRevenue = computed(() =>
+    props.chartData.reduce((sum, p) => sum + p.revenue, 0),
+);
+
+const formatCurrency = (v) =>
+    new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: "INR",
+        maximumFractionDigits: 0,
+    }).format(v);
+
+const formatCompact = (v) =>
+    new Intl.NumberFormat("en-IN", {
+        notation: "compact",
+        maximumFractionDigits: 1,
+    }).format(v);
+
+const formatDate = (d) =>
+    new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+
+const barHeight = (value) =>
+    Math.max(2, (value / maxRevenue.value) * 100) + "%";
+
+// show a label roughly every 5th bar so 30 days don't overlap
+const showLabel = (index) =>
+    index % 5 === 0 || index === props.chartData.length - 1;
 </script>
 
 <template>
@@ -37,7 +69,7 @@ const props = defineProps({
                     {{ stats.today_transactions }}
                 </div>
                 <div class="text-xs text-green-200 mt-1">
-                    {{ stats.today_success }} success
+                    {{ stats.today_success }} succeeded
                 </div>
             </div>
             <div class="stat-gradient-3 rounded-2xl p-5 card-hover">
@@ -45,14 +77,54 @@ const props = defineProps({
                 <div class="text-3xl font-bold text-white mt-1">
                     £ {{ Number(stats.today_volume).toFixed(2) }}
                 </div>
-                <div class="text-xs text-blue-200 mt-1">Recharge volume</div>
+                <div class="text-xs text-blue-200 mt-1">
+                    Successful recharges
+                </div>
             </div>
             <div class="stat-gradient-4 rounded-2xl p-5 card-hover">
                 <div class="text-sm text-green-100">Success Rate</div>
                 <div class="text-3xl font-bold text-white mt-1">
                     {{ stats.success_rate }}%
                 </div>
-                <div class="text-xs text-green-200 mt-1">All time</div>
+                <div class="text-xs text-green-200 mt-1">
+                    All time · {{ stats.total_transactions }} txns
+                </div>
+            </div>
+        </div>
+
+        <!-- Secondary analytics chips -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-dark-800 rounded-2xl p-4 border border-dark-600">
+                <div class="text-xs text-dark-400 uppercase tracking-wider">
+                    Monthly Revenue
+                </div>
+                <div class="text-xl font-bold text-white mt-1">
+                    £ {{ Number(stats.monthly_revenue).toFixed(2) }}
+                </div>
+            </div>
+            <div class="bg-dark-800 rounded-2xl p-4 border border-dark-600">
+                <div class="text-xs text-dark-400 uppercase tracking-wider">
+                    Pending Top-ups
+                </div>
+                <div class="text-xl font-bold text-white mt-1">
+                    {{ stats.pending_topups }}
+                </div>
+            </div>
+            <div class="bg-dark-800 rounded-2xl p-4 border border-dark-600">
+                <div class="text-xs text-dark-400 uppercase tracking-wider">
+                    Pending KYC
+                </div>
+                <div class="text-xl font-bold text-white mt-1">
+                    {{ stats.pending_kyc }}
+                </div>
+            </div>
+            <div class="bg-dark-800 rounded-2xl p-4 border border-dark-600">
+                <div class="text-xs text-dark-400 uppercase tracking-wider">
+                    Total Transactions
+                </div>
+                <div class="text-xl font-bold text-white mt-1">
+                    {{ stats.total_transactions }}
+                </div>
             </div>
         </div>
 
@@ -107,10 +179,13 @@ const props = defineProps({
                         </div>
                         <div class="text-right">
                             <div class="font-semibold text-primary-light">
-                                {{ retailer.month_transactions }}
+                                {{ retailer.month_success }}
+                                <span class="text-dark-400 font-normal"
+                                    >/ {{ retailer.month_transactions }}</span
+                                >
                             </div>
                             <div class="text-xs text-dark-400">
-                                transactions
+                                successful / total
                             </div>
                         </div>
                     </div>
@@ -141,7 +216,10 @@ const props = defineProps({
                 <div class="divide-y divide-dark-600">
                     <div v-if="recentTransactions">
                         <div
-                            v-for="txn in recentTransactions.slice(0, 8)"
+                            v-for="txn in (recentTransactions || []).slice(
+                                0,
+                                8,
+                            )"
                             :key="txn.id"
                             class="p-4 flex items-center justify-between hover:bg-dark-700 transition"
                         >
@@ -149,20 +227,24 @@ const props = defineProps({
                                 <div
                                     class="w-8 h-8 bg-dark-700 rounded-lg flex items-center justify-center text-sm font-semibold text-primary-light"
                                 >
-                                    {{ txn.operator?.name?.charAt(0) || "?" }}
+                                    {{ (txn.operator || "?").charAt(0) }}
                                 </div>
                                 <div>
                                     <div class="text-sm font-medium text-white">
-                                        {{ txn.mobile_number }}
+                                        {{ txn.mobile }}
                                     </div>
                                     <div class="text-xs text-dark-400">
-                                        {{ txn.user?.name || "Unknown" }}
+                                        {{ txn.retailer || "Unknown" }}
+                                        <span v-if="txn.country">
+                                            · {{ txn.country }}</span
+                                        >
+                                        · {{ txn.created_at }}
                                     </div>
                                 </div>
                             </div>
                             <div class="text-right">
                                 <div class="text-sm font-medium text-white">
-                                    £ {{ txn.amount.toFixed(2) }}
+                                    £ {{ Number(txn.amount).toFixed(2) }}
                                 </div>
                                 <span
                                     :class="[
@@ -177,6 +259,101 @@ const props = defineProps({
                                     {{ txn.status }}
                                 </span>
                             </div>
+                        </div>
+                        <div
+                            v-if="
+                                !recentTransactions ||
+                                recentTransactions.length === 0
+                            "
+                            class="p-6 text-center text-dark-400"
+                        >
+                            No transactions yet
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Revenue Chart -->
+        <div
+            v-if="chartData && chartData.length"
+            class="bg-dark-800 rounded-2xl border border-dark-600 p-6"
+        >
+            <div class="flex items-start justify-between mb-6">
+                <div>
+                    <h3 class="text-lg font-semibold text-white">Revenue</h3>
+                    <p class="text-xs text-dark-400">
+                        Last 30 days · successful transactions
+                    </p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xl font-bold text-white">
+                        {{ formatCurrency(totalRevenue) }}
+                    </p>
+                    <p class="text-xs text-dark-400">Total</p>
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <!-- Y axis -->
+                <div
+                    class="flex flex-col justify-between h-48 text-[10px] text-dark-400 text-right w-10"
+                >
+                    <span>{{ formatCompact(maxRevenue) }}</span>
+                    <span>{{ formatCompact(maxRevenue / 2) }}</span>
+                    <span>0</span>
+                </div>
+
+                <!-- Bars -->
+                <div class="flex-1">
+                    <div
+                        class="relative flex items-end gap-1 h-48 border-b border-l border-dark-600"
+                    >
+                        <!-- gridlines -->
+                        <div
+                            class="absolute inset-x-0 top-1/2 border-t border-dashed border-dark-600/60"
+                        ></div>
+
+                        <div
+                            v-for="point in chartData"
+                            :key="point.date"
+                            class="group relative flex-1 h-full flex items-end"
+                        >
+                            <div
+                                class="w-full bg-primary/70 group-hover:bg-primary rounded-t transition-all"
+                                :style="{ height: barHeight(point.revenue) }"
+                            ></div>
+
+                            <!-- Tooltip -->
+                            <div
+                                class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10 whitespace-nowrap rounded-lg bg-dark-900 border border-dark-600 px-3 py-2 text-xs text-white shadow-lg"
+                            >
+                                <p class="font-semibold">
+                                    {{ formatDate(point.date) }}
+                                </p>
+                                <p>{{ formatCurrency(point.revenue) }}</p>
+                                <p class="text-dark-400">
+                                    {{ point.count }} transaction{{
+                                        point.count === 1 ? "" : "s"
+                                    }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- X labels -->
+                    <div class="flex gap-1 mt-2">
+                        <div
+                            v-for="(point, i) in chartData"
+                            :key="point.date"
+                            class="flex-1 text-center"
+                        >
+                            <span
+                                v-if="showLabel(i)"
+                                class="text-[10px] text-dark-400 whitespace-nowrap"
+                            >
+                                {{ formatDate(point.date) }}
+                            </span>
                         </div>
                     </div>
                 </div>

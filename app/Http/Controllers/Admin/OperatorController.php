@@ -87,11 +87,10 @@ class OperatorController extends Controller
         $synced = 0;
         $failedCountries = [];
 
-        $countryCodes = Country::whereIn('iso_code', ['GB', 'IN'])->where('is_active', true)->pluck('iso_code')->filter()->values();
+        $countryCodes = Country::whereIn('iso_code', ['GB'])->where('is_active', true)->pluck('iso_code')->filter()->values();
 
         $allowedProviders = [
-            'GB' => ['Vodafone United Kingdom', 'O2 United Kingdom', 'Lebara United Kingdom', 'giffgaff United Kingdom', 'Lyca Mobile United Kingdom', '3 United Kingdom'],
-            'IN' => ['Airtel India', 'Vi India', 'Jio India', 'BSNL India', 'MTNL India'],
+            'GB' => ['Vodafone United Kingdom', 'O2 United Kingdom', 'Lebara United Kingdom', 'giffgaff United Kingdom', 'Lyca Mobile United Kingdom', '3 United Kingdom', 'EE United Kingdom', 'Voxi United Kingdom', 'Smarty United Kingdom'],
         ];
 
         foreach ($countryCodes as $isoCode) {

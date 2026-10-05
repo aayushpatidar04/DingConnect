@@ -45,6 +45,7 @@ class WalletService
         $ledger = DB::table('wallet_ledgers')
             ->where('wallet_id', $wallet->id)
             ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->first();
 
         return $ledger ? max(0, (float) $ledger->balance_after) : (float) $wallet->balance;

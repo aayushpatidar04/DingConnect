@@ -30,6 +30,18 @@ const importForm = ref({
     operator_name: "",
     country: "",
 });
+const importFile = ref(null);
+
+const importFileInput = ref(null);
+
+function onFileChange(e) {
+    importFile.value = e.target.files[0] || null;
+}
+
+function clearImportFile() {
+    importFile.value = null;
+    if (importFileInput.value) importFileInput.value.value = ""; // allow re-selecting same file
+}
 
 function openAdd() {
     editingId.value = null;
@@ -74,12 +86,36 @@ function submitForm() {
 }
 
 function submitImport() {
-    router.post("/admin/allowed-numbers/import", importForm.value, {
-        onSuccess: () => {
-            showImportModal.value = false;
-            importForm.value = { numbers: "", type: "mobile", operator_name: "", country: "" };
-        },
-    });
+    if (importFile.value) {
+        const formData = new FormData();
+        formData.append("file", importFile.value);
+        formData.append("type", importForm.value.type);
+        formData.append("operator_name", importForm.value.operator_name || "");
+        formData.append("country", importForm.value.country || "");
+        router.post("/admin/allowed-numbers/import-file", formData, {
+            forceFormData: true,
+            onSuccess: resetImportForm,
+        });
+    } else if (importForm.value.numbers.trim()) {
+        router.post("/admin/allowed-numbers/import", importForm.value, {
+            onSuccess: resetImportForm,
+        });
+    }
+}
+
+function resetImportForm() {
+    showImportModal.value = false;
+    importForm.value = {
+        numbers: "",
+        type: "mobile",
+        operator_name: "",
+        country: "",
+    };
+    clearImportFile();
+}
+
+function downloadSample() {
+    window.location.href = "/admin/allowed-numbers/sample";
 }
 
 function toggleActive(item) {
@@ -97,9 +133,13 @@ function deleteItem(id) {
 
 function filterBy(type) {
     if (props.filters.type === type) {
-        router.visit("/admin/allowed-numbers", { data: { ...props.filters, type: null } });
+        router.visit("/admin/allowed-numbers", {
+            data: { ...props.filters, type: null },
+        });
     } else {
-        router.visit("/admin/allowed-numbers", { data: { ...props.filters, type } });
+        router.visit("/admin/allowed-numbers", {
+            data: { ...props.filters, type },
+        });
     }
 }
 </script>
@@ -112,9 +152,12 @@ function filterBy(type) {
             <!-- Header -->
             <div class="flex items-center justify-between mb-6">
                 <div>
-                    <h1 class="text-2xl font-bold text-white">Allowed Numbers</h1>
+                    <h1 class="text-2xl font-bold text-white">
+                        Allowed Numbers
+                    </h1>
                     <p class="text-dark-300 text-sm mt-1">
-                        Manage numbers/serials authorized for ReadReceipt PIN recharges
+                        Manage numbers/serials authorized for ReadReceipt PIN
+                        recharges
                     </p>
                 </div>
                 <div class="flex gap-3">
@@ -134,8 +177,12 @@ function filterBy(type) {
             </div>
 
             <!-- Filters -->
-            <div class="bg-dark-800 rounded-2xl border border-dark-600 p-4 mb-6 flex items-center gap-3">
-                <span class="text-xs text-dark-400 uppercase tracking-wider">Filter:</span>
+            <div
+                class="bg-dark-800 rounded-2xl border border-dark-600 p-4 mb-6 flex items-center gap-3"
+            >
+                <span class="text-xs text-dark-400 uppercase tracking-wider"
+                    >Filter:</span
+                >
                 <button
                     @click="filterBy('mobile')"
                     :class="[
@@ -167,18 +214,52 @@ function filterBy(type) {
             </div>
 
             <!-- Table -->
-            <div class="bg-dark-800 rounded-2xl border border-dark-600 overflow-hidden">
+            <div
+                class="bg-dark-800 rounded-2xl border border-dark-600 overflow-hidden"
+            >
                 <table class="w-full">
                     <thead>
                         <tr class="border-b border-dark-600">
-                            <th class="text-left text-xs text-dark-400 uppercase tracking-wider px-6 py-4">Number / Serial</th>
-                            <th class="text-left text-xs text-dark-400 uppercase tracking-wider px-6 py-4">Type</th>
-                            <th class="text-left text-xs text-dark-400 uppercase tracking-wider px-6 py-4">Operator</th>
-                            <th class="text-left text-xs text-dark-400 uppercase tracking-wider px-6 py-4">Country</th>
-                            <th class="text-left text-xs text-dark-400 uppercase tracking-wider px-6 py-4">Note</th>
-                            <th class="text-center text-xs text-dark-400 uppercase tracking-wider px-6 py-4">Status</th>
-                            <th class="text-center text-xs text-dark-400 uppercase tracking-wider px-6 py-4">Added</th>
-                            <th class="text-right text-xs text-dark-400 uppercase tracking-wider px-6 py-4">Actions</th>
+                            <th
+                                class="text-left text-xs text-dark-400 uppercase tracking-wider px-6 py-4"
+                            >
+                                Number / Serial
+                            </th>
+                            <th
+                                class="text-left text-xs text-dark-400 uppercase tracking-wider px-6 py-4"
+                            >
+                                Type
+                            </th>
+                            <th
+                                class="text-left text-xs text-dark-400 uppercase tracking-wider px-6 py-4"
+                            >
+                                Operator
+                            </th>
+                            <th
+                                class="text-left text-xs text-dark-400 uppercase tracking-wider px-6 py-4"
+                            >
+                                Country
+                            </th>
+                            <th
+                                class="text-left text-xs text-dark-400 uppercase tracking-wider px-6 py-4"
+                            >
+                                Note
+                            </th>
+                            <th
+                                class="text-center text-xs text-dark-400 uppercase tracking-wider px-6 py-4"
+                            >
+                                Status
+                            </th>
+                            <th
+                                class="text-center text-xs text-dark-400 uppercase tracking-wider px-6 py-4"
+                            >
+                                Added
+                            </th>
+                            <th
+                                class="text-right text-xs text-dark-400 uppercase tracking-wider px-6 py-4"
+                            >
+                                Actions
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -187,7 +268,9 @@ function filterBy(type) {
                             :key="item.id"
                             class="border-b border-dark-700 hover:bg-dark-700/50 transition"
                         >
-                            <td class="px-6 py-3 font-mono text-sm text-white">{{ item.number }}</td>
+                            <td class="px-6 py-3 font-mono text-sm text-white">
+                                {{ item.number }}
+                            </td>
                             <td class="px-6 py-3">
                                 <span
                                     :class="[
@@ -197,12 +280,22 @@ function filterBy(type) {
                                             : 'bg-purple-500/20 text-purple-300',
                                     ]"
                                 >
-                                    {{ item.type === 'mobile' ? 'Mobile' : 'Serial' }}
+                                    {{
+                                        item.type === "mobile"
+                                            ? "Mobile"
+                                            : "Serial"
+                                    }}
                                 </span>
                             </td>
-                            <td class="px-6 py-3 text-sm text-dark-300">{{ item.operator_name || '-' }}</td>
-                            <td class="px-6 py-3 text-sm text-dark-300">{{ item.country || '-' }}</td>
-                            <td class="px-6 py-3 text-xs text-dark-400">{{ item.note || '-' }}</td>
+                            <td class="px-6 py-3 text-sm text-dark-300">
+                                {{ item.operator_name || "-" }}
+                            </td>
+                            <td class="px-6 py-3 text-sm text-dark-300">
+                                {{ item.country || "-" }}
+                            </td>
+                            <td class="px-6 py-3 text-xs text-dark-400">
+                                {{ item.note || "-" }}
+                            </td>
                             <td class="px-6 py-3 text-center">
                                 <button
                                     @click="toggleActive(item)"
@@ -213,11 +306,15 @@ function filterBy(type) {
                                             : 'bg-red-500/20 text-red-300',
                                     ]"
                                 >
-                                    {{ item.active ? 'Active' : 'Inactive' }}
+                                    {{ item.active ? "Active" : "Inactive" }}
                                 </button>
                             </td>
                             <td class="px-6 py-3 text-xs text-dark-400">
-                                {{ new Date(item.created_at).toLocaleDateString() }}
+                                {{
+                                    new Date(
+                                        item.created_at,
+                                    ).toLocaleDateString()
+                                }}
                             </td>
                             <td class="px-6 py-3 text-right">
                                 <button
@@ -235,8 +332,12 @@ function filterBy(type) {
                             </td>
                         </tr>
                         <tr v-if="!numbers.data?.length">
-                            <td colspan="8" class="text-center text-dark-400 py-8">
-                                No numbers found. Add your first number or import bulk.
+                            <td
+                                colspan="8"
+                                class="text-center text-dark-400 py-8"
+                            >
+                                No numbers found. Add your first number or
+                                import bulk.
                             </td>
                         </tr>
                     </tbody>
@@ -244,7 +345,10 @@ function filterBy(type) {
             </div>
 
             <!-- Pagination -->
-            <div v-if="numbers.links?.length > 3" class="mt-4 flex justify-center gap-1">
+            <div
+                v-if="numbers.links?.length > 3"
+                class="mt-4 flex justify-center gap-1"
+            >
                 <template v-for="link in numbers.links" :key="link.label">
                     <a
                         v-if="link.url"
@@ -272,13 +376,18 @@ function filterBy(type) {
             class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
             @click.self="showAddForm = false"
         >
-            <div class="bg-dark-800 rounded-2xl border border-dark-600 p-6 max-w-lg w-full">
+            <div
+                class="bg-dark-800 rounded-2xl border border-dark-600 p-6 max-w-lg w-full"
+            >
                 <h3 class="text-lg font-bold text-white mb-4">
-                    {{ editingId ? 'Edit Number' : 'Add Number' }}
+                    {{ editingId ? "Edit Number" : "Add Number" }}
                 </h3>
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-xs text-dark-400 uppercase tracking-wider mb-1">Number / Serial</label>
+                        <label
+                            class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                            >Number / Serial</label
+                        >
                         <input
                             v-model="form.number"
                             type="text"
@@ -287,7 +396,10 @@ function filterBy(type) {
                         />
                     </div>
                     <div>
-                        <label class="block text-xs text-dark-400 uppercase tracking-wider mb-1">Type</label>
+                        <label
+                            class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                            >Type</label
+                        >
                         <select
                             v-model="form.type"
                             class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-2 text-white text-sm"
@@ -297,7 +409,10 @@ function filterBy(type) {
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs text-dark-400 uppercase tracking-wider mb-1">Operator</label>
+                        <label
+                            class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                            >Operator</label
+                        >
                         <input
                             v-model="form.operator_name"
                             type="text"
@@ -306,7 +421,10 @@ function filterBy(type) {
                         />
                     </div>
                     <div>
-                        <label class="block text-xs text-dark-400 uppercase tracking-wider mb-1">Country</label>
+                        <label
+                            class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                            >Country</label
+                        >
                         <input
                             v-model="form.country"
                             type="text"
@@ -316,7 +434,10 @@ function filterBy(type) {
                         />
                     </div>
                     <div>
-                        <label class="block text-xs text-dark-400 uppercase tracking-wider mb-1">Note</label>
+                        <label
+                            class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                            >Note</label
+                        >
                         <input
                             v-model="form.note"
                             type="text"
@@ -331,7 +452,9 @@ function filterBy(type) {
                             id="active"
                             class="rounded border-dark-600"
                         />
-                        <label for="active" class="text-sm text-dark-300">Active</label>
+                        <label for="active" class="text-sm text-dark-300"
+                            >Active</label
+                        >
                     </div>
                 </div>
                 <div class="flex gap-3 mt-6">
@@ -339,7 +462,7 @@ function filterBy(type) {
                         @click="submitForm"
                         class="flex-1 py-2.5 bg-primary text-white rounded-xl font-medium hover:bg-primary-dark transition"
                     >
-                        {{ editingId ? 'Update' : 'Add' }}
+                        {{ editingId ? "Update" : "Add" }}
                     </button>
                     <button
                         @click="showAddForm = false"
@@ -357,48 +480,123 @@ function filterBy(type) {
             class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
             @click.self="showImportModal = false"
         >
-            <div class="bg-dark-800 rounded-2xl border border-dark-600 p-6 max-w-lg w-full">
-                <h3 class="text-lg font-bold text-white mb-2">Bulk Import Numbers</h3>
+            <div
+                class="bg-dark-800 rounded-2xl border border-dark-600 p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-dark-600 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-dark-500"
+            >
+                <h3 class="text-lg font-bold text-white mb-2">
+                    Bulk Import Numbers
+                </h3>
                 <p class="text-xs text-dark-400 mb-4">
-                    Paste one number/serial per line. Duplicates will be skipped automatically.
+                    Import via CSV file or paste one number/serial per line.
+                    Duplicates will be skipped automatically.
                 </p>
+
+                <div class="flex gap-2 mb-4">
+                    <button
+                        type="button"
+                        @click="downloadSample"
+                        class="text-xs px-3 py-1.5 bg-dark-700 border border-dark-600 text-dark-300 rounded-lg hover:text-white transition"
+                    >
+                        Download Sample CSV
+                    </button>
+                </div>
+
                 <div class="space-y-4">
-                    <div>
-                        <label class="block text-xs text-dark-400 uppercase tracking-wider mb-1">Type</label>
-                        <select
-                            v-model="importForm.type"
-                            class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-2 text-white text-sm"
+                    <div v-if="!importFile" class="space-y-4">
+                        <div>
+                            <label
+                                class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                                >Import Type</label
+                            >
+                            <select
+                                v-model="importForm.type"
+                                class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-2 text-white text-sm"
+                            >
+                                <option value="mobile">Mobile Number</option>
+                                <option value="serial">Serial Number</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label
+                                class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                                >Operator (optional)</label
+                            >
+                            <input
+                                v-model="importForm.operator_name"
+                                type="text"
+                                class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-2 text-white text-sm"
+                                placeholder="Applied to all imported numbers"
+                            />
+                        </div>
+                        <div>
+                            <label
+                                class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                                >Country (optional)</label
+                            >
+                            <input
+                                v-model="importForm.country"
+                                type="text"
+                                class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-2 text-white text-sm"
+                                placeholder="e.g. GB"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- File section -->
+                    <div class="border-t border-dark-600 pt-4">
+                        <label
+                            class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                            >Upload CSV File</label
                         >
-                            <option value="mobile">Mobile Number</option>
-                            <option value="serial">Serial Number</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs text-dark-400 uppercase tracking-wider mb-1">Operator (optional)</label>
                         <input
-                            v-model="importForm.operator_name"
-                            type="text"
-                            class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-2 text-white text-sm"
-                            placeholder="Applied to all imported numbers"
+                            ref="importFileInput"
+                            type="file"
+                            accept=".csv,.txt"
+                            @change="onFileChange"
+                            class="..."
                         />
+                        <div
+                            v-if="importFile"
+                            class="mt-1 flex items-center justify-between"
+                        >
+                            <p class="text-xs text-green-400">
+                                Selected: {{ importFile.name }}
+                            </p>
+                            <button
+                                type="button"
+                                @click="clearImportFile"
+                                class="text-xs text-red-300 hover:text-white"
+                            >
+                                Remove
+                            </button>
+                        </div>
+                        <p v-if="importFile" class="text-xs text-dark-400 mt-2">
+                            Per-row values from the file will be used (header:
+                            number, type, operator_name, country). The fields
+                            above are ignored.
+                        </p>
                     </div>
-                    <div>
-                        <label class="block text-xs text-dark-400 uppercase tracking-wider mb-1">Country (optional)</label>
-                        <input
-                            v-model="importForm.country"
-                            type="text"
-                            class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-2 text-white text-sm"
-                            placeholder="e.g. GB"
-                        />
-                    </div>
-                    <div>
-                        <label class="block text-xs text-dark-400 uppercase tracking-wider mb-1">Numbers (one per line)</label>
+
+                    <div class="border-t border-dark-600 pt-4">
+                        <label
+                            class="block text-xs text-dark-400 uppercase tracking-wider mb-1"
+                            >Or paste numbers (one per line)</label
+                        >
                         <textarea
                             v-model="importForm.numbers"
-                            rows="8"
-                            class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-2 text-white text-sm font-mono"
-                            placeholder="447700900123&#10;447700900124&#10;447700900125"
+                            rows="5"
+                            :disabled="!!importFile"
+                            :class="[
+                                'w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-2 text-white text-sm font-mono',
+                                importFile
+                                    ? 'opacity-40 cursor-not-allowed'
+                                    : '',
+                            ]"
+                            placeholder="447700900123&#10;447700900124"
                         ></textarea>
+                        <p v-if="importFile" class="text-xs text-dark-500 mt-1">
+                            Ignored while a CSV file is selected.
+                        </p>
                     </div>
                 </div>
                 <div class="flex gap-3 mt-6">

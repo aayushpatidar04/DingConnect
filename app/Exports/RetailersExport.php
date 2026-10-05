@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class RetailersExport implements FromQuery, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
@@ -25,23 +26,32 @@ class RetailersExport implements FromQuery, WithHeadings, WithMapping, WithStyle
             'Shop Name',
             'Address',
             'City',
-            'State',
-            'Pincode',
-            'GST Number',
-            'PAN Number',
+            'County',
+            'Postcode',
+            'VAT Number',
+            'Company Reg Number',
+            'UTR Number',
             'Status',
             'KYC Status',
+            'KYC Verified At',
+            'KYC Rejection Reason',
             'Wallet Balance',
             'Total Transactions',
             'Total Spent',
+            'Last Login',
             'Joined Date',
         ];
     }
 
     public function query(): Builder|QueryBuilder|Relation
     {
-        return User::where('role', 'retailer')
-            ->with(['wallet', 'transactions'])
+        return User::role('retailer') // Spatie scope; see note below
+            ->with('wallet')
+            ->withCount('transactions')
+            ->withSum(
+                ['transactions as total_spent' => fn ($q) => $q->where('status', 'success')],
+                'amount'
+            )
             ->orderByDesc('created_at');
     }
 
@@ -51,19 +61,23 @@ class RetailersExport implements FromQuery, WithHeadings, WithMapping, WithStyle
             $retailer->id,
             $retailer->name,
             $retailer->email,
-            $retailer->phone,
+            $retailer->phone ?? '-',
             $retailer->shop_name ?? '-',
             $retailer->address ?? '-',
             $retailer->city ?? '-',
-            $retailer->state ?? '-',
-            $retailer->pincode ?? '-',
-            $retailer->gst_number ?? '-',
-            $retailer->pan_number ?? '-',
-            'Yes',
-            ucfirst($retailer->kyc_status),
-            $retailer->wallet->balance ?? 0,
-            $retailer->transactions->count(),
-            $retailer->transactions->where('status', 'success')->sum('amount'),
+            $retailer->county ?? '-',
+            $retailer->postcode ?? '-',
+            $retailer->vat_number ?? '-',
+            $retailer->company_reg_number ?? '-',
+            $retailer->utr_number ?? '-',
+            $retailer->is_active ? 'Active' : 'Inactive',
+            $retailer->kyc_status ? ucfirst($retailer->kyc_status) : '-',
+            $retailer->kyc_verified_at?->format('Y-m-d H:i') ?? '-',
+            $retailer->kyc_rejection_reason ?? '-',
+            (float) ($retailer->wallet?->balance ?? 0),
+            $retailer->transactions_count,
+            (float) ($retailer->total_spent ?? 0),
+            $retailer->last_login_at?->format('Y-m-d H:i') ?? '-',
             $retailer->created_at->format('Y-m-d H:i'),
         ];
     }
@@ -72,7 +86,7 @@ class RetailersExport implements FromQuery, WithHeadings, WithMapping, WithStyle
     {
         $sheet->getStyle('1:1')->getFont()->setBold(true);
         $sheet->getStyle('1:1')->getFill()
-            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            ->setFillType(Fill::FILL_SOLID)
             ->getStartColor()->setARGB('FFE5E7EB');
 
         return null;

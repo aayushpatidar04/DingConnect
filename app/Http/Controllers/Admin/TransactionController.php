@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\TransactionsExport;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
 
 
 class TransactionController extends Controller
@@ -54,7 +56,9 @@ class TransactionController extends Controller
 
         $retailers = User::where('role', 'retailer')->get(['id', 'name', 'shop_name']);
 
-        return Inertia::render('Admin/Transactions/Index', compact('transactions', 'stats', 'retailers'));
+        $filters = $request->only('status', 'retailer_id', 'from', 'to');
+
+        return Inertia::render('Admin/Transactions/Index', compact('transactions', 'stats', 'retailers', 'filters'));
     }
 
     public function show(Transaction $transaction)
@@ -87,48 +91,13 @@ class TransactionController extends Controller
 
     public function export(Request $request)
     {
-        $query = Transaction::query()->with(['user', 'operator']);
-
-        if ($from = $request->input('from')) {
-            $query->whereDate('created_at', '>=', $from);
-        }
-        if ($to = $request->input('to')) {
-            $query->whereDate('created_at', '<=', $to);
-        }
-        if ($status = $request->input('status')) {
-            $query->where('status', $status);
-        }
-
-        $transactions = $query->orderByDesc('created_at')->get();
-
-        $filename = 'transactions_' . now()->format('Y-m-d') . '.csv';
-
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename={$filename}",
-        ];
-
-        $callback = function () use ($transactions) {
-            $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['ID', 'Date', 'Retailer', 'Mobile', 'Operator', 'Country', 'Amount', 'Status', 'Receipt']);
-
-            foreach ($transactions as $txn) {
-                fputcsv($handle, [
-                    $txn->id,
-                    $txn->created_at->format('Y-m-d H:i'),
-                    $txn->user->name,
-                    $txn->mobile_number,
-                    $txn->operator->name,
-                    $txn->country->name,
-                    $txn->amount,
-                    ucfirst($txn->status),
-                    $txn->receipt_number,
-                ]);
-            }
-
-            fclose($handle);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return Excel::download(
+            new TransactionsExport(
+                $request->input('from'),
+                $request->input('to'),
+                $request->input('status'),
+            ),
+            'transactions_' . now()->format('Y-m-d') . '.xlsx'
+        );
     }
 }

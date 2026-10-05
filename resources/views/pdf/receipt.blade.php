@@ -289,7 +289,7 @@
                 </div>
                 @endif
                 <div class="row">
-                    <span class="rl">DingConnect Ref</span>
+                    <span class="rl">Transaction Ref</span>
                     <span class="rv">{{ $transaction->ding_transaction_id ?? '-' }}</span>
                 </div>
                 <div class="row">
@@ -310,7 +310,7 @@
         </div>
 
         <div class="footer">
-            <p>MK Network &middot; Powered by DingConnect</p>
+            <p>MK Network &middot; Powered by InTouch Software Solutions</p>
             <p style="margin-top:2px;">This is a computer-generated receipt.</p>
         </div>
     </div>

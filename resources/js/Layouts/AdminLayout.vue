@@ -174,10 +174,22 @@ onUnmounted(() => {
                                 : 'text-dark-300 hover:bg-dark-700 hover:text-white'
                         "
                     >
-                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        <svg
+                            class="w-5 h-5 flex-shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                            />
                         </svg>
-                        <span v-if="showMobileMenu" class="ml-3 font-medium">Allowed Numbers</span>
+                        <span v-if="showMobileMenu" class="ml-3 font-medium"
+                            >Allowed Numbers</span
+                        >
                     </Link>
 
                     <Link
@@ -216,36 +228,44 @@ onUnmounted(() => {
 
                 <!-- User Section -->
                 <div class="p-3 border-t border-dark-600">
-                    <div class="relative profile-dropdown-wrapper">
-                        <button
-                            @click.stop="showAdminDropdown = !showAdminDropdown"
-                            class="flex items-center w-full px-3 py-2 hover:bg-dark-700 rounded-lg transition"
+                    <div
+                        class="flex items-center gap-2"
+                        :class="showMobileMenu ? '' : 'flex-col'"
+                    >
+                        <div v-if="showMobileMenu"
+                            class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
                         >
-                            <div
-                                class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                            >
-                                {{ user.name.charAt(0).toUpperCase() }}
-                            </div>
-                            <div class="ml-3 flex-1 text-left">
-                                <p class="text-sm font-medium text-white">
-                                    {{ user.name }}
-                                </p>
-                                <p class="text-xs text-dark-400">Administrator</p>
-                            </div>
-                        </button>
-                        <div
-                            v-show="showAdminDropdown"
-                            class="mt-1 bg-dark-700 rounded-xl border border-dark-600 overflow-hidden"
-                        >
-                            <form method="POST" action="/logout">
-                                <button
-                                    type="submit"
-                                    class="block w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-dark-600 transition"
-                                >
-                                    Logout
-                                </button>
-                            </form>
+                            {{ user.name.charAt(0).toUpperCase() }}
                         </div>
+
+                        <div v-if="showMobileMenu" class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-white truncate">
+                                {{ user.name }}
+                            </p>
+                            <p class="text-xs text-dark-400">Administrator</p>
+                        </div>
+
+                        <Link
+                            method="post"
+                            href="/logout"
+                            as="button"
+                            title="Logout"
+                            class="p-2 rounded-lg text-red-700 hover:text-red-400 hover:bg-dark-700 transition flex-shrink-0"
+                        >
+                            <svg
+                                class="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                                />
+                            </svg>
+                        </Link>
                     </div>
                 </div>
             </aside>
