@@ -69,7 +69,31 @@ class ValuetopupService
             $params['operatorId'] = $operatorId;
         }
 
-        return $this->get('/api/v2/catalog/operators', $params);
+        $response = $this->get('/api/v2/catalog/operators', $params);
+
+        $allowedOperators = [
+            'Vodafone',
+            'O2',
+            'Lebara',
+            'giffgaff',
+            'Lyca Mobile',
+            '3',
+            'EE',
+            'Voxi',
+            'Smarty',
+        ];
+
+        $response['payLoad'] = collect($response['payLoad'] ?? [])
+            ->filter(function ($operator) use ($allowedOperators) {
+                return in_array(
+                    strtolower($operator['operatorName']),
+                    array_map('strtolower', $allowedOperators)
+                );
+            })
+            ->values()
+            ->toArray();
+
+        return $response;
     }
 
     public function products(int $operatorId)
@@ -314,45 +338,45 @@ class ValuetopupService
         $min = $sku['min'] ?? [];
         $max = $sku['max'] ?? [];
 
-        $sendValue       = (float) ($max['cost'] ?? $min['cost'] ?? 0);
-        $receiveValue    = (float) ($max['faceValue'] ?? $min['faceValue'] ?? 0);
-        $sendCurrency    = $min['costCurrency'] ?? 'GBP';
+        $sendValue = (float) ($max['cost'] ?? $min['cost'] ?? 0);
+        $receiveValue = (float) ($max['faceValue'] ?? $min['faceValue'] ?? 0);
+        $sendCurrency = $min['costCurrency'] ?? 'GBP';
         $receiveCurrency = $max['faceValueCurrency'] ?? $min['faceValueCurrency'] ?? 'GBP';
 
         $category = strtolower($sku['category'] ?? 'rtr');
-        $isPin    = $category === 'pin';
+        $isPin = $category === 'pin';
 
         return [
-            'sku_code'                    => 'vt-' . ($sku['skuId'] ?? ''),
-            'provider_code'               => 'vt-' . ($sku['operatorId'] ?? ''),
-            'region_code'                 => $sku['region'] ?? '',
-            'display_text'                => $sku['skuName'] ?? $sku['productName'] ?? '',
-            'localization_key'            => '',
-            'send_value'                  => $sendValue,
-            'receive_value'               => $receiveValue,
-            'send_currency'               => $sendCurrency,
-            'receive_currency'            => $receiveCurrency,
+            'sku_code' => 'vt-' . ($sku['skuId'] ?? ''),
+            'provider_code' => 'vt-' . ($sku['operatorId'] ?? ''),
+            'region_code' => $sku['region'] ?? '',
+            'display_text' => $sku['skuName'] ?? $sku['productName'] ?? '',
+            'localization_key' => '',
+            'send_value' => $sendValue,
+            'receive_value' => $receiveValue,
+            'send_currency' => $sendCurrency,
+            'receive_currency' => $receiveCurrency,
             'receive_value_excluding_tax' => $receiveValue,
-            'commission_rate'             => 0,
-            'commission_applied'          => 0,
-            'validity_period'             => $sku['validity'] ?? '',
-            'benefits'                    => $sku['benefitType'] ? [$sku['benefitType']] : [],
-            'payment_types'               => [],
-            'processing_mode'             => 'Instant',
-            'redemption_type'             => $isPin ? 'ReadReceipt' : 'Immediate',
-            'product_type'                => $category,
-            'requires_receipt'            => $isPin,
-            'min_send_value'              => $sendValue,
-            'max_send_value'              => $sendValue,
-            'is_denomination'             => true,
-            'description_markdown'        => $sku['productDescription'] ?? '',
-            'readmore_markdown'           => $sku['additionalInformation'] ?? '',
-            '_valuetopup'                 => [
-                'skuId'       => $sku['skuId'] ?? null,
-                'productId'   => $sku['productId'] ?? null,
-                'operatorId'  => $sku['operatorId'] ?? null,
+            'commission_rate' => 0,
+            'commission_applied' => 0,
+            'validity_period' => $sku['validity'] ?? '',
+            'benefits' => $sku['benefitType'] ? [$sku['benefitType']] : [],
+            'payment_types' => [],
+            'processing_mode' => 'Instant',
+            'redemption_type' => $isPin ? 'ReadReceipt' : 'Immediate',
+            'product_type' => $category,
+            'requires_receipt' => $isPin,
+            'min_send_value' => $sendValue,
+            'max_send_value' => $sendValue,
+            'is_denomination' => true,
+            'description_markdown' => $sku['productDescription'] ?? '',
+            'readmore_markdown' => $sku['additionalInformation'] ?? '',
+            '_valuetopup' => [
+                'skuId' => $sku['skuId'] ?? null,
+                'productId' => $sku['productId'] ?? null,
+                'operatorId' => $sku['operatorId'] ?? null,
                 'productName' => $sku['productName'] ?? '',
-                'category'    => $category,
+                'category' => $category,
             ],
         ];
     }
@@ -372,11 +396,11 @@ class ValuetopupService
         if (!empty($payload['pins']) && is_array($payload['pins'])) {
             foreach ($payload['pins'] as $pin) {
                 $pinNumbers[] = [
-                    'pinNumber'             => $pin['pinNumber'] ?? '',
-                    'controlNumber'         => $pin['controlNumber'] ?? '',
-                    'deliveredAmount'       => $pin['deliveredAmount'] ?? 0,
+                    'pinNumber' => $pin['pinNumber'] ?? '',
+                    'controlNumber' => $pin['controlNumber'] ?? '',
+                    'deliveredAmount' => $pin['deliveredAmount'] ?? 0,
                     'deliveredCurrencyCode' => $pin['deliveredCurrencyCode'] ?? '',
-                    'expirationDate'        => $pin['expirationDate'] ?? null,
+                    'expirationDate' => $pin['expirationDate'] ?? null,
                 ];
             }
         }
@@ -395,11 +419,11 @@ class ValuetopupService
 
         return [
             'valuetopup_transaction_id' => $payload['transactionId'] ?? null,
-            'valuetopup_response'       => $response,
-            'receipt_text'              => $receiptText,
-            'send_value'                => (float) ($payload['invoiceAmount'] ?? 0),
-            'receive_value'             => (float) ($payload['faceValue'] ?? 0),
-            'ding_transaction_id'       => $payload['topupDetail']['operatorTransactionId'] ?? null,
+            'valuetopup_response' => $response,
+            'receipt_text' => $receiptText,
+            'send_value' => (float) ($payload['invoiceAmount'] ?? 0),
+            'receive_value' => (float) ($payload['faceValue'] ?? 0),
+            'ding_transaction_id' => $payload['topupDetail']['operatorTransactionId'] ?? null,
         ];
     }
 

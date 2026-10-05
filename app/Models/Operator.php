@@ -11,6 +11,7 @@ class Operator extends Model
         'name',
         'slug',
         'provider_code',
+        'valuetopup_operator_id',
         'country_id',
         'logo_url',
         'is_active',

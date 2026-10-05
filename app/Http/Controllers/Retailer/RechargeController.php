@@ -161,45 +161,105 @@ class RechargeController extends Controller
         ]);
 
         $countryIso = $request->query('country_iso');
+        $country = Country::where('iso_code', $countryIso)->first();
+
         $result = $vt->operators();
 
         if (!($result['responseCode'] ?? '') === '000' || empty($result['payLoad'])) {
             return response()->json(['success' => true, 'providers' => []]);
         }
 
-        $country = Country::where('iso_code', $countryIso)->first();
+        // Load existing DingConnect operators for this country to enable matching
+        $existingOperators = Operator::where('country_id', $country?->id)
+            ->whereNotNull('provider_code')
+            ->where('provider_code', 'not like', 'vt-%')
+            ->get()
+            ->keyBy(fn($o) => mb_strtolower($o->name));
 
-        $providers = collect($result['payLoad'])->map(function ($item) use ($country, $countryIso) {
-            $operator = Operator::updateOrCreate(
-                [
+        // Reverse lookup: VT ID -> Ding operator name (for already-linked operators)
+        $vtIdToDingName = $existingOperators
+            ->filter(fn($o) => !empty($o->valuetopup_operator_id))
+            ->mapWithKeys(fn($o) => [(string) $o->valuetopup_operator_id => $o->name])
+            ->all();
+
+        $syncedProviders = [];
+
+        foreach ($result['payLoad'] as $item) {
+            $vtName = $item['operatorName'];
+            $vtId = (string) $item['operatorId'];
+
+            // Check if already linked via valuetopup_operator_id
+            if (isset($vtIdToDingName[$vtId])) {
+                $operator = $existingOperators[mb_strtolower($vtIdToDingName[$vtId])] ?? null;
+            } else {
+                // Fuzzy name match against existing DingConnect operators
+                $operator = $this->findMatchingDingOperator($vtName, $existingOperators);
+            }
+
+            if ($operator) {
+                // Link existing DingConnect operator to this VT ID
+                $operator->update([
+                    'valuetopup_operator_id' => $item['operatorId'],
+                    'logo_url' => $operator->logo_url ?: ($item['imageUrl'] ?? null),
+                    'payment_types' => $operator->payment_types ?: json_encode(['valuetopup']),
+                ]);
+            } else {
+                // No DingConnect match — create a new operator row
+                $operator = Operator::create([
+                    'name' => $vtName,
+                    'slug' => Str::slug($vtName),
                     'provider_code' => 'vt-' . $item['operatorId'],
-                ],
-                [
-                    'name' => $item['operatorName'],
-                    'slug' => Str::slug($item['operatorName']),
+                    'valuetopup_operator_id' => $item['operatorId'],
                     'country_id' => $country?->id,
                     'logo_url' => $item['imageUrl'] ?? null,
                     'region_codes' => json_encode([]),
                     'payment_types' => json_encode(['valuetopup']),
                     'is_premium' => false,
                     'is_active' => true,
-                ]
-            );
+                ]);
+            }
 
-            return [
+            $syncedProviders[] = [
                 'provider_code'  => $operator->provider_code,
                 'provider_id'    => $operator->id,
                 'name'           => $operator->name,
                 'logo_url'       => $operator->logo_url,
                 'country_iso'    => $countryIso,
-                'source'         => 'valuetopup',
+                'source'         => $operator->provider_code === 'vt-' . $item['operatorId'] ? 'valuetopup_only' : 'both',
                 'valuetopup_id'  => $item['operatorId'],
             ];
-        })->filter(fn($p) => !empty($p['provider_code']))->values()->all();
+        }
 
-        return response()->json(['success' => true, 'providers' => $providers]);
+        return response()->json(['success' => true, 'providers' => $syncedProviders]);
     }
 
+    /**
+     * Try to find a DingConnect operator whose name contains or is contained
+     * by the Valuetopup operator name.
+     *
+     * Example: "Vodafone" matches "Vodafone United Kingdom"
+     *          "Lebara" matches "Lebara United Kingdom"
+     */
+    private function findMatchingDingOperator(string $vtName, $existingOperators): ?Operator
+    {
+        $vtLower = mb_strtolower($vtName);
+
+        foreach ($existingOperators as $dingNameLower => $dingOperator) {
+            if ($vtLower === $dingNameLower
+                || str_contains($dingNameLower, $vtLower)
+                || str_contains($vtLower, $dingNameLower)
+            ) {
+                return $dingOperator;
+            }
+
+            $dingFirstWord = explode(' ', $dingNameLower)[0];
+            if ($vtLower === $dingFirstWord) {
+                return $dingOperator;
+            }
+        }
+
+        return null;
+    }
     /**
      * Fetch Valuetopup products + SKUs for an operator and return them
      * in the same shape as getProducts so the frontend can merge them.
@@ -209,13 +269,24 @@ class RechargeController extends Controller
     {
         $request->validate([
             'country_iso' => 'required|string|size:2',
-            'operator_id' => 'required|integer',
+            'operator_id' => 'required_without:valuetopup_id|integer',
+            'valuetopup_id' => 'required_without:operator_id|integer',
         ]);
 
         $countryIso = $request->query('country_iso');
-        $operatorId = (int) $request->query('operator_id');
 
-        $productsResult = $vt->products($operatorId);
+        // Resolve the VT operator ID either directly or via the operator DB id
+        $valuetopupId = (int) $request->query('valuetopup_id');
+        if (!$valuetopupId) {
+            $operator = Operator::findOrFail((int) $request->query('operator_id'));
+            $valuetopupId = (int) ($operator->valuetopup_operator_id ?? 0);
+        }
+
+        if (!$valuetopupId) {
+            return response()->json(['success' => true, 'products' => []]);
+        }
+
+        $productsResult = $vt->products($valuetopupId);
 
         if (!($productsResult['responseCode'] ?? '') === '000' || empty($productsResult['payLoad'])) {
             return response()->json(['success' => true, 'products' => []]);

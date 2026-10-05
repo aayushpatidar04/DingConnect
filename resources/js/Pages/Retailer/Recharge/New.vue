@@ -33,6 +33,14 @@ const cleanedPhone = ref("");
 const submitting = ref(false);
 const errorMessage = ref("");
 
+// Dual-API state
+const vtProviders = ref([]);
+const vtProducts = ref([]);
+const loadingVtProviders = ref(false);
+const loadingVtProducts = ref(false);
+const selectedProductSource = ref("ding"); // "ding" or "valuetopup"
+const valuetopupSkuId = ref(null);
+
 // Product description (fetched on demand)
 const productDescription = ref("");
 const productReadmore = ref("");
@@ -84,6 +92,8 @@ const form = useForm({
     provider_code: "",
     free_range: false,
     receive_value_excluding_tax: 0,
+    gateway: "ding",
+    valuetopup_sku_id: null,
 });
 
 // =========================================================================
@@ -128,6 +138,18 @@ const canProceedFromPhone = computed(
     () => cleanedPhone.value.length >= 7 && !phoneError.value,
 );
 
+// Merged product list for display
+const allProducts = computed(() => {
+    const map = new Map();
+    for (const p of products.value) {
+        map.set(p.sku_code, { ...p, _source: "ding" });
+    }
+    for (const p of vtProducts.value) {
+        map.set(p.sku_code, { ...p, _source: "valuetopup" });
+    }
+    return [...map.values()];
+});
+
 // =========================================================================
 // STEP NAVIGATION
 // =========================================================================
@@ -154,36 +176,45 @@ function backToStep(step) {
 
 async function loadProviders() {
     loadingProviders.value = true;
+    loadingVtProviders.value = true;
     providers.value = [];
+    vtProviders.value = [];
     selectedProvider.value = null;
     errorMessage.value = "";
 
-    try {
-        const params = new URLSearchParams();
-        params.append("country_iso", currentCountryIso.value);
+    // Fire both requests in parallel
+    const [dingRes, vtRes] = await Promise.allSettled([
+        fetch(
+            `/retailer/recharge/providers?country_iso=${currentCountryIso.value}`,
+        ).then((r) => r.json()),
+        fetch(
+            `/retailer/recharge/valuetopup/operators?country_iso=${currentCountryIso.value}`,
+        ).then((r) => r.json()),
+    ]);
 
-        const res = await fetch(
-            `/retailer/recharge/providers?${params.toString()}`,
-        );
-        const data = await res.json();
-        if (data.success) {
-            providers.value = data.providers || [];
-            if (providers.value.length === 0) {
-                errorMessage.value = "No operators available for this country.";
-            }
-        } else {
-            errorMessage.value = data.error || "Failed to load operators.";
-        }
-    } catch (e) {
-        errorMessage.value = "Network error. Please try again.";
-    } finally {
-        loadingProviders.value = false;
+    // DingConnect
+    if (dingRes.status === "fulfilled" && dingRes.value.success) {
+        providers.value = dingRes.value.providers || [];
+    }
+
+    // Valuetopup
+    if (vtRes.status === "fulfilled" && vtRes.value.success) {
+        vtProviders.value = vtRes.value.providers || [];
+    }
+
+    loadingProviders.value = false;
+    loadingVtProviders.value = false;
+
+    // Combined view deduplicated by id
+    if (providers.value.length === 0 && vtProviders.value.length === 0) {
+        errorMessage.value = "No operators available for this country.";
     }
 }
 
 async function selectProvider(provider) {
     selectedProvider.value = provider;
     form.provider_code = provider.provider_code;
+    selectedProductSource.value = "ding"; // reset; loadProducts will populate the right one
     errorMessage.value = "";
 }
 
@@ -191,19 +222,23 @@ async function proceedToProducts() {
     if (!selectedProvider.value) return;
     errorMessage.value = "";
 
-    // Check provider status
-    try {
-        const res = await fetch(
-            `/retailer/recharge/provider-status?provider_code=${selectedProvider.value.provider_code}`,
-        );
-        const data = await res.json();
-        providerLive.value = data.is_live !== false;
-        if (!providerLive.value) {
-            errorMessage.value =
-                "Selected provider is down at this moment, please try after some time.";
-            return;
+    // Only Ding providers have an availability endpoint. For VT-only ones, assume live.
+    if (!selectedProvider.value.provider_code.startsWith("vt-")) {
+        try {
+            const res = await fetch(
+                `/retailer/recharge/provider-status?provider_code=${selectedProvider.value.provider_code}`,
+            );
+            const data = await res.json();
+            providerLive.value = data.is_live !== false;
+            if (!providerLive.value) {
+                errorMessage.value =
+                    "Selected provider is down at this moment, please try after some time.";
+                return;
+            }
+        } catch (e) {
+            providerLive.value = true;
         }
-    } catch (e) {
+    } else {
         providerLive.value = true;
     }
 
@@ -213,31 +248,77 @@ async function proceedToProducts() {
 
 async function loadProducts() {
     loadingProducts.value = true;
+    loadingVtProducts.value = true;
     products.value = [];
+    vtProducts.value = [];
     selectedProduct.value = null;
     productDescription.value = "";
     productReadmore.value = "";
     errorMessage.value = "";
 
-    try {
-        const params = new URLSearchParams();
-        params.append("country_iso", currentCountryIso.value);
-        params.append("provider_code", selectedProvider.value.provider_code);
+    const provider = selectedProvider.value;
+    const country = currentCountryIso.value;
 
-        const res = await fetch(
-            `/retailer/recharge/products?${params.toString()}`,
+    // Determine Valuetopup operator id for this provider (if linked)
+    const vtOperatorId = provider.value_topup_id || provider.valuetopup_id || null;
+
+    // Build parallel requests
+    const requests = [];
+
+    // DingConnect products (if not a VT-only provider)
+    if (!provider.provider_code.startsWith("vt-")) {
+        const dingParams = new URLSearchParams();
+        dingParams.append("country_iso", country);
+        dingParams.append("provider_code", provider.provider_code);
+        requests.push(
+            fetch(`/retailer/recharge/products?${dingParams.toString()}`).then(
+                (r) => r.json(),
+            ),
         );
-        const data = await res.json();
-        if (data.success) {
-            products.value = data.products || [];
-            await loadPromotions();
-        } else {
-            errorMessage.value = data.error || "Failed to load products.";
-        }
-    } catch (e) {
-        errorMessage.value = "Network error. Please try again.";
-    } finally {
-        loadingProducts.value = false;
+    } else {
+        requests.push(Promise.resolve({ success: true, products: [] }));
+    }
+
+    // Valuetopup products (if provider has a VT id)
+    if (vtOperatorId) {
+        const vtParams = new URLSearchParams();
+        vtParams.append("country_iso", country);
+        vtParams.append("valuetopup_id", vtOperatorId);
+        requests.push(
+            fetch(
+                `/retailer/recharge/valuetopup/products?${vtParams.toString()}`,
+            ).then((r) => r.json()),
+        );
+    } else {
+        requests.push(Promise.resolve({ success: true, products: [] }));
+    }
+
+    const [dingRes, vtRes] = await Promise.allSettled(requests);
+
+    if (dingRes.status === "fulfilled" && dingRes.value.success) {
+        products.value = (dingRes.value.products || []).map((p) => ({
+            ...p,
+            _source: "ding",
+        }));
+    }
+
+    if (vtRes.status === "fulfilled" && vtRes.value.success) {
+        vtProducts.value = (vtRes.value.products || []).map((p) => ({
+            ...p,
+            _source: "valuetopup",
+        }));
+    }
+
+    loadingProducts.value = false;
+    loadingVtProducts.value = false;
+
+    if (products.value.length === 0 && vtProducts.value.length === 0) {
+        errorMessage.value = "No products available for this operator.";
+    }
+
+    // Skip promotions for VT-only providers (DingConnect-only feature)
+    if (!provider.provider_code.startsWith("vt-")) {
+        await loadPromotions();
     }
 }
 
@@ -271,6 +352,20 @@ async function selectProduct(product) {
     selectedProduct.value = product;
     selectedSkuCode.value = product.sku_code;
     isFreeRangeFlow.value = !product.is_denomination;
+    selectedProductSource.value = product._source || "ding";
+
+    // Set gateway based on source
+    if (product._source === "valuetopup") {
+        form.gateway = "valuetopup";
+        // Extract VT sku id from the "vt-XXXX" code
+        const rawCode = product.sku_code.replace(/^vt-/, "");
+        form.valuetopup_sku_id = parseInt(rawCode) || null;
+        valuetopupSkuId.value = form.valuetopup_sku_id;
+    } else {
+        form.gateway = "ding";
+        form.valuetopup_sku_id = null;
+        valuetopupSkuId.value = null;
+    }
 
     if (isFreeRangeFlow.value) {
         freeRangeAmount.value = product.min_send_value || 5;
@@ -281,8 +376,10 @@ async function selectProduct(product) {
     productDescription.value = "";
     productReadmore.value = "";
 
-    // Fetch product description from API
-    await fetchProductDescription(product.sku_code);
+    // Fetch product description from API (DingConnect descriptions only)
+    if (form.gateway === "ding") {
+        await fetchProductDescription(product.sku_code);
+    }
 
     // Populate form
     form.sku_code = product.sku_code;
@@ -293,8 +390,8 @@ async function selectProduct(product) {
     form.display_text = product.display_text;
     form.default_display_text = product.display_text;
     form.validity_period = product.validity_period;
-    form.description_markdown = productDescription.value || "";
-    form.readmore_markdown = productReadmore.value || "";
+    form.description_markdown = productDescription.value || product.description_markdown || "";
+    form.readmore_markdown = productReadmore.value || product.readmore_markdown || "";
     form.benefits = product.benefits || [];
     form.redemption_type = product.redemption_type || "Immediate";
     form.product_type = product.product_type || "";
@@ -403,23 +500,51 @@ async function fetchFreeRangePricing() {
     }
     freeRangeLoading.value = true;
     try {
-        const params = new URLSearchParams();
-        params.append("sku_code", selectedProduct.value.sku_code);
-        params.append("send_value", freeRangeAmount.value);
-        params.append("send_currency_iso", form.send_currency);
-
-        const res = await fetch(
-            `/retailer/recharge/pricing?${params.toString()}`,
-        );
-        const data = await res.json();
-        if (data.success && data.pricing) {
-            freeRangePricing.value = data.pricing;
-            form.send_value = data.pricing.send_value;
-            form.receive_value = data.pricing.receive_value;
-            form.receive_value_excluding_tax =
-                data.pricing.receive_value_excluding_tax;
+        if (selectedProductSource.value === "valuetopup") {
+            // Valuetopup free-range estimate
+            const body = {
+                sku_id: valuetopupSkuId.value,
+                amount: freeRangeAmount.value,
+                currency: form.send_currency,
+            };
+            const res = await fetch(
+                "/retailer/recharge/estimate-cost",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body),
+                },
+            );
+            const data = await res.json();
+            if (data.success && data.pricing) {
+                freeRangePricing.value = data.pricing;
+                form.send_value = data.pricing.send_value;
+                form.receive_value = data.pricing.receive_value;
+                form.receive_value_excluding_tax =
+                    data.pricing.sales_tax || 0;
+            } else {
+                freeRangePricing.value = null;
+            }
         } else {
-            freeRangePricing.value = null;
+            // DingConnect free-range estimate
+            const params = new URLSearchParams();
+            params.append("sku_code", selectedProduct.value.sku_code);
+            params.append("send_value", freeRangeAmount.value);
+            params.append("send_currency_iso", form.send_currency);
+
+            const res = await fetch(
+                `/retailer/recharge/pricing?${params.toString()}`,
+            );
+            const data = await res.json();
+            if (data.success && data.pricing) {
+                freeRangePricing.value = data.pricing;
+                form.send_value = data.pricing.send_value;
+                form.receive_value = data.pricing.receive_value;
+                form.receive_value_excluding_tax =
+                    data.pricing.receive_value_excluding_tax;
+            } else {
+                freeRangePricing.value = null;
+            }
         }
     } catch (e) {
         freeRangePricing.value = null;
@@ -483,6 +608,15 @@ function doSubmit() {
         form.provider_code = selectedProvider.value.provider_code;
     }
 
+    // Ensure gateway and VT SKU are set for VT products
+    if (selectedProductSource.value === "valuetopup") {
+        form.gateway = "valuetopup";
+        form.valuetopup_sku_id = valuetopupSkuId.value;
+    } else {
+        form.gateway = "ding";
+        form.valuetopup_sku_id = null;
+    }
+
     form.post("/retailer/recharge", {
         onSuccess: () => {
             showReviewModal.value = false;
@@ -515,10 +649,14 @@ function resetFlow() {
     selectedCountry.value = null;
     countryIso.value = "";
     providers.value = [];
+    vtProviders.value = [];
     selectedProvider.value = null;
     products.value = [];
+    vtProducts.value = [];
     selectedProduct.value = null;
     selectedSkuCode.value = "";
+    selectedProductSource.value = "ding";
+    valuetopupSkuId.value = null;
     isFreeRangeFlow.value = false;
     freeRangeAmount.value = 0;
     freeRangePricing.value = null;
@@ -688,7 +826,11 @@ onMounted(() => {
             </div>
 
             <div
-                v-else-if="providers.length === 0 && !loadingProviders"
+                v-else-if="
+                    providers.length === 0 &&
+                    vtProviders.length === 0 &&
+                    !loadingProviders
+                "
                 class="text-center py-16"
             >
                 <p class="text-dark-300 text-lg mb-2">
@@ -703,19 +845,20 @@ onMounted(() => {
             </div>
 
             <div
-                v-else
+                v-if="providers.length + vtProviders.length > 0"
                 class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
             >
+                <!-- DingConnect providers -->
                 <button
                     v-for="provider in providers"
-                    :key="provider.provider_code"
+                    :key="'d-' + provider.provider_code"
                     @click="selectProvider(provider)"
                     :class="[
                         'rounded-2xl p-5 text-left transition relative',
                         selectedProvider?.provider_code ===
                         provider.provider_code
-                            ? 'bg-primary/20 border-2 border-primary'
-                            : 'bg-dark-800 border border-dark-600 hover:border-primary/50',
+                            ? 'bg-primary/20 border-2 border-yellow-500'
+                            : 'bg-dark-800 border border-dark-600 hover:border-yellow-500/50',
                     ]"
                 >
                     <div class="flex items-center gap-3">
@@ -750,10 +893,56 @@ onMounted(() => {
                         &#10003; Selected
                     </div>
                 </button>
+
+                <!-- Valuetopup providers (that are NOT already linked to a Ding provider) -->
+                <button
+                    v-for="provider in vtProviders"
+                    :key="'v-' + provider.provider_code"
+                    @click="selectProvider(provider)"
+                    :class="[
+                        'rounded-2xl p-5 text-left transition relative',
+                        selectedProvider?.provider_code ===
+                        provider.provider_code
+                            ? 'bg-yellow-500/20 border-2 border-yellow-500'
+                            : 'bg-dark-800 border border-dark-600 hover:border-yellow-500/50',
+                    ]"
+                >
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-12 h-12 bg-white rounded-lg flex items-center justify-center overflow-hidden shrink-0"
+                        >
+                            <img
+                                v-if="provider.logo_url"
+                                :src="provider.logo_url"
+                                :alt="provider.name"
+                                class="w-full h-full object-contain p-1"
+                                @error="$event.target.style.display = 'none'"
+                            />
+                            <span v-else class="text-2xl">📱</span>
+                        </div>
+                        <div>
+                            <div class="text-lg font-semibold text-white">
+                                {{ provider.name }}
+                            </div>
+                            <div class="text-xs text-dark-400 mt-1">
+                                {{ provider.provider_code }}
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        v-if="
+                            selectedProvider?.provider_code ===
+                            provider.provider_code
+                        "
+                        class="text-xs text-yellow-400 mt-2 font-semibold"
+                    >
+                        &#10003; Selected
+                    </div>
+                </button>
             </div>
 
             <button
-                v-if="providers.length > 0"
+                v-if="providers.length + vtProviders.length > 0"
                 @click="proceedToProducts"
                 :disabled="!selectedProvider"
                 class="mt-6 w-full btn-primary text-white py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
@@ -815,13 +1004,17 @@ onMounted(() => {
             </div>
 
             <ProductCategories
-                :products="products"
-                :loading="loadingProducts"
+                :products="allProducts"
+                :loading="loadingProducts || loadingVtProducts"
                 @select-product="selectProduct"
             />
 
             <div
-                v-if="!loadingProducts && products.length === 0"
+                v-if="
+                    !loadingProducts &&
+                    !loadingVtProducts &&
+                    allProducts.length === 0
+                "
                 class="text-center py-12"
             >
                 <p class="text-dark-300">
@@ -1120,6 +1313,16 @@ onMounted(() => {
                         <div class="text-2xl font-bold text-primary-light">
                             {{ freeRangePricing.receive_currency }}
                             {{ freeRangePricing.receive_value.toFixed(2) }}
+                        </div>
+                        <div
+                            v-if="
+                                selectedProductSource === 'valuetopup' &&
+                                freeRangePricing.face_value
+                            "
+                            class="text-sm text-yellow-400 mt-1"
+                        >
+                            Face value: {{ freeRangePricing.face_value_currency || 'GBP' }}
+                            {{ freeRangePricing.face_value.toFixed(2) }}
                         </div>
                     </div>
                 </div>
