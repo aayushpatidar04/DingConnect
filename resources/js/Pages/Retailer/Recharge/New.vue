@@ -34,9 +34,7 @@ const submitting = ref(false);
 const errorMessage = ref("");
 
 // Dual-API state
-const vtProviders = ref([]);
 const vtProducts = ref([]);
-const loadingVtProviders = ref(false);
 const loadingVtProducts = ref(false);
 const selectedProductSource = ref("ding"); // "ding" or "valuetopup"
 const valuetopupSkuId = ref(null);
@@ -176,9 +174,7 @@ function backToStep(step) {
 
 async function loadProviders() {
     loadingProviders.value = true;
-    loadingVtProviders.value = true;
     providers.value = [];
-    vtProviders.value = [];
     selectedProvider.value = null;
     errorMessage.value = "";
 
@@ -192,29 +188,62 @@ async function loadProviders() {
         ).then((r) => r.json()),
     ]);
 
-    // DingConnect
-    if (dingRes.status === "fulfilled" && dingRes.value.success) {
-        providers.value = dingRes.value.providers || [];
+    const dingProviders =
+        dingRes.status === "fulfilled" && dingRes.value.success
+            ? dingRes.value.providers || []
+            : [];
+
+    const vtProviders =
+        vtRes.status === "fulfilled" && vtRes.value.success
+            ? vtRes.value.providers || []
+            : [];
+
+    // Step 1: Start with DingConnect providers, default valuetopup_id to null
+    const merged = dingProviders.map((p) => ({
+        ...p,
+        valuetopup_id: null,
+    }));
+
+    // Step 2: For each VT provider, either:
+    //   - update the matching Ding row's valuetopup_id (if already linked), OR
+    //   - append it as a VT-only row (if not in Ding)
+    for (const vt of vtProviders) {
+        const vtId = vt.valuetopup_id;
+        if (vt.source === "both") {
+            // Linked to an existing Ding row — update that row
+            const idx = merged.findIndex(
+                (p) => p.provider_id === vt.provider_id,
+            );
+            if (idx !== -1) {
+                merged[idx].valuetopup_id = vtId;
+            }
+        } else if (vt.source === "valuetopup_only") {
+            // New VT-only provider — add to the merged list
+            merged.push({
+                provider_id: vt.provider_id,
+                provider_code: vt.provider_code, // already "vt-<id>"
+                name: vt.name,
+                logo_url: vt.logo_url,
+                country_iso: vt.country_iso,
+                valuetopup_id: vtId,
+                source: "valuetopup_only",
+            });
+        }
     }
 
-    // Valuetopup
-    if (vtRes.status === "fulfilled" && vtRes.value.success) {
-        vtProviders.value = vtRes.value.providers || [];
+    providers.value = merged;
+
+    if (providers.value.length === 0) {
+        errorMessage.value = "No operators available for this country.";
     }
 
     loadingProviders.value = false;
-    loadingVtProviders.value = false;
-
-    // Combined view deduplicated by id
-    if (providers.value.length === 0 && vtProviders.value.length === 0) {
-        errorMessage.value = "No operators available for this country.";
-    }
 }
 
 async function selectProvider(provider) {
     selectedProvider.value = provider;
     form.provider_code = provider.provider_code;
-    selectedProductSource.value = "ding"; // reset; loadProducts will populate the right one
+    selectedProductSource.value = provider.source === "valuetopup_only" ? "valuetopup" : "ding";
     errorMessage.value = "";
 }
 
@@ -222,8 +251,8 @@ async function proceedToProducts() {
     if (!selectedProvider.value) return;
     errorMessage.value = "";
 
-    // Only Ding providers have an availability endpoint. For VT-only ones, assume live.
-    if (!selectedProvider.value.provider_code.startsWith("vt-")) {
+    // Skip DingConnect provider-status for VT-only providers
+    if (selectedProvider.value.source !== "valuetopup_only") {
         try {
             const res = await fetch(
                 `/retailer/recharge/provider-status?provider_code=${selectedProvider.value.provider_code}`,
@@ -248,7 +277,7 @@ async function proceedToProducts() {
 
 async function loadProducts() {
     loadingProducts.value = true;
-    loadingVtProducts.value = true;
+    loadingVtProducts.value = false;
     products.value = [];
     vtProducts.value = [];
     selectedProduct.value = null;
@@ -259,41 +288,34 @@ async function loadProducts() {
     const provider = selectedProvider.value;
     const country = currentCountryIso.value;
 
-    // Determine Valuetopup operator id for this provider (if linked)
-    const vtOperatorId = provider.value_topup_id || provider.valuetopup_id || null;
-
-    // Build parallel requests
-    const requests = [];
-
-    // DingConnect products (if not a VT-only provider)
-    if (!provider.provider_code.startsWith("vt-")) {
+    // DingConnect products (skip for VT-only providers)
+    let dingPromise = Promise.resolve({ success: true, products: [] });
+    if (provider.source !== "valuetopup_only") {
         const dingParams = new URLSearchParams();
         dingParams.append("country_iso", country);
         dingParams.append("provider_code", provider.provider_code);
-        requests.push(
-            fetch(`/retailer/recharge/products?${dingParams.toString()}`).then(
-                (r) => r.json(),
-            ),
-        );
-    } else {
-        requests.push(Promise.resolve({ success: true, products: [] }));
+        dingPromise = fetch(
+            `/retailer/recharge/products?${dingParams.toString()}`,
+        ).then((r) => r.json());
     }
 
-    // Valuetopup products (if provider has a VT id)
-    if (vtOperatorId) {
+    // Valuetopup products (always for VT-only, or if linked via valuetopup_id)
+    const vtOperatorId = provider.valuetopup_id;
+    let vtPromise = Promise.resolve({ success: true, products: [] });
+    if (vtOperatorId || provider.source === "valuetopup_only") {
+        loadingVtProducts.value = true;
         const vtParams = new URLSearchParams();
         vtParams.append("country_iso", country);
-        vtParams.append("valuetopup_id", vtOperatorId);
-        requests.push(
-            fetch(
-                `/retailer/recharge/valuetopup/products?${vtParams.toString()}`,
-            ).then((r) => r.json()),
-        );
-    } else {
-        requests.push(Promise.resolve({ success: true, products: [] }));
+        // For VT-only providers use provider_id as the operator id
+        const operatorId =
+            vtOperatorId || provider.provider_id;
+        vtParams.append("valuetopup_id", operatorId);
+        vtPromise = fetch(
+            `/retailer/recharge/valuetopup/products?${vtParams.toString()}`,
+        ).then((r) => r.json());
     }
 
-    const [dingRes, vtRes] = await Promise.allSettled(requests);
+    const [dingRes, vtRes] = await Promise.allSettled([dingPromise, vtPromise]);
 
     if (dingRes.status === "fulfilled" && dingRes.value.success) {
         products.value = (dingRes.value.products || []).map((p) => ({
@@ -316,10 +338,7 @@ async function loadProducts() {
         errorMessage.value = "No products available for this operator.";
     }
 
-    // Skip promotions for VT-only providers (DingConnect-only feature)
-    if (!provider.provider_code.startsWith("vt-")) {
-        await loadPromotions();
-    }
+    await loadPromotions();
 }
 
 async function loadPromotions() {
@@ -649,7 +668,6 @@ function resetFlow() {
     selectedCountry.value = null;
     countryIso.value = "";
     providers.value = [];
-    vtProviders.value = [];
     selectedProvider.value = null;
     products.value = [];
     vtProducts.value = [];
@@ -826,11 +844,7 @@ onMounted(() => {
             </div>
 
             <div
-                v-else-if="
-                    providers.length === 0 &&
-                    vtProviders.length === 0 &&
-                    !loadingProviders
-                "
+                v-else-if="providers.length === 0 && !loadingProviders"
                 class="text-center py-16"
             >
                 <p class="text-dark-300 text-lg mb-2">
@@ -845,20 +859,23 @@ onMounted(() => {
             </div>
 
             <div
-                v-if="providers.length + vtProviders.length > 0"
+                v-if="providers.length > 0"
                 class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
             >
-                <!-- DingConnect providers -->
                 <button
                     v-for="provider in providers"
-                    :key="'d-' + provider.provider_code"
+                    :key="provider.provider_code"
                     @click="selectProvider(provider)"
                     :class="[
                         'rounded-2xl p-5 text-left transition relative',
                         selectedProvider?.provider_code ===
                         provider.provider_code
-                            ? 'bg-primary/20 border-2 border-yellow-500'
-                            : 'bg-dark-800 border border-dark-600 hover:border-yellow-500/50',
+                            ? (provider.source === 'valuetopup_only'
+                                ? 'bg-yellow-500/20 border-2 border-yellow-500'
+                                : 'bg-primary/20 border-2 border-primary')
+                            : (provider.source === 'valuetopup_only'
+                                ? 'bg-dark-800 border border-yellow-500/50'
+                                : 'bg-dark-800 border border-dark-600 hover:border-primary/50'),
                     ]"
                 >
                     <div class="flex items-center gap-3">
@@ -888,53 +905,10 @@ onMounted(() => {
                             selectedProvider?.provider_code ===
                             provider.provider_code
                         "
-                        class="text-xs text-primary mt-2 font-semibold"
-                    >
-                        &#10003; Selected
-                    </div>
-                </button>
-
-                <!-- Valuetopup providers (that are NOT already linked to a Ding provider) -->
-                <button
-                    v-for="provider in vtProviders"
-                    :key="'v-' + provider.provider_code"
-                    @click="selectProvider(provider)"
-                    :class="[
-                        'rounded-2xl p-5 text-left transition relative',
-                        selectedProvider?.provider_code ===
-                        provider.provider_code
-                            ? 'bg-yellow-500/20 border-2 border-yellow-500'
-                            : 'bg-dark-800 border border-dark-600 hover:border-yellow-500/50',
-                    ]"
-                >
-                    <div class="flex items-center gap-3">
-                        <div
-                            class="w-12 h-12 bg-white rounded-lg flex items-center justify-center overflow-hidden shrink-0"
-                        >
-                            <img
-                                v-if="provider.logo_url"
-                                :src="provider.logo_url"
-                                :alt="provider.name"
-                                class="w-full h-full object-contain p-1"
-                                @error="$event.target.style.display = 'none'"
-                            />
-                            <span v-else class="text-2xl">📱</span>
-                        </div>
-                        <div>
-                            <div class="text-lg font-semibold text-white">
-                                {{ provider.name }}
-                            </div>
-                            <div class="text-xs text-dark-400 mt-1">
-                                {{ provider.provider_code }}
-                            </div>
-                        </div>
-                    </div>
-                    <div
-                        v-if="
-                            selectedProvider?.provider_code ===
-                            provider.provider_code
-                        "
-                        class="text-xs text-yellow-400 mt-2 font-semibold"
+                        class="text-xs mt-2 font-semibold"
+                        :class="provider.source === 'valuetopup_only'
+                            ? 'text-yellow-400'
+                            : 'text-primary'"
                     >
                         &#10003; Selected
                     </div>
@@ -942,7 +916,7 @@ onMounted(() => {
             </div>
 
             <button
-                v-if="providers.length + vtProviders.length > 0"
+                v-if="providers.length > 0"
                 @click="proceedToProducts"
                 :disabled="!selectedProvider"
                 class="mt-6 w-full btn-primary text-white py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
@@ -984,6 +958,12 @@ onMounted(() => {
                 <div>
                     <div class="text-sm font-medium text-white">
                         {{ selectedProvider.name }}
+                        <span
+                            v-if="selectedProvider.source === 'valuetopup_only'"
+                            class="text-[10px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded-full ml-2"
+                        >
+                            VT Only
+                        </span>
                     </div>
                     <div class="text-xs text-dark-400">
                         {{ selectedCountry?.name }}
