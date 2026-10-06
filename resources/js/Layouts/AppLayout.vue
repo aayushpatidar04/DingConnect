@@ -50,16 +50,32 @@ import { useToast, toasts } from "@/composables/useToast.js";
 
                     <!-- Right side -->
                     <div class="flex items-center space-x-3">
-                        <Link
-                            href="/login"
-                            class="text-sm font-medium text-ink-500 hover:text-ink-900 transition"
-                            >Sign In</Link
-                        >
-                        <Link
-                            href="/register"
-                            class="btn-primary px-4 py-2 bg-primary text-ink-900 rounded-lg text-sm font-medium"
-                            >Become a Retailer</Link
-                        >
+                        <template v-if="$page.props.auth?.user">
+                            <Link
+                                :href="
+                                    $page.props.auth.user.role === 'admin'
+                                        ? '/admin'
+                                        : '/retailer'
+                                "
+                                class="btn-primary px-4 py-2 bg-primary text-ink-100 rounded-lg text-sm font-medium"
+                            >
+                                Dashboard
+                            </Link>
+                        </template>
+
+                        <template v-else>
+                            <Link
+                                href="/login"
+                                class="text-sm font-medium text-ink-500 hover:text-ink-900 transition"
+                                >Sign In</Link
+                            >
+
+                            <Link
+                                href="/register"
+                                class="btn-primary px-4 py-2 bg-primary text-ink-100 rounded-lg text-sm font-medium"
+                                >Become a Retailer</Link
+                            >
+                        </template>
                     </div>
                 </div>
             </div>

@@ -260,7 +260,7 @@ onMounted(() => {
             type="button"
             @click="initiateTopUp"
             :disabled="processing || !stripeLoaded"
-            class="w-full py-4 bg-primary text-ink-900 rounded-xl font-semibold hover:bg-primary-dark disabled:opacity-60 transition text-base"
+            class="w-full py-4 bg-primary text-ink-100 rounded-xl font-semibold hover:bg-primary-dark disabled:opacity-60 transition text-base"
         >
             {{ processing ? 'Processing...' : `Pay £${getAmount()} with Card` }}
         </button>

@@ -88,7 +88,7 @@ function applyFilters() {
                 <button
                     @click="syncFromDing"
                     :disabled="syncing"
-                    class="px-4 py-2 bg-green-600 text-ink-900 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-60 transition flex items-center gap-2 whitespace-nowrap"
+                    class="px-4 py-2 bg-green-600 text-ink-100 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-60 transition flex items-center gap-2 whitespace-nowrap"
                 >
                     <svg
                         v-if="syncing"
@@ -278,7 +278,7 @@ function applyFilters() {
                                     :class="[
                                         'px-2 py-1 text-xs rounded-full',
                                         op.is_active
-                                            ? 'bg-green-500/20 text-green-300'
+                                            ? 'bg-green-200 text-green-600'
                                             : 'bg-surface-3 text-ink-500',
                                     ]"
                                 >

@@ -60,7 +60,7 @@ function submit() {
             <button
                 type="submit"
                 :disabled="form.processing"
-                class="px-6 py-2 bg-primary text-ink-900 rounded-lg hover:bg-primary-dark disabled:opacity-60 transition"
+                class="px-6 py-2 bg-primary text-ink-100 rounded-lg hover:bg-primary-dark disabled:opacity-60 transition"
             >
                 Save Settings
             </button>

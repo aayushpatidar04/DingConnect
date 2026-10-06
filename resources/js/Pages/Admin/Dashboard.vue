@@ -22,7 +22,7 @@ const totalRevenue = computed(() =>
 const formatCurrency = (v) =>
     new Intl.NumberFormat("en-IN", {
         style: "currency",
-        currency: "INR",
+        currency: "GBP",
         maximumFractionDigits: 0,
     }).format(v);
 
@@ -56,7 +56,7 @@ const showLabel = (index) =>
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="stat-gradient-1 rounded-2xl p-5 card-hover">
                 <div class="text-sm text-blue-100">Total Retailers</div>
-                <div class="text-3xl font-bold text-ink-900 mt-1">
+                <div class="text-3xl font-bold text-ink-100 mt-1">
                     {{ stats.total_retailers }}
                 </div>
                 <div class="text-xs text-blue-200 mt-1">
@@ -65,7 +65,7 @@ const showLabel = (index) =>
             </div>
             <div class="stat-gradient-2 rounded-2xl p-5 card-hover">
                 <div class="text-sm text-green-100">Today's Transactions</div>
-                <div class="text-3xl font-bold text-ink-900 mt-1">
+                <div class="text-3xl font-bold text-ink-100 mt-1">
                     {{ stats.today_transactions }}
                 </div>
                 <div class="text-xs text-green-200 mt-1">
@@ -74,7 +74,7 @@ const showLabel = (index) =>
             </div>
             <div class="stat-gradient-3 rounded-2xl p-5 card-hover">
                 <div class="text-sm text-blue-100">Today's Volume</div>
-                <div class="text-3xl font-bold text-ink-900 mt-1">
+                <div class="text-3xl font-bold text-ink-100 mt-1">
                     £ {{ Number(stats.today_volume).toFixed(2) }}
                 </div>
                 <div class="text-xs text-blue-200 mt-1">
@@ -83,7 +83,7 @@ const showLabel = (index) =>
             </div>
             <div class="stat-gradient-4 rounded-2xl p-5 card-hover">
                 <div class="text-sm text-green-100">Success Rate</div>
-                <div class="text-3xl font-bold text-ink-900 mt-1">
+                <div class="text-3xl font-bold text-ink-100 mt-1">
                     {{ stats.success_rate }}%
                 </div>
                 <div class="text-xs text-green-200 mt-1">
@@ -250,7 +250,7 @@ const showLabel = (index) =>
                                     :class="[
                                         'px-2 py-0.5 text-xs rounded-full',
                                         txn.status === 'success'
-                                            ? 'bg-accent/20 text-accent-light'
+                                            ? 'bg-green-200 text-green-600'
                                             : txn.status === 'failed'
                                               ? 'bg-red-500/20 text-red-600'
                                               : 'bg-yellow-500/20 text-yellow-600',

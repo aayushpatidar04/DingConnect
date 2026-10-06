@@ -238,7 +238,7 @@ function logout() {
                                 class="flex items-center space-x-2 p-2 hover:bg-surface-2 rounded-lg transition"
                             >
                                 <div
-                                    class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-ink-900 font-bold text-sm"
+                                    class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-ink-100 font-bold text-sm"
                                 >
                                     {{ user.name.charAt(0).toUpperCase() }}
                                 </div>

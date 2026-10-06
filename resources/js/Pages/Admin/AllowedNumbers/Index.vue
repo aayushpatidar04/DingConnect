@@ -169,7 +169,7 @@ function filterBy(type) {
                     </button>
                     <button
                         @click="openAdd"
-                        class="px-4 py-2 bg-primary text-ink-900 rounded-xl text-sm font-medium hover:bg-primary-dark transition"
+                        class="px-4 py-2 bg-primary text-ink-100 rounded-xl text-sm font-medium hover:bg-primary-dark transition"
                     >
                         Add Number
                     </button>
@@ -276,8 +276,8 @@ function filterBy(type) {
                                     :class="[
                                         'px-2 py-0.5 rounded text-xs font-medium',
                                         item.type === 'mobile'
-                                            ? 'bg-blue-500/20 text-blue-300'
-                                            : 'bg-purple-500/20 text-purple-300',
+                                            ? 'bg-blue-500/20 text-blue-600'
+                                            : 'bg-purple-500/20 text-purple-600',
                                     ]"
                                 >
                                     {{
@@ -302,7 +302,7 @@ function filterBy(type) {
                                     :class="[
                                         'px-2 py-0.5 rounded text-xs font-medium transition',
                                         item.active
-                                            ? 'bg-green-500/20 text-green-300'
+                                            ? 'bg-green-200 text-green-600'
                                             : 'bg-red-500/20 text-red-600',
                                     ]"
                                 >
@@ -460,7 +460,7 @@ function filterBy(type) {
                 <div class="flex gap-3 mt-6 shrink-0">
                     <button
                         @click="submitForm"
-                        class="flex-1 py-2.5 bg-primary text-ink-900 rounded-xl font-medium hover:bg-primary-dark transition"
+                        class="flex-1 py-2.5 bg-primary text-ink-100 rounded-xl font-medium hover:bg-primary-dark transition"
                     >
                         {{ editingId ? "Update" : "Add" }}
                     </button>

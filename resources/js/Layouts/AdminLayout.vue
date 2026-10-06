@@ -62,7 +62,7 @@ onUnmounted(() => {
                         :class="
                             $page.url === '/admin' ||
                             $page.url.startsWith('/admin/dashboard')
-                                ? 'bg-primary text-ink-900 shadow-lg shadow-primary/20'
+                                ? 'bg-primary text-ink-100 shadow-lg shadow-primary/20'
                                 : 'text-ink-500 hover:bg-surface-2 hover:text-ink-900'
                         "
                     >
@@ -89,7 +89,7 @@ onUnmounted(() => {
                         class="flex items-center px-3 py-3 rounded-xl transition-all duration-200"
                         :class="
                             $page.url.includes('/retailers')
-                                ? 'bg-primary text-ink-900 shadow-lg shadow-primary/20'
+                                ? 'bg-primary text-ink-100 shadow-lg shadow-primary/20'
                                 : 'text-ink-500 hover:bg-surface-2 hover:text-ink-900'
                         "
                     >
@@ -116,7 +116,7 @@ onUnmounted(() => {
                         class="flex items-center px-3 py-3 rounded-xl transition-all duration-200"
                         :class="
                             $page.url.includes('/transactions')
-                                ? 'bg-primary text-ink-900 shadow-lg shadow-primary/20'
+                                ? 'bg-primary text-ink-100 shadow-lg shadow-primary/20'
                                 : 'text-ink-500 hover:bg-surface-2 hover:text-ink-900'
                         "
                     >
@@ -143,7 +143,7 @@ onUnmounted(() => {
                         class="flex items-center px-3 py-3 rounded-xl transition-all duration-200"
                         :class="
                             $page.url.includes('/operators')
-                                ? 'bg-primary text-ink-900 shadow-lg shadow-primary/20'
+                                ? 'bg-primary text-ink-100 shadow-lg shadow-primary/20'
                                 : 'text-ink-500 hover:bg-surface-2 hover:text-ink-900'
                         "
                     >
@@ -170,7 +170,7 @@ onUnmounted(() => {
                         class="flex items-center px-3 py-3 rounded-xl transition-all duration-200"
                         :class="
                             $page.url.includes('/allowed-numbers')
-                                ? 'bg-primary text-ink-900 shadow-lg shadow-primary/20'
+                                ? 'bg-primary text-ink-100 shadow-lg shadow-primary/20'
                                 : 'text-ink-500 hover:bg-surface-2 hover:text-ink-900'
                         "
                     >
@@ -197,7 +197,7 @@ onUnmounted(() => {
                         class="flex items-center px-3 py-3 rounded-xl transition-all duration-200"
                         :class="
                             $page.url.includes('/settings')
-                                ? 'bg-primary text-ink-900 shadow-lg shadow-primary/20'
+                                ? 'bg-primary text-ink-100 shadow-lg shadow-primary/20'
                                 : 'text-ink-500 hover:bg-surface-2 hover:text-ink-900'
                         "
                     >
@@ -233,7 +233,7 @@ onUnmounted(() => {
                         :class="showMobileMenu ? '' : 'flex-col'"
                     >
                         <div v-if="showMobileMenu"
-                            class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-ink-900 font-bold text-sm flex-shrink-0"
+                            class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-ink-100 font-bold text-sm flex-shrink-0"
                         >
                             {{ user.name.charAt(0).toUpperCase() }}
                         </div>

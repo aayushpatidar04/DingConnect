@@ -8,11 +8,11 @@ defineOptions({ layout: RetailerLayout });
 const props = defineProps({ transaction: Object });
 
 const statusColors = {
-    pending: "bg-yellow-500/10 text-yellow-600 border-yellow-500/30",
-    processing: "bg-blue-500/10 text-blue-300 border-blue-500/30",
-    success: "bg-green-500/10 text-green-300 border-green-500/30",
+    pending: "bg-yellow-500/10 text-yellow-700 border-yellow-500/30",
+    processing: "bg-blue-500/10 text-blue-700 border-blue-500/30",
+    success: "bg-green-500/10 text-green-700 border-green-500/30",
     failed: "bg-red-500/10 text-red-600 border-red-500/30",
-    cancelled: "bg-gray-500/10 text-gray-300 border-gray-500/30",
+    cancelled: "bg-surface-3/60 text-ink-700 border-surface-3",
 };
 
 const statusIcons = {
@@ -216,7 +216,7 @@ onMounted(async () => {
                     :class="[
                         'px-4 py-2 rounded-xl border text-sm font-semibold flex items-center gap-2',
                         statusColors[transaction.status] ||
-                            'bg-gray-500/10 text-gray-300',
+                            'bg-surface-3/60 text-ink-700',
                     ]"
                 >
                     <span>{{ statusIcons[transaction.status] || "📋" }}</span>
@@ -390,7 +390,7 @@ onMounted(async () => {
                     <span
                         v-for="benefit in transaction.benefits"
                         :key="benefit"
-                        class="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded"
+                        class="text-xs bg-green-200 text-green-600 px-2 py-1 rounded"
                     >
                         {{ benefit }}
                     </span>
@@ -565,14 +565,14 @@ onMounted(async () => {
             <button
                 v-if="canRetry"
                 @click="$inertia.visit('/retailer/recharge')"
-                class="flex-1 py-3 bg-primary text-ink-900 rounded-xl font-semibold hover:bg-primary-dark transition"
+                class="flex-1 py-3 bg-primary text-ink-100 rounded-xl font-semibold hover:bg-primary-dark transition"
             >
                 New Recharge
             </button>
             <button
                 v-if="canDownloadReceipt"
                 @click="downloadReceipt"
-                class="flex-1 py-3 bg-surface-2 border border-green-500/30 text-green-300 rounded-xl font-semibold hover:bg-green-500/10 transition flex items-center justify-center gap-2"
+                class="flex-1 py-3 bg-surface-2 border border-green-500/30 text-green-500 rounded-xl font-semibold hover:bg-green-500/10 transition flex items-center justify-center gap-2"
             >
                 📥 Download Receipt
             </button>

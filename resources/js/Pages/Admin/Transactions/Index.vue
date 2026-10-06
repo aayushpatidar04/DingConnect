@@ -119,13 +119,13 @@ const exportUrl = computed(() => {
             </div>
             <button
                 type="submit"
-                class="px-4 py-2 bg-primary text-ink-900 rounded-lg hover:bg-primary-dark transition text-sm"
+                class="px-4 py-2 bg-primary text-ink-100 rounded-lg hover:bg-primary-dark transition text-sm"
             >
                 Filter
             </button>
             <a
                 :href="exportUrl"
-                class="px-4 py-2 bg-accent text-ink-900 rounded-lg hover:bg-accent-dark transition text-sm"
+                class="px-4 py-2 bg-accent text-ink-100 rounded-lg hover:bg-accent-dark transition text-sm"
             >
                 Export
             </a>
@@ -214,7 +214,7 @@ const exportUrl = computed(() => {
                                     :class="[
                                         'px-2 py-1 text-xs rounded-full',
                                         txn.status === 'success'
-                                            ? 'bg-accent/20 text-accent-light'
+                                            ? 'bg-green-200 text-green-600'
                                             : txn.status === 'failed'
                                               ? 'bg-red-500/20 text-red-600'
                                               : 'bg-yellow-500/20 text-yellow-600',
@@ -250,7 +250,7 @@ const exportUrl = computed(() => {
                         class="px-3 py-1 rounded-lg text-sm border border-surface-3 transition"
                         :class="
                             link.active
-                                ? 'bg-primary text-ink-900 border-primary'
+                                ? 'bg-primary text-ink-100 border-primary'
                                 : 'bg-surface-2 text-ink-500 hover:bg-surface-2'
                         "
                     />

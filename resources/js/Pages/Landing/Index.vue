@@ -51,7 +51,7 @@ defineOptions({ layout: AppLayout });
                     >
                         <Link
                             href="/login"
-                            class="btn-primary px-8 py-4 bg-primary text-ink-900 rounded-xl font-semibold text-lg text-center"
+                            class="btn-primary px-8 py-4 bg-primary text-ink-100 rounded-xl font-semibold text-lg text-center"
                         >
                             Retailer Login
                         </Link>
@@ -67,7 +67,7 @@ defineOptions({ layout: AppLayout });
                     <div
                         class="stat-gradient-1 rounded-2xl p-6 text-center card-hover"
                     >
-                        <div class="text-4xl font-bold text-ink-900 mb-2">
+                        <div class="text-4xl font-bold text-ink-100 mb-2">
                             500+
                         </div>
                         <div class="text-blue-100 text-sm">
@@ -77,7 +77,7 @@ defineOptions({ layout: AppLayout });
                     <div
                         class="stat-gradient-2 rounded-2xl p-6 text-center card-hover"
                     >
-                        <div class="text-4xl font-bold text-ink-900 mb-2">
+                        <div class="text-4xl font-bold text-ink-100 mb-2">
                             1L+
                         </div>
                         <div class="text-green-100 text-sm">Transactions</div>
@@ -85,7 +85,7 @@ defineOptions({ layout: AppLayout });
                     <div
                         class="stat-gradient-3 rounded-2xl p-6 text-center card-hover"
                     >
-                        <div class="text-4xl font-bold text-ink-900 mb-2">
+                        <div class="text-4xl font-bold text-ink-100 mb-2">
                             200+
                         </div>
                         <div class="text-blue-100 text-sm">Operators</div>
@@ -93,7 +93,7 @@ defineOptions({ layout: AppLayout });
                     <div
                         class="stat-gradient-4 rounded-2xl p-6 text-center card-hover"
                     >
-                        <div class="text-4xl font-bold text-ink-900 mb-2">
+                        <div class="text-4xl font-bold text-ink-100 mb-2">
                             50+
                         </div>
                         <div class="text-green-100 text-sm">Countries</div>
@@ -250,7 +250,7 @@ defineOptions({ layout: AppLayout });
                 <div class="grid md:grid-cols-3 gap-8">
                     <div class="text-center">
                         <div
-                            class="w-16 h-16 bg-primary text-ink-900 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4"
+                            class="w-16 h-16 bg-primary text-ink-100 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4"
                         >
                             1
                         </div>
@@ -264,7 +264,7 @@ defineOptions({ layout: AppLayout });
                     </div>
                     <div class="text-center">
                         <div
-                            class="w-16 h-16 bg-primary text-ink-900 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4"
+                            class="w-16 h-16 bg-primary text-ink-100 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4"
                         >
                             2
                         </div>
@@ -278,7 +278,7 @@ defineOptions({ layout: AppLayout });
                     </div>
                     <div class="text-center">
                         <div
-                            class="w-16 h-16 bg-accent text-ink-900 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4"
+                            class="w-16 h-16 bg-accent text-ink-100 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4"
                         >
                             3
                         </div>
@@ -313,13 +313,13 @@ defineOptions({ layout: AppLayout });
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
                     <Link
                         href="/contact"
-                        class="btn-primary px-8 py-4 bg-primary text-ink-900 rounded-xl font-semibold text-lg text-center"
+                        class="btn-primary px-8 py-4 bg-primary text-ink-100 rounded-xl font-semibold text-lg text-center"
                     >
                         Contact Us
                     </Link>
                     <Link
                         href="/login"
-                        class="px-8 py-4 border-2 border-white text-ink-900 rounded-xl font-semibold text-lg hover:bg-white/10 transition text-center"
+                        class="px-8 py-4 border-2 border-white text-ink-900 rounded-xl font-semibold text-lg bg-gray-100 hover:bg-gray-200 transition text-center"
                     >
                         Retailer Login
                     </Link>

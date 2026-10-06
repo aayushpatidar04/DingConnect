@@ -21,13 +21,13 @@ const props = defineProps({
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="stat-gradient-1 rounded-2xl p-6 card-hover">
                 <div class="text-sm text-blue-100">Wallet Balance</div>
-                <div class="text-3xl font-bold text-ink-900 mt-1">
+                <div class="text-3xl font-bold text-ink-100 mt-1">
                     £ {{ Number(wallet.balance).toFixed(2) }}
                 </div>
             </div>
             <div class="stat-gradient-2 rounded-2xl p-6 card-hover">
                 <div class="text-sm text-green-100">Available Balance</div>
-                <div class="text-3xl font-bold text-ink-900 mt-1">
+                <div class="text-3xl font-bold text-ink-100 mt-1">
                     £ {{ Number(availableBalance).toFixed(2) }}
                 </div>
             </div>
@@ -42,7 +42,7 @@ const props = defineProps({
                 </div>
                 <Link
                     href="/retailer/wallet/topup"
-                    class="btn-primary px-6 py-3 bg-primary text-ink-900 rounded-xl font-medium"
+                    class="btn-primary px-6 py-3 bg-primary text-ink-100 rounded-xl font-medium"
                     >Top Up</Link
                 >
             </div>
@@ -59,7 +59,7 @@ const props = defineProps({
                 <div
                     v-for="topup in topups.data"
                     :key="topup.id"
-                    class="p-4 flex items-center justify-between hover:bg-surface-2 transition"
+                    class="p-4 flex items-center justify-between hover:bg-gray-200 transition"
                 >
                     <div>
                         <div class="font-medium text-ink-900">
@@ -73,7 +73,7 @@ const props = defineProps({
                         :class="[
                             'px-3 py-1 text-xs rounded-full font-medium',
                             topup.status === 'completed'
-                                ? 'bg-green-500/20 text-accent-light'
+                                ? 'bg-green-200 text-green-600'
                                 : topup.status === 'failed'
                                   ? 'bg-red-500/20 text-red-600'
                                   : 'bg-yellow-500/20 text-yellow-600',

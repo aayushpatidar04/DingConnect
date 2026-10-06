@@ -82,14 +82,14 @@ const submit = () => {
             </div>
 
             <div class="flex items-center justify-between">
-                <label class="flex items-center">
+                <!-- <label class="flex items-center">
                     <Checkbox
                         name="remember"
                         v-model:checked="form.remember"
                         class="rounded border-surface-3 bg-surface-3 text-primary"
                     />
                     <span class="ml-2 text-sm text-ink-500">Remember me</span>
-                </label>
+                </label> -->
 
                 <Link
                     v-if="canResetPassword"

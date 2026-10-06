@@ -1,6 +1,7 @@
 <script setup>
 import { Head, Link, useForm } from "@inertiajs/vue3";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
+import InputError from "@/Components/InputError.vue";
 defineOptions({ layout: AdminLayout });
 
 const props = defineProps({ retailer: Object });
@@ -20,7 +21,7 @@ const creditForm = useForm({ amount: "", description: "" });
             <div class="flex gap-4 items-center">
                 <Link
                     :href="`/admin/retailers/${retailer.id}/edit`"
-                    class="ml-4 px-4 py-2 bg-primary text-ink-900 rounded-lg font-semibold hover:bg-primary-dark transition text-sm"
+                    class="ml-4 px-4 py-2 bg-primary text-ink-100 rounded-lg font-semibold hover:bg-primary-dark transition text-sm"
                     >Edit</Link
                 >
     
@@ -168,7 +169,7 @@ const creditForm = useForm({ amount: "", description: "" });
                         <button
                             type="submit"
                             :disabled="creditForm.processing"
-                            class="w-full py-2 bg-primary text-ink-900 rounded-lg hover:bg-primary-dark disabled:opacity-60 transition"
+                            class="w-full py-2 bg-primary text-ink-100 rounded-lg hover:bg-primary-dark disabled:opacity-60 transition"
                         >
                             Credit Wallet
                         </button>
@@ -183,7 +184,7 @@ const creditForm = useForm({ amount: "", description: "" });
                         :class="[
                             'px-3 py-1 rounded-full text-sm font-medium',
                             retailer.kyc_status === 'approved'
-                                ? 'bg-accent/20 text-accent-light'
+                                ? 'bg-green-200 text-green-600'
                                 : retailer.kyc_status === 'rejected'
                                   ? 'bg-red-500/20 text-red-600'
                                   : 'bg-yellow-500/20 text-yellow-600',
@@ -214,7 +215,7 @@ const creditForm = useForm({ amount: "", description: "" });
                             />
                             <button
                                 type="submit"
-                                class="w-full py-2 bg-accent text-ink-900 rounded-lg hover:bg-accent-dark transition"
+                                class="w-full py-2 bg-accent text-ink-100 rounded-lg hover:bg-accent-dark transition"
                             >
                                 Approve KYC
                             </button>
@@ -235,9 +236,10 @@ const creditForm = useForm({ amount: "", description: "" });
                                 placeholder="Rejection reason"
                                 class="w-full px-3 py-2 border border-surface-3 rounded-lg mb-2 text-sm bg-surface-3 text-ink-900 input-dark"
                             />
+                            <InputError class="mt-2" :message="$page.props.errors?.rejection_reason" />
                             <button
                                 type="submit"
-                                class="w-full py-2 bg-red-600 text-ink-900 rounded-lg hover:bg-red-700 transition text-sm"
+                                class="w-full py-2 bg-red-600 text-ink-100 rounded-lg hover:bg-red-700 transition text-sm"
                             >
                                 Reject KYC
                             </button>

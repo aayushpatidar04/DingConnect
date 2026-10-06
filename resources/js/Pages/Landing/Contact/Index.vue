@@ -104,7 +104,7 @@ function submit() {
                         </div>
                         <button
                             type="submit"
-                            class="w-full py-3 bg-primary text-ink-900 rounded-lg font-semibold hover:bg-primary-dark transition"
+                            class="w-full py-3 bg-primary text-ink-100 rounded-lg font-semibold hover:bg-primary-dark transition"
                         >
                             Send Message
                         </button>
@@ -244,7 +244,7 @@ function submit() {
                         </p>
                         <Link
                             href="/register"
-                            class="btn-primary inline-block px-6 py-3 bg-primary text-ink-900 rounded-lg font-medium"
+                            class="btn-primary inline-block px-6 py-3 bg-primary text-ink-100 rounded-lg font-medium"
                             >Apply Now</Link
                         >
                     </div>

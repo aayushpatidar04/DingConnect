@@ -124,7 +124,7 @@ function submit() {
             <button
                 type="submit"
                 :disabled="form.processing"
-                class="w-full py-3 bg-primary text-ink-900 rounded-lg font-medium hover:bg-primary-dark disabled:opacity-60 transition"
+                class="w-full py-3 bg-primary text-ink-100 rounded-lg font-medium hover:bg-primary-dark disabled:opacity-60 transition"
             >
                 Update Profile
             </button>

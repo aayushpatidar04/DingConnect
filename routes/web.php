@@ -32,7 +32,7 @@ use Inertia\Inertia;
 // ==========================================================================
 Route::get('/', [LandingController::class, 'index'])->name('home');
 
-Route::get('/contact', fn () => Inertia::render('Contact/Index'))->name('contact');
+Route::get('/contact', fn () => Inertia::render('Landing/Contact/Index'))->name('contact');
 
 // ==========================================================================
 // AUTH

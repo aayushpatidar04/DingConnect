@@ -24,7 +24,7 @@ class WalletCredited implements ShouldBroadcast
         $this->amount = $amount;
         $this->balance = $balance;
 
-        $this->message = "₹{$amount} credited successfully. Current balance: ₹{$balance}";
+        $this->message = "£{$amount} credited successfully. Current balance: £{$balance}";
     }
 
     public function broadcastOn()

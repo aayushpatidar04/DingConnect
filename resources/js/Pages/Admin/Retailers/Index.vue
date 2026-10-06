@@ -21,12 +21,12 @@ const exportRetailers = () => {
             <div class="flex gap-2">
                 <button
                     @click="exportRetailers"
-                    class="px-4 py-2 bg-accent text-ink-900 rounded-lg hover:bg-accent-dark text-sm font-medium transition"
+                    class="px-4 py-2 bg-accent text-ink-100 rounded-lg hover:bg-accent-dark text-sm font-medium transition"
                     >Export CSV</button
                 >
                 <Link
                     href="/admin/retailers/create"
-                    class="px-4 py-2 btn-primary text-ink-900 rounded-lg text-sm font-medium"
+                    class="px-4 py-2 btn-primary text-ink-100 rounded-lg text-sm font-medium"
                     >Add Retailer</Link
                 >
             </div>
@@ -107,7 +107,7 @@ const exportRetailers = () => {
                                     :class="{
                                         'bg-yellow-500/20 text-yellow-600':
                                             retailer.kyc_status === 'pending',
-                                        'bg-accent/20 text-accent-light':
+                                        'bg-green-200 text-green-600':
                                             retailer.kyc_status === 'approved',
                                         'bg-red-500/20 text-red-600':
                                             retailer.kyc_status === 'rejected',
@@ -120,7 +120,7 @@ const exportRetailers = () => {
                                     class="px-2 py-1 text-xs rounded-full font-medium"
                                     :class="
                                         retailer.is_active
-                                            ? 'bg-accent/20 text-accent-light'
+                                            ? 'bg-green-200 text-green-600'
                                             : 'bg-red-500/20 text-red-600'
                                     "
                                 >
@@ -178,7 +178,7 @@ const exportRetailers = () => {
                         class="px-3 py-1 rounded-lg text-sm border border-surface-3 transition"
                         :class="
                             link.active
-                                ? 'bg-primary text-ink-900 border-primary'
+                                ? 'bg-primary text-ink-100 border-primary'
                                 : 'bg-surface-2 text-ink-500 hover:bg-surface-2'
                         "
                     />

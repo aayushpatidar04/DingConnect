@@ -62,7 +62,7 @@ const props = defineProps({
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="stat-gradient-1 rounded-2xl p-5 card-hover">
                 <div class="text-sm text-blue-100">Wallet Balance</div>
-                <div class="text-2xl font-bold text-ink-900 mt-1">
+                <div class="text-2xl font-bold text-ink-100 mt-1">
                     £ {{ stats.wallet_balance.toFixed(2) }}
                 </div>
                 <div class="text-xs text-blue-200 mt-1">
@@ -71,7 +71,7 @@ const props = defineProps({
             </div>
             <div class="stat-gradient-2 rounded-2xl p-5 card-hover">
                 <div class="text-sm text-green-100">Success Rate</div>
-                <div class="text-2xl font-bold text-ink-900 mt-1">
+                <div class="text-2xl font-bold text-ink-100 mt-1">
                     {{ stats.success_rate }}%
                 </div>
                 <div class="text-xs text-green-200 mt-1">
@@ -80,7 +80,7 @@ const props = defineProps({
             </div>
             <div class="stat-gradient-3 rounded-2xl p-5 card-hover">
                 <div class="text-sm text-blue-100">This Month</div>
-                <div class="text-2xl font-bold text-ink-900 mt-1">
+                <div class="text-2xl font-bold text-ink-100 mt-1">
                     £ {{ stats.this_month_volume.toFixed(2) }}
                 </div>
                 <div class="text-xs text-blue-200 mt-1">
@@ -89,7 +89,7 @@ const props = defineProps({
             </div>
             <div class="stat-gradient-4 rounded-2xl p-5 card-hover">
                 <div class="text-sm text-green-100">Today</div>
-                <div class="text-2xl font-bold text-ink-900 mt-1">
+                <div class="text-2xl font-bold text-ink-100 mt-1">
                     {{ stats.today_transactions }}
                 </div>
                 <div class="text-xs text-green-200 mt-1">transactions</div>
@@ -172,7 +172,7 @@ const props = defineProps({
                             :class="[
                                 'px-2 py-0.5 text-xs rounded-full',
                                 txn.status === 'success'
-                                    ? 'bg-accent/20 text-accent-light'
+                                    ? 'bg-green-200 text-green-600'
                                     : txn.status === 'failed'
                                       ? 'bg-red-500/20 text-red-600'
                                       : 'bg-yellow-500/20 text-yellow-600',

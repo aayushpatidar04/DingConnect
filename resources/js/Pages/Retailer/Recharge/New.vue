@@ -738,9 +738,9 @@ onMounted(() => {
                             :class="[
                                 'w-9 h-9 rounded-full flex items-center justify-center font-semibold text-xs transition',
                                 currentStep > idx + 1
-                                    ? 'bg-green-500 text-ink-900'
+                                    ? 'bg-green-500 text-ink-100'
                                     : currentStep === idx + 1
-                                      ? 'bg-primary text-ink-900'
+                                      ? 'bg-primary text-ink-100'
                                       : 'bg-surface-3 text-ink-500 border border-surface-3',
                             ]"
                         >
@@ -924,7 +924,7 @@ onMounted(() => {
                 v-if="providers.length > 0"
                 @click="proceedToProducts"
                 :disabled="!selectedProvider"
-                class="mt-6 w-full btn-primary text-ink-900 py-3 rounded-xl font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+                class="mt-6 w-full btn-primary text-ink-100 py-3 rounded-xl font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
             >
                 Continue &rarr;
             </button>
@@ -1122,7 +1122,7 @@ onMounted(() => {
                 <button
                     @click="proceedToConfirmFromNumber"
                     :disabled="!canProceedFromPhone || validatingNumber"
-                    class="mt-6 w-full btn-primary text-ink-900 py-3 rounded-xl font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+                    class="mt-6 w-full btn-primary text-ink-100 py-3 rounded-xl font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                     {{
                         validatingNumber
@@ -1184,7 +1184,7 @@ onMounted(() => {
                         <div
                             class="text-[10px] text-ink-500 uppercase tracking-wider mb-1"
                         >
-                            You Paid
+                            You Pay
                         </div>
                         <div class="text-sm font-bold text-ink-900">
                             {{ selectedProduct?.send_currency || "GBP" }}
@@ -1346,7 +1346,7 @@ onMounted(() => {
                         :disabled="
                             submitting || (isFreeRangeFlow && !freeRangePricing)
                         "
-                        class="flex-1 btn-primary text-ink-900 py-3 rounded-xl font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+                        class="flex-1 btn-primary text-ink-100 py-3 rounded-xl font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                         {{
                             submitting
@@ -1511,7 +1511,7 @@ onMounted(() => {
                         <button
                             @click="submitRecharge('buy')"
                             :disabled="submitting"
-                            class="flex-1 btn-primary text-ink-900 py-3 rounded-xl font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+                            class="flex-1 btn-primary text-ink-100 py-3 rounded-xl font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                             {{
                                 submitting

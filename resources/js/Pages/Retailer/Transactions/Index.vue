@@ -49,7 +49,7 @@ const props = defineProps({ transactions: Object });
             </div>
             <button
                 type="submit"
-                class="px-4 py-2 bg-primary text-ink-900 rounded-lg text-sm hover:bg-primary-dark transition"
+                class="px-4 py-2 bg-primary text-ink-100 rounded-lg text-sm hover:bg-primary-dark transition"
             >
                 Filter
             </button>
@@ -134,12 +134,12 @@ const props = defineProps({ transactions: Object });
                             <td class="px-4 py-3 text-xs text-ink-500">
                                 {{ txn.redemption_type || "Immediate" }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3 text-center">
                                 <span
                                     :class="[
                                         'px-2 py-0.5 text-xs rounded-full',
                                         txn.status === 'success'
-                                            ? 'bg-accent/20 text-accent-light'
+                                            ? 'bg-green-200 text-green-600'
                                             : txn.status === 'failed'
                                               ? 'bg-red-500/20 text-red-600'
                                               : 'bg-yellow-500/20 text-yellow-600',
