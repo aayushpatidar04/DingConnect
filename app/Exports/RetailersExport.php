@@ -43,6 +43,10 @@ class RetailersExport implements FromQuery, WithHeadings, WithMapping, WithStyle
         ];
     }
 
+    public function __construct(protected array $filters = [])
+    {
+    }
+
     public function query(): Builder|QueryBuilder|Relation
     {
         return User::role('retailer') // Spatie scope; see note below
@@ -52,6 +56,7 @@ class RetailersExport implements FromQuery, WithHeadings, WithMapping, WithStyle
                 ['transactions as total_spent' => fn ($q) => $q->where('status', 'success')],
                 'amount'
             )
+            ->filter($this->filters)
             ->orderByDesc('created_at');
     }
 

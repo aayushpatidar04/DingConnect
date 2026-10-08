@@ -5,7 +5,8 @@ use App\Http\Controllers\Admin\{
     OperatorController as AdminOperatorController,
     RetailerController as AdminRetailerController,
     SettingController as AdminSettingController,
-    TransactionController as AdminTransactionController
+    TransactionController as AdminTransactionController,
+    AllowedNumberController
 };
 use App\Http\Controllers\Api\{
     CountryController,
@@ -42,7 +43,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
     Route::get('/register', fn () => Inertia::render('Auth/Register'))->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/register', [AuthController::class, 'store']);
     Route::get('/forgot-password', fn () => Inertia::render('Auth/ForgotPassword'))->name('password.request');
     Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
     Route::get('/reset-password/{token}', fn ($token) => Inertia::render('Auth/ResetPassword', ['token' => $token]))->name('password.reset');
@@ -82,10 +83,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::post('/settings', [AdminSettingController::class, 'update'])->name('settings.update');
 
     // AllowedNumbers management
-    Route::resource('allowed-numbers', \App\Http\Controllers\Admin\AllowedNumberController::class)->only(['index', 'store', 'update', 'destroy']);
-    Route::post('allowed-numbers/import', [\App\Http\Controllers\Admin\AllowedNumberController::class, 'import'])->name('allowed-numbers.import');
-    Route::post('allowed-numbers/import-file', [\App\Http\Controllers\Admin\AllowedNumberController::class, 'importFile'])->name('allowed-numbers.import-file');
-    Route::get('allowed-numbers/sample', [\App\Http\Controllers\Admin\AllowedNumberController::class, 'downloadSample'])->name('allowed-numbers.sample');
+    Route::get('allowed-numbers/sample', [AllowedNumberController::class, 'downloadSample']);
+    Route::post('allowed-numbers/import-file', [AllowedNumberController::class, 'importFile']);
+    Route::get('allowed-numbers/files/{allowedNumberFile}/download', [AllowedNumberController::class, 'downloadFile']);
+    Route::delete('allowed-numbers/files/{allowedNumberFile}', [AllowedNumberController::class, 'destroyFile']);
+    // ...your existing index / store / update / destroy routes
+    Route::resource('allowed-numbers', AllowedNumberController::class)->only(['index', 'store', 'update', 'destroy']);
 });
 
 // ==========================================================================

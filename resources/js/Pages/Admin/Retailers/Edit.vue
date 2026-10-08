@@ -2,6 +2,7 @@
 import { Head, useForm, Link } from "@inertiajs/vue3";
 import { watch } from "vue";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
+import FlashMessage from "@/Components/FlashMessage.vue";
 
 defineOptions({ layout: AdminLayout });
 
@@ -51,6 +52,8 @@ function submit() {
 
 <template>
     <Head :title="`Edit ${retailer?.name || 'Retailer'}`" />
+    <FlashMessage />
+
     <div>
         <div class="flex items-center justify-between gap-4 mb-8">
             <Link

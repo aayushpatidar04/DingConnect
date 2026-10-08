@@ -25,6 +25,7 @@ class RegisterRequest extends FormRequest
             'postcode'              => ['nullable', 'string', 'max:20'],
             'vat_number'            => ['nullable', 'string', 'max:50'],
             'company_reg_number'    => ['nullable', 'string', 'max:50'],
+            'utr_number'            => ['nullable', 'string', 'max:20'],
         ];
     }
 }

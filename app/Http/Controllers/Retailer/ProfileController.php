@@ -30,27 +30,25 @@ class ProfileController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'phone' => ['required', 'string', 'max:20', 'unique:users,phone,' . $user->id],
             'shop_name' => 'nullable|string|max:255',
-            'address' => 'nullable|string',
+            'address' => 'nullable|string|max:500',
             'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'pincode' => 'nullable|string|max:10',
+            'county' => 'nullable|string|max:100',
+            'postcode' => 'nullable|string|max:10',
+            'vat_number' => 'nullable|string|max:20',
+            'company_reg_number' => 'nullable|string|max:20',
+            'utr_number' => 'nullable|string|max:20',
             'current_password' => 'nullable|required_with:new_password|string',
             'new_password' => 'nullable|string|min:8|confirmed',
         ]);
 
-        // Verify current password if changing
-        if (!empty($validated['current_password'])) {
-            if (!Hash::check($validated['current_password'], $user->password)) {
-                return back()->with('error', 'Current password is incorrect.');
-            }
-        }
-
-        unset($validated['current_password']);
-
         if (!empty($validated['new_password'])) {
-            $validated['password'] = Hash::make($validated['new_password']);
-            unset($validated['new_password']);
+            if (!Hash::check($validated['current_password'], $user->password)) {
+                return back()->withErrors(['current_password' => 'Current password is incorrect.']);
+            }
+            $validated['password'] = $validated['new_password']; // User model casts password as 'hashed'
         }
+
+        unset($validated['current_password'], $validated['new_password']);
 
         $user->update($validated);
 

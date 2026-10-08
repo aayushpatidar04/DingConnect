@@ -58,6 +58,9 @@ class AuthController extends Controller
             'city'                  => 'nullable|string|max:100',
             'county'                => 'nullable|string|max:100',
             'postcode'              => 'nullable|string|max:20',
+            'vat_number'            => 'nullable|string|max:50',
+            'company_reg_number'    => 'nullable|string|max:50',
+            'utr_number'            => 'nullable|string|max:20',
         ]);
 
         $user = User::create([
@@ -65,11 +68,15 @@ class AuthController extends Controller
             'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
             'role' => 'retailer',
             'kyc_status' => 'pending',
+            'is_active' => true,
         ]);
 
-        // Create wallet
+        // Assign role and create wallet
+        $user->assignRole('retailer');
         $walletService = app(WalletService::class);
         $walletService->getWallet($user);
+
+        event(new \Illuminate\Auth\Events\Registered($user));
 
         Auth::login($user);
 

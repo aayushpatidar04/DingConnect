@@ -2,15 +2,31 @@
 import { Head, Link, useForm } from "@inertiajs/vue3";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
 import InputError from "@/Components/InputError.vue";
+import FlashMessage from "@/Components/FlashMessage.vue";
+
 defineOptions({ layout: AdminLayout });
 
 const props = defineProps({ retailer: Object });
 
 const creditForm = useForm({ amount: "", description: "" });
+
+const formatDate = (date) => {
+    if (!date) return "-";
+    return new Date(date).toLocaleString("en-GB", {
+        timeZone: "Europe/London",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+};
 </script>
 
 <template>
     <Head :title="`${retailer.name} - Retailer Details`" />
+    <FlashMessage />
+
     <div class="space-y-6">
         <div class="flex items-center justify-between gap-4">
             <Link
@@ -24,7 +40,7 @@ const creditForm = useForm({ amount: "", description: "" });
                     class="ml-4 px-4 py-2 bg-primary text-ink-100 rounded-lg font-semibold hover:bg-primary-dark transition text-sm"
                     >Edit</Link
                 >
-    
+
                 <div>
                     <h1 class="text-3xl font-bold text-ink-900">
                         {{ retailer.name }}
@@ -38,7 +54,9 @@ const creditForm = useForm({ amount: "", description: "" });
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2 space-y-6">
-                <div class="bg-surface-2 rounded-2xl p-6 border border-surface-3">
+                <div
+                    class="bg-surface-2 rounded-2xl p-6 border border-surface-3"
+                >
                     <h3 class="text-lg font-semibold text-ink-900 mb-4">
                         Retailer Information
                     </h3>
@@ -90,7 +108,9 @@ const creditForm = useForm({ amount: "", description: "" });
                     </div>
                 </div>
 
-                <div class="bg-surface-2 rounded-2xl p-6 border border-surface-3">
+                <div
+                    class="bg-surface-2 rounded-2xl p-6 border border-surface-3"
+                >
                     <h3 class="text-lg font-semibold text-ink-900 mb-4">
                         Recent Transactions
                     </h3>
@@ -109,7 +129,7 @@ const creditForm = useForm({ amount: "", description: "" });
                                 </div>
                                 <div class="text-sm text-ink-500">
                                     {{ txn.operator?.name || "Unknown" }} ·
-                                    {{ txn.created_at }}
+                                    {{ formatDate(txn.created_at) }}
                                 </div>
                             </div>
                             <div class="text-right">
@@ -136,7 +156,9 @@ const creditForm = useForm({ amount: "", description: "" });
             </div>
 
             <div class="space-y-6">
-                <div class="bg-surface-2 rounded-2xl p-6 border border-surface-3">
+                <div
+                    class="bg-surface-2 rounded-2xl p-6 border border-surface-3"
+                >
                     <h3 class="text-lg font-semibold text-ink-900 mb-4">
                         Wallet
                     </h3>
@@ -148,6 +170,11 @@ const creditForm = useForm({ amount: "", description: "" });
                         @submit.prevent="
                             creditForm.post(
                                 `/admin/retailers/${retailer.id}/credit`,
+                                {
+                                    onSuccess: () => {
+                                        creditForm.reset();
+                                    },
+                                },
                             )
                         "
                         class="mt-4 space-y-3"
@@ -176,7 +203,9 @@ const creditForm = useForm({ amount: "", description: "" });
                     </form>
                 </div>
 
-                <div class="bg-surface-2 rounded-2xl p-6 border border-surface-3">
+                <div
+                    class="bg-surface-2 rounded-2xl p-6 border border-surface-3"
+                >
                     <h3 class="text-lg font-semibold text-ink-900 mb-4">
                         KYC Status
                     </h3>
@@ -236,7 +265,10 @@ const creditForm = useForm({ amount: "", description: "" });
                                 placeholder="Rejection reason"
                                 class="w-full px-3 py-2 border border-surface-3 rounded-lg mb-2 text-sm bg-surface-3 text-ink-900 input-dark"
                             />
-                            <InputError class="mt-2" :message="$page.props.errors?.rejection_reason" />
+                            <InputError
+                                class="mt-2"
+                                :message="$page.props.errors?.rejection_reason"
+                            />
                             <button
                                 type="submit"
                                 class="w-full py-2 bg-red-600 text-ink-100 rounded-lg hover:bg-red-700 transition text-sm"

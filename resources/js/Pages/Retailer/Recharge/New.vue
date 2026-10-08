@@ -3,6 +3,7 @@ import { Head, useForm } from "@inertiajs/vue3";
 import RetailerLayout from "@/Layouts/RetailerLayout.vue";
 import ProductCategories from "@/Components/ProductCategories.vue";
 import { ref, computed, onMounted } from "vue";
+import FlashMessage from "@/Components/FlashMessage.vue";
 
 defineOptions({ layout: RetailerLayout });
 
@@ -598,7 +599,7 @@ function validateBeforeSubmit() {
 function submitRecharge(action = "buy") {
     if (action === "review") {
         if (!validateBeforeSubmit()) return;
-        reviewTimestamp.value = new Date().toLocaleString();
+        reviewTimestamp.value = new Date().toLocaleString("en-GB", { timeZone: "Europe/London" });
         reviewReference.value = "RCPT-" + Date.now();
         showReviewModal.value = true;
         return;
@@ -705,6 +706,8 @@ onMounted(() => {
 
 <template>
     <Head title="New Recharge - MK Network" />
+    <FlashMessage />
+
     <div class="max-w-5xl mx-auto">
         <!-- Header -->
         <div class="mb-6">
@@ -1008,6 +1011,7 @@ onMounted(() => {
                 v-else
                 :products="allProducts"
                 :loading="loadingProducts"
+                :logo="selectedProvider.logo_url"
                 @select-product="selectProduct"
             />
 

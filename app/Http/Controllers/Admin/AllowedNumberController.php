@@ -4,66 +4,86 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AllowedNumber;
-use App\Models\User;
+use App\Models\AllowedNumberFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class AllowedNumberController extends Controller
 {
     public function index(Request $request)
     {
-        $query = AllowedNumber::query()
-            ->with('user')
-            ->orderByDesc('created_at');
+        $filters = $request->only('search', 'folder', 'inactive');
+        $search = trim((string) ($filters['search'] ?? ''));
+        $folder = $filters['folder'] ?? null;
 
-        if ($search = $request->input('search')) {
-            $query->where('number', 'like', "%{$search}%")
-                ->orWhere('operator_name', 'like', "%{$search}%");
-        }
-        if ($type = $request->input('type')) {
-            $query->where('type', $type);
-        }
-        if ($request->boolean('inactive')) {
-            $query->where('active', false);
+        $currentFolder = null;
+        if ($folder === 'manual') {
+            $currentFolder = ['id' => 'manual', 'name' => 'Manual entries', 'is_manual' => true];
+        } elseif ($folder) {
+            $file = AllowedNumberFile::findOrFail($folder);
+            $currentFolder = ['id' => $file->id, 'name' => $file->name, 'is_manual' => false];
         }
 
-        $numbers = $query->paginate(50);
+        $numbers = null;
+        $folders = null;
+
+        if ($currentFolder || $search !== '') {
+            $numbers = AllowedNumber::query()
+                ->when($currentFolder, fn($q) => $currentFolder['is_manual']
+                    ? $q->whereNull('file_name')
+                    : $q->where('file_name', $currentFolder['name']))
+                ->when($search !== '', function ($q) use ($search) {
+                    // grouped so it can't bypass the folder / inactive filters
+                    $q->where(function ($q) use ($search) {
+                        $q->where('mobile', 'like', "%{$search}%")
+                            ->orWhere('serial', 'like', "%{$search}%")
+                            ->orWhere('provider', 'like', "%{$search}%");
+                    });
+                })
+                ->when($request->boolean('inactive'), fn($q) => $q->where('active', false))
+                ->orderByDesc('created_at')
+                ->paginate(50)
+                ->withQueryString();
+        } else {
+            $folders = AllowedNumberFile::withCount('numbers')
+                ->orderByDesc('created_at')
+                ->get();
+        }
 
         return Inertia::render('Admin/AllowedNumbers/Index', [
+            'folders' => $folders,
+            'manualCount' => AllowedNumber::whereNull('file_name')->count(),
             'numbers' => $numbers,
-            'filters' => $request->only('search', 'type', 'inactive'),
+            'currentFolder' => $currentFolder,
+            'filters' => $filters,
         ]);
     }
 
+    // ---------- Manual entry ----------
+
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'number' => 'required|string|max:50',
-            'type' => 'required|in:mobile,serial',
-            'operator_name' => 'nullable|string|max:100',
-            'country' => 'nullable|string|max:10',
-            'note' => 'nullable|string|max:255',
-        ]);
+        $this->normalizeInput($request);
+        $validated = $request->validate($this->rules(null, $request->input('serial')), $this->messages());
 
-        $validated['user_id'] = Auth::id();
-
-        $allowed = AllowedNumber::create($validated);
+        unset($validated['active']);
+        AllowedNumber::create($validated + ['user_id' => Auth::id(), 'active' => true]);
 
         return back()->with('success', 'Number added successfully.');
     }
 
     public function update(Request $request, AllowedNumber $allowedNumber)
     {
-        $validated = $request->validate([
-            'number' => 'required|string|max:50',
-            'type' => 'required|in:mobile,serial',
-            'operator_name' => 'nullable|string|max:100',
-            'country' => 'nullable|string|max:10',
-            'note' => 'nullable|string|max:255',
-            'active' => 'required|boolean',
-        ]);
+        $this->normalizeInput($request);
+        $validated = $request->validate(
+            $this->rules($allowedNumber->id, $request->input('serial')) + ['active' => 'required|boolean'],
+            $this->messages()
+        );
 
         $allowedNumber->update($validated);
 
@@ -77,93 +97,172 @@ class AllowedNumberController extends Controller
         return back()->with('success', 'Removed successfully.');
     }
 
-    /**
-     * Import numbers via textarea (one per line).
-     */
-    public function import(Request $request)
-    {
-        $request->validate([
-            'numbers' => ['required', 'string'],
-            'type' => ['required', 'in:mobile,serial'],
-            'operator_name' => ['nullable', 'string', 'max:100'],
-            'country' => ['nullable', 'string', 'max:10'],
-        ]);
+    // ---------- File upload ----------
 
-        $lines = array_values(array_filter(array_map(
-            'trim',
-            preg_split('/\r\n|\r|\n/', $request->numbers)
-        )));
-
-        // Textarea flow: same type/operator/country for every line
-        $rows = array_map(fn($line) => [
-            'number' => $line,
-            'type' => $request->type,
-            'operator_name' => $request->operator_name,
-            'country' => $request->country,
-        ], $lines);
-
-        return $this->processImport($rows, $request->type);
-    }
-
-    /**
-     * Import numbers via CSV/Excel file upload.
-     */
     public function importFile(Request $request)
     {
-        $request->validate([
-            'file' => ['required', 'file', 'mimes:csv,txt', 'max:2048'],
-            'type' => ['nullable', 'in:mobile,serial'],
-            'operator_name' => ['nullable', 'string', 'max:100'],
-            'country' => ['nullable', 'string', 'max:10'],
-        ]);
+        $request->validate(['file' => ['required', 'file', 'mimes:csv,txt', 'max:2048']]);
 
-        $content = file_get_contents($request->file('file')->getRealPath());
-        $lines = array_values(array_filter(
-            preg_split('/\r\n|\r|\n/', $content),
-            fn($l) => trim($l) !== ''
-        ));
+        $upload = $request->file('file');
+        $name = basename($upload->getClientOriginalName());
 
-        if (empty($lines)) {
-            return back()->with('error', 'The uploaded file is empty.');
+        // same file name can't be uploaded twice (case-insensitive under utf8mb4_unicode_ci)
+        if (AllowedNumberFile::where('name', $name)->exists()) {
+            return back()->withErrors([
+                'file' => "A file named \"{$name}\" was already uploaded. Rename it or delete the existing one first.",
+            ]);
         }
 
-        // First row = header
-        $header = array_map(fn($h) => strtolower(trim($h)), str_getcsv(array_shift($lines)));
-        $col = array_flip($header);
+        $handle = fopen($upload->getRealPath(), 'r');
+        $header = fgetcsv($handle, 0, ',', '"', '\\');
 
-        $numberIdx = $col['number'] ?? $col['serial'] ?? null;
-        $typeIdx = $col['type'] ?? null;
-        $operatorIdx = $col['operator_name'] ?? $col['operator'] ?? null;
-        $countryIdx = $col['country'] ?? null;
-
-        if ($numberIdx === null) {
-            return back()->with('error', 'CSV must have a "number" column header.');
+        if (!$header || $header === [null]) {
+            fclose($handle);
+            return back()->withErrors(['file' => 'The uploaded file is empty.']);
         }
+
+        $header[0] = preg_replace('/^\xEF\xBB\xBF/', '', (string) $header[0]); // strip Excel BOM
+        $col = array_flip(array_map(fn($h) => strtolower(trim((string) $h)), $header));
+
+        if (!isset($col['mobile']) || !isset($col['serial'])) {
+            fclose($handle);
+            return back()->withErrors([
+                'file' => 'CSV must have "mobile" and "serial" column headers (optional: provider, country).',
+            ]);
+        }
+
+        $pi = $col['provider'] ?? null;
+        $ci = $col['country'] ?? null;
 
         $rows = [];
-        foreach ($lines as $line) {
-            $cells = str_getcsv($line);
+        $skipped = [];
+        $seen = [];
+        $line = 1;
+
+        while (($cells = fgetcsv($handle, 0, ',', '"', '\\')) !== false) {
+            $line++;
+
+            if (count(array_filter($cells, fn($c) => trim((string) $c) !== '')) === 0) {
+                continue; // blank line
+            }
+
+            $rawMobile = trim((string) ($cells[$col['mobile']] ?? ''));
+            $rawSerial = trim((string) ($cells[$col['serial']] ?? ''));
+            $mobile = $this->mobileOrZero($rawMobile);
+            $serial = $this->serialOrZero($rawSerial);
+
+            // skip only when BOTH are missing/invalid
+            if ($mobile === '0' && $serial === '0') {
+                $skipped[] = ['line' => $line, 'mobile' => $rawMobile, 'serial' => $rawSerial, 'reason' => 'invalid'];
+                continue;
+            }
+
+            $key = $mobile . '|' . strtolower($serial);
+            if (isset($seen[$key])) {
+                $skipped[] = ['line' => $line, 'mobile' => $mobile, 'serial' => $serial, 'reason' => 'duplicate_in_file'];
+                continue;
+            }
+            $seen[$key] = true;
+
             $rows[] = [
-                'number' => trim($cells[$numberIdx] ?? ''),
-                'type' => $typeIdx !== null ? strtolower(trim($cells[$typeIdx] ?? '')) : '',
-                'operator_name' => $operatorIdx !== null ? trim($cells[$operatorIdx] ?? '') : '',
-                'country' => $countryIdx !== null ? strtoupper(trim($cells[$countryIdx] ?? '')) : '',
+                'mobile' => $mobile,
+                'serial' => $serial,
+                'provider' => $pi !== null ? (mb_substr(trim((string) ($cells[$pi] ?? '')), 0, 100) ?: null) : null,
+                'country' => $ci !== null ? (substr(strtoupper(trim((string) ($cells[$ci] ?? ''))), 0, 10) ?: null) : null,
             ];
         }
+        fclose($handle);
 
-        // $request->type / operator_name / country act as defaults for rows with empty cells
-        return $this->processImport($rows, $request->type ?? 'mobile');
+        // pairs that already exist in the table
+        $existing = [];
+        $remember = function ($r) use (&$existing) {
+            $existing[$r->mobile . '|' . strtolower($r->serial)] = true;
+        };
+
+        $mobiles = array_values(array_unique(array_filter(array_column($rows, 'mobile'), fn($m) => $m !== '0')));
+        $serials = array_values(array_unique(array_filter(array_column($rows, 'serial'), fn($s) => $s !== '0')));
+
+        foreach (array_chunk($mobiles, 1000) as $chunk) {
+            AllowedNumber::whereIn('mobile', $chunk)->get(['mobile', 'serial'])->each($remember);
+        }
+        foreach (array_chunk($serials, 1000) as $chunk) {
+            AllowedNumber::whereIn('serial', $chunk)->get(['mobile', 'serial'])->each($remember);
+        }
+
+        $toInsert = [];
+        foreach ($rows as $r) {
+            if (isset($existing[$r['mobile'] . '|' . strtolower($r['serial'])])) {
+                $skipped[] = ['line' => null, 'mobile' => $r['mobile'], 'serial' => $r['serial'], 'reason' => 'duplicate_existing'];
+                continue;
+            }
+            $toInsert[] = $r;
+        }
+
+        $imported = count($toInsert);
+        $skippedCount = count($skipped);
+        $path = $upload->store('allowed-numbers');
+
+        try {
+            DB::transaction(function () use ($name, $path, $toInsert, $imported, $skippedCount) {
+                $now = now();
+
+                AllowedNumberFile::create([
+                    'user_id' => Auth::id(),
+                    'name' => $name,
+                    'path' => $path,
+                    'total_rows' => $imported + $skippedCount,
+                    'imported_rows' => $imported,
+                    'skipped_rows' => $skippedCount,
+                ]);
+
+                foreach (array_chunk($toInsert, 500) as $chunk) {
+                    AllowedNumber::insert(array_map(fn($r) => $r + [
+                        'user_id' => Auth::id(),
+                        'file_name' => $name,
+                        'active' => true,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ], $chunk));
+                }
+            });
+        } catch (\Throwable $e) {
+            Storage::delete($path); // don't leave an orphan file behind
+            throw $e;
+        }
+
+        return back()
+            ->with('success', "Uploaded {$name}: {$imported} imported, {$skippedCount} skipped.")
+            ->with('import_results', array_slice($skipped, 0, 200));
     }
 
-    /**
-     * Download sample CSV template.
-     */
+    public function downloadFile(AllowedNumberFile $allowedNumberFile)
+    {
+        if (!Storage::exists($allowedNumberFile->path)) {
+            return back()->with('error', 'The stored file could not be found on the server.');
+        }
+
+        return Storage::download($allowedNumberFile->path, $allowedNumberFile->name);
+    }
+
+    public function destroyFile(AllowedNumberFile $allowedNumberFile)
+    {
+        DB::transaction(function () use ($allowedNumberFile) {
+            AllowedNumber::where('file_name', $allowedNumberFile->name)->delete();
+            $allowedNumberFile->delete();
+        });
+
+        Storage::delete($allowedNumberFile->path);
+
+        return redirect('/admin/allowed-numbers')
+            ->with('success', "Deleted \"{$allowedNumberFile->name}\" and its numbers.");
+    }
+
     public function downloadSample()
     {
-        $csv = "number,type,operator_name,country\n";
-        $csv .= "447700900123,mobile,giffgaff,GB\n";
-        $csv .= "447700900124,mobile,giffgaff,GB\n";
-        $csv .= "829953289034771924,serial,giffgaff,GB\n";
+        $csv = "mobile,serial,provider,country\n";
+        $csv .= "447700900123,829953289034771924,giffgaff,GB\n";
+        $csv .= "447700900124,829953289034771925,giffgaff,GB\n";
+        $csv .= "447700900125,829953289034771926,EE United Kingdom,GB\n";
 
         return response($csv, 200, [
             'Content-Type' => 'text/csv',
@@ -171,54 +270,71 @@ class AllowedNumberController extends Controller
         ]);
     }
 
-    /**
-     * Shared import logic — inserts numbers, skips duplicates & invalid.
-     */
-    private function processImport(array $rows, string $defaultType)
+    // ---------- Helpers ----------
+
+    private function cleanMobile(?string $v): string
     {
-        $imported = 0;
-        $skipped = 0;
-        $results = [];
+        return preg_replace('/\D+/', '', (string) $v); // digits only
+    }
 
-        foreach ($rows as $row) {
-            $number = preg_replace('/[^A-Za-z0-9+\-]/', '', $row['number'] ?? '');
+    private function cleanSerial(?string $v): string
+    {
+        return preg_replace('/[^A-Za-z0-9\-]/', '', (string) $v);
+    }
 
-            if (strlen($number) < 5) {
-                $skipped++;
-                $results[] = ['number' => $row['number'] ?? '', 'status' => 'invalid'];
-                continue;
-            }
+    private function mobileOrZero(?string $v): string
+    {
+        $c = $this->cleanMobile($v);
 
-            // Per-row type wins; fall back to the flow's default (form value for textarea, request/first for CSV)
-            $type = in_array($row['type'] ?? '', ['mobile', 'serial'], true)
-                ? $row['type']
-                : $defaultType;
-
-            $exists = AllowedNumber::where('user_id', Auth::id())
-                ->where('number', $number)
-                ->where('type', $type)
-                ->exists();
-
-            if ($exists) {
-                $skipped++;
-                $results[] = ['number' => $number, 'status' => 'duplicate'];
-                continue;
-            }
-
-            AllowedNumber::create([
-                'user_id' => Auth::id(),
-                'number' => $number,
-                'type' => $type,
-                'operator_name' => $row['operator_name'] ?: null,
-                'country' => $row['country'] ?: null,
-                'active' => true,
-            ]);
-
-            $imported++;
-            $results[] = ['number' => $number, 'status' => 'imported'];
+        // UK trunk-prefix form 0XXXXXXXXXX -> 44XXXXXXXXXX
+        if (strlen($c) === 11 && str_starts_with($c, '0')) {
+            $c = '44' . substr($c, 1);
         }
 
-        return back()->with('success', "Imported {$imported} numbers. Skipped {$skipped} duplicates/invalid.")
-            ->with('import_results', $results);
+        return strlen($c) >= 5 ? $c : '0';
+    }
+
+    private function serialOrZero(?string $v): string
+    {
+        $c = $this->cleanSerial($v);
+        return strlen($c) >= 5 ? $c : '0';
+    }
+
+    private function normalizeInput(Request $request): void
+    {
+        $request->merge([
+            'mobile' => $this->mobileOrZero($request->input('mobile')),
+            'serial' => $this->serialOrZero($request->input('serial')),
+            'country' => strtoupper(trim((string) $request->input('country'))) ?: null,
+        ]);
+
+        if ($request->input('mobile') === '0' && $request->input('serial') === '0') {
+            throw ValidationException::withMessages([
+                'mobile' => 'Enter at least a mobile number or a serial number (5+ characters).',
+            ]);
+        }
+    }
+
+    private function rules(?int $ignoreId, ?string $serial): array
+    {
+        return [
+            'mobile' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('allowed_numbers', 'mobile')
+                    ->where(fn ($q) => $q->where('serial', $serial))
+                    ->ignore($ignoreId),
+            ],
+            'serial' => ['required', 'string', 'max:100'],
+            'provider' => ['nullable', 'string', 'max:100'],
+            'country' => ['nullable', 'string', 'max:10'],
+            'note' => ['nullable', 'string', 'max:255'],
+        ];
+    }
+
+    private function messages(): array
+    {
+        return ['mobile.unique' => 'This mobile + serial combination already exists.'];
     }
 }

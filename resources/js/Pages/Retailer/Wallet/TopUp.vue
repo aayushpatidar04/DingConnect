@@ -2,6 +2,7 @@
 import { Head, router } from '@inertiajs/vue3';
 import RetailerLayout from '@/Layouts/RetailerLayout.vue';
 import { ref, onMounted, nextTick } from 'vue';
+import FlashMessage from "@/Components/FlashMessage.vue";
 
 defineOptions({ layout: RetailerLayout });
 
@@ -76,7 +77,7 @@ function initCardElement() {
             const card = elements.value.create('card', {
                 style: {
                     base: {
-                        color: '#fff',
+                        color: '#000',
                         fontFamily: 'ui-sans-serif, system-ui, sans-serif',
                         fontSize: '16px',
                         '::placeholder': { color: '#6b7280' },
@@ -168,6 +169,8 @@ onMounted(() => {
 
 <template>
     <Head title="Top Up Wallet - MK Network" />
+    <FlashMessage />
+
     <div class="max-w-2xl mx-auto space-y-6">
         <div>
             <h1 class="text-3xl font-bold text-ink-900 mb-1">Top Up Wallet</h1>

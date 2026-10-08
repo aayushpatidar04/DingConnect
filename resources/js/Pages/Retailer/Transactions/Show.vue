@@ -2,6 +2,7 @@
 import { Head } from "@inertiajs/vue3";
 import RetailerLayout from "@/Layouts/RetailerLayout.vue";
 import { ref, computed, onMounted } from "vue";
+import FlashMessage from "@/Components/FlashMessage.vue";
 
 defineOptions({ layout: RetailerLayout });
 
@@ -26,6 +27,7 @@ const statusIcons = {
 const formatDate = (date) => {
     if (!date) return "-";
     return new Date(date).toLocaleString("en-GB", {
+        timeZone: "Europe/London",
         day: "2-digit",
         month: "short",
         year: "numeric",
@@ -194,6 +196,8 @@ onMounted(async () => {
 
 <template>
     <Head title="Transaction - MK Network" />
+    <FlashMessage />
+
     <div class="max-w-3xl mx-auto">
         <!-- Header -->
         <div class="mb-6">

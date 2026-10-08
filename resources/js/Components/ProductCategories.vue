@@ -1,182 +1,70 @@
 <script setup>
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 
 const props = defineProps({
-    products: Array,
+    products: { type: Array, default: () => [] },
     loading: Boolean,
+    logo: String,
 });
+
+const emit = defineEmits(["select-product"]);
 
 // Category icons and colors
 const categoryConfig = {
     TopUp: {
         icon: "📱",
         label: "TopUp",
-        color: "blue",
-        bgClass: "bg-blue-500/10 border-blue-500/30",
-        iconBg: "bg-blue-500/20",
-        textColor: "text-blue-400",
-        checkBenefits: (b, r, t) =>
-            t === "TopUp" &&
-            r === "Immediate" &&
-            b.includes("Mobile") &&
-            b.includes("Minutes") &&
-            !b.includes("Data"),
+        bgClass: "bg-blue-100 border-blue-400",
+        activeClass: "bg-blue-500/25 border-blue-400 ring-2 ring-blue-500/40",
+        textColor: "text-blue-800",
     },
     Data: {
         icon: "📶",
         label: "Data",
-        color: "green",
         bgClass: "bg-green-500/10 border-green-500/30",
-        iconBg: "bg-green-500/20",
+        activeClass:
+            "bg-green-500/25 border-green-400 ring-2 ring-green-500/40",
         textColor: "text-green-400",
-        checkBenefits: (b, r, t) =>
-            t === "Data" &&
-            r === "Immediate" &&
-            b.includes("Mobile") &&
-            b.includes("Data") &&
-            !b.includes("Minutes"),
     },
     Bundle: {
         icon: "📦",
         label: "Bundle",
-        color: "purple",
         bgClass: "bg-purple-500/10 border-purple-500/30",
-        iconBg: "bg-purple-500/20",
+        activeClass:
+            "bg-purple-500/25 border-purple-400 ring-2 ring-purple-500/40",
         textColor: "text-purple-400",
-        checkBenefits: (b, r, t) =>
-            t === "Bundle" &&
-            r === "Immediate" &&
-            b.includes("Mobile") &&
-            b.includes("Minutes") &&
-            b.includes("Data"),
     },
     PIN: {
         icon: "🔢",
         label: "PIN",
-        color: "orange",
         bgClass: "bg-orange-500/10 border-orange-500/30",
-        iconBg: "bg-orange-500/20",
+        activeClass:
+            "bg-orange-500/25 border-orange-400 ring-2 ring-orange-500/40",
         textColor: "text-orange-400",
-        checkBenefits: (b, r, t) =>
-            t === "PIN" &&
-            r === "ReadReceipt" &&
-            b.includes("Mobile") &&
-            b.includes("Minutes") &&
-            b.includes("Data"),
     },
     LDI: {
         icon: "📞",
         label: "LDI",
-        color: "cyan",
         bgClass: "bg-cyan-500/10 border-cyan-500/30",
-        iconBg: "bg-cyan-500/20",
+        activeClass: "bg-cyan-500/25 border-cyan-400 ring-2 ring-cyan-500/40",
         textColor: "text-cyan-400",
-        checkBenefits: (b, r, t) =>
-            t === "LDI" &&
-            r === "ReadReceipt" &&
-            (b.includes("LongDistance") || b.includes("Minutes")),
     },
     Voucher: {
         icon: "🎫",
         label: "Voucher",
-        color: "pink",
         bgClass: "bg-pink-500/10 border-pink-500/30",
-        iconBg: "bg-pink-500/20",
+        activeClass: "bg-pink-500/25 border-pink-400 ring-2 ring-pink-500/40",
         textColor: "text-pink-400",
-        checkBenefits: (b, r, t) =>
-            t === "Voucher" &&
-            r === "ReadReceipt" &&
-            b.includes("Digital Product"),
     },
     DTH: {
         icon: "📺",
         label: "DTH",
-        color: "yellow",
         bgClass: "bg-yellow-500/10 border-yellow-500/30",
-        iconBg: "bg-yellow-500/20",
+        activeClass:
+            "bg-yellow-500/25 border-yellow-400 ring-2 ring-yellow-500/40",
         textColor: "text-yellow-600",
-        checkBenefits: (b, r, t) =>
-            t === "DTH" &&
-            r === "Immediate" &&
-            (b.includes("TV") || b.includes("Utility")),
     },
 };
-
-function determineTransferType(product) {
-    const { benefits = [], redemption_type } = product;
-
-    // Normalize benefits for consistent matching
-    const b = benefits.map((v) => v.toLowerCase());
-
-    if (redemption_type === "Immediate") {
-        if (
-            b.includes("mobile") &&
-            b.includes("minutes") &&
-            !b.includes("data")
-        ) {
-            return "TopUp";
-        }
-        if (
-            b.includes("mobile") &&
-            b.includes("data") &&
-            !b.includes("minutes")
-        ) {
-            return "Data";
-        }
-        if (
-            b.includes("mobile") &&
-            b.includes("minutes") &&
-            b.includes("data")
-        ) {
-            return "Bundle";
-        }
-        if (b.includes("tv") || b.includes("utility")) {
-            return "DTH";
-        }
-    }
-
-    if (redemption_type === "ReadReceipt") {
-        if (
-            b.includes("mobile") &&
-            b.includes("minutes") &&
-            b.includes("data")
-        ) {
-            return "PIN";
-        }
-        if (b.includes("longdistance") || b.includes("minutes")) {
-            return "LDI";
-        }
-        if (b.includes("digital product")) {
-            return "Voucher";
-        }
-    }
-
-    return "TopUp"; // fallback
-}
-
-function categorizeProduct(product) {
-    const transferType = determineTransferType(product);
-    const category = categoryConfig[transferType];
-    return category || categoryConfig.TopUp;
-}
-
-const categorizedProducts = computed(() => {
-    if (!props.products || props.products.length === 0) return {};
-
-    const categories = {};
-    props.products.forEach((product) => {
-        const category = categorizeProduct(product);
-        if (!categories[category.label]) {
-            categories[category.label] = {
-                ...category,
-                products: [],
-            };
-        }
-        categories[category.label].products.push(product);
-    });
-
-    return categories;
-});
 
 const categoryOrder = [
     "TopUp",
@@ -187,11 +75,72 @@ const categoryOrder = [
     "Voucher",
     "DTH",
 ];
-const activeCategories = computed(() => {
-    return categoryOrder.filter((cat) => categorizedProducts.value[cat]);
+
+function determineTransferType(product) {
+    const { benefits = [], redemption_type } = product;
+    const b = (benefits || []).map((v) => String(v).toLowerCase());
+
+    if (redemption_type === "Immediate") {
+        if (
+            b.includes("mobile") &&
+            b.includes("minutes") &&
+            !b.includes("data")
+        )
+            return "TopUp";
+        if (
+            b.includes("mobile") &&
+            b.includes("data") &&
+            !b.includes("minutes")
+        )
+            return "Data";
+        if (b.includes("mobile") && b.includes("minutes") && b.includes("data"))
+            return "Bundle";
+        if (b.includes("tv") || b.includes("utility")) return "DTH";
+    }
+
+    if (redemption_type === "ReadReceipt") {
+        if (b.includes("mobile") && b.includes("minutes") && b.includes("data"))
+            return "PIN";
+        if (b.includes("longdistance") || b.includes("minutes")) return "LDI";
+        if (b.includes("digital product")) return "Voucher";
+    }
+
+    return "TopUp"; // fallback
+}
+
+// { TopUp: [...], Data: [...], ... }
+const grouped = computed(() => {
+    const map = {};
+    for (const product of props.products || []) {
+        const key = determineTransferType(product);
+        (map[key] ||= []).push(product);
+    }
+    return map;
 });
 
-const emit = defineEmits(["select-product"]);
+// Only categories that actually have products, in your preferred order
+const activeCategories = computed(() =>
+    categoryOrder.filter((cat) => grouped.value[cat]?.length),
+);
+
+// Active tab
+const activeTab = ref(null);
+
+watch(
+    activeCategories,
+    (list) => {
+        if (!list.length) {
+            activeTab.value = null;
+        } else if (!list.includes(activeTab.value)) {
+            // activeTab.value = list[0];
+        }
+    },
+    { immediate: true },
+);
+
+const visibleProducts = computed(() =>
+    activeTab.value ? grouped.value[activeTab.value] || [] : [],
+);
 
 function selectProduct(product) {
     emit("select-product", product);
@@ -220,112 +169,104 @@ function formatValidity(iso) {
 <template>
     <div v-if="products.length > 0">
         <!-- Category Tabs -->
-        <div class="flex flex-wrap gap-2 mb-6">
+        <div class="flex gap-2 mb-6 justify-center overflow-x-auto pb-1" role="tablist">
             <button
                 v-for="category in activeCategories"
                 :key="category"
-                @click=""
+                type="button"
+                role="tab"
+                :aria-selected="activeTab === category"
+                @click="activeTab = category"
                 :class="[
-                    'px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2 border',
-                    categoryConfig[category]?.bgClass ||
-                        'bg-surface-3 border-surface-3',
-                    categoryConfig[category]?.textColor || 'text-ink-900',
+                    'px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2 border whitespace-nowrap',
+                    categoryConfig[category].textColor,
+                    activeTab === category
+                        ? categoryConfig[category].activeClass
+                        : categoryConfig[category].bgClass +
+                          ' opacity-60 hover:opacity-100',
                 ]"
             >
-                <span>{{ categoryConfig[category]?.icon }}</span>
-                {{ category }}
+                <!-- <span>{{ categoryConfig[category].icon }}</span> -->
+                {{ category === 'TopUp' ? 'Direct Top Up' : category }}
                 <span class="bg-surface-3/70 px-2 py-0.5 rounded-full text-xs">
-                    {{ categorizedProducts[category].products.length }}
+                    {{ grouped[category].length }}
                 </span>
             </button>
         </div>
 
-        <!-- Products Grid by Category -->
-        <div v-for="category in activeCategories" :key="category" class="mb-8">
-            <div class="flex items-center gap-3 mb-4">
-                <div
-                    :class="[
-                        'w-8 h-8 rounded-lg flex items-center justify-center',
-                        categoryConfig[category]?.iconBg,
-                    ]"
-                >
-                    <span class="text-lg">{{
-                        categoryConfig[category]?.icon
-                    }}</span>
-                </div>
-                <h3
-                    :class="[
-                        'text-lg font-semibold',
-                        categoryConfig[category]?.textColor,
-                    ]"
-                >
-                    {{ category }}
-                </h3>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <button
-                    v-for="product in categorizedProducts[category].products"
-                    :key="product.sku_code"
-                    @click="selectProduct(product)"
-                    :class="[
-                        'bg-surface-2 border rounded-2xl p-5 text-left transition group relative',
-                        product.is_denomination
-                            ? 'border-surface-3 hover:border-primary'
-                            : 'border-primary/30 hover:border-primary bg-primary/5',
-                    ]"
-                >
-
-                    <!-- Display Text -->
+        <!-- Only the active tab's products are rendered -->
+        <div
+            :key="activeTab"
+            role="tabpanel"
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
+            <button
+                v-for="product in visibleProducts"
+                :key="product.sku_code"
+                type="button"
+                @click="selectProduct(product)"
+                :class="[
+                    'bg-surface-2 border rounded-2xl p-5 text-left transition group relative',
+                    product.is_denomination
+                        ? 'border-surface-3 hover:border-primary'
+                        : 'border-primary/30 hover:border-primary bg-primary/5',
+                ]"
+            >
+                <!-- Display Text -->
+                <div class="flex justify-between">
                     <div class="font-semibold text-ink-900 mb-2 pr-16">
                         {{ product.display_text || product.sku_code }}
                     </div>
+                    <div v-if="props.logo" class="absolute top-4 right-4 w-12 h-12">
+                        <img
+                            :src="props.logo"
+                            alt="Provider Logo"
+                            class="w-full h-full object-contain"
+                        />
+                    </div>
+                </div>
 
-                    <!-- Benefits Tags -->
-                    <div
-                        v-if="product.benefits && product.benefits.length"
-                        class="flex flex-wrap gap-1 mb-3"
+                <!-- Benefits Tags -->
+                <div
+                    v-if="product.benefits && product.benefits.length"
+                    class="flex flex-wrap gap-1 mb-3"
+                >
+                    <span
+                        v-for="benefit in product.benefits"
+                        :key="benefit"
+                        class="text-xs bg-surface-3 text-ink-500 px-2 py-0.5 rounded-full"
                     >
-                        <span
-                            v-for="benefit in product.benefits"
-                            :key="benefit"
-                            class="text-xs bg-surface-3 text-ink-500 px-2 py-0.5 rounded-full"
-                        >
-                            {{ benefit }}
-                        </span>
-                    </div>
+                        {{ benefit }}
+                    </span>
+                </div>
 
-                    <!-- Pricing -->
-                    <div class="flex items-baseline gap-2 mb-2">
-                        <span class="text-xl font-bold text-ink-900">
-                            £{{ product.send_value.toFixed(2) }}
-                        </span>
-                        <!-- <span v-if="product.receive_value && product.receive_value !== product.send_value" class="text-sm text-green-400">
-                            → £{{ product.receive_value.toFixed(2) }}
-                        </span> -->
-                    </div>
+                <!-- Pricing -->
+                <div class="flex items-baseline gap-2 mb-2">
+                    <span class="text-xl font-bold text-ink-900">
+                        £{{ Number(product.send_value || 0).toFixed(2) }}
+                    </span>
+                </div>
 
-                    <!-- Validity Period -->
-                    <div
-                        v-if="product.validity_period"
-                        class="text-xs text-ink-500"
+                <!-- Validity Period -->
+                <div
+                    v-if="product.validity_period"
+                    class="text-xs text-ink-500"
+                >
+                    {{ formatValidity(product.validity_period) }}
+                </div>
+
+                <!-- Redemption Type Badge -->
+                <div
+                    v-if="product.redemption_type === 'ReadReceipt'"
+                    class="mt-2"
+                >
+                    <span
+                        class="text-xs bg-yellow-500/10 text-yellow-600 px-2 py-1 rounded-full"
                     >
-                        {{ formatValidity(product.validity_period) }}
-                    </div>
-
-                    <!-- Redemption Type Badge -->
-                    <div
-                        v-if="product.redemption_type === 'ReadReceipt'"
-                        class="mt-2"
-                    >
-                        <span
-                            class="text-xs bg-yellow-500/10 text-yellow-600 px-2 py-1 rounded-full"
-                        >
-                            📋 PIN/Voucher required
-                        </span>
-                    </div>
-                </button>
-            </div>
+                        📋 PIN/Voucher required
+                    </span>
+                </div>
+            </button>
         </div>
     </div>
 
@@ -335,10 +276,5 @@ function formatValidity(iso) {
             class="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"
         ></div>
         <p class="mt-4 text-ink-500">Loading products...</p>
-    </div>
-
-    <!-- Empty State -->
-    <div v-else class="text-center py-12 text-ink-500">
-        No products available. Please select an operator first.
     </div>
 </template>

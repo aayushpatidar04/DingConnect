@@ -1,6 +1,8 @@
 <script setup>
 import { Head, useForm } from "@inertiajs/vue3";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
+import FlashMessage from "@/Components/FlashMessage.vue";
+
 defineOptions({ layout: AdminLayout });
 
 const props = defineProps({ settings: Object, groups: Array });
@@ -17,6 +19,8 @@ function submit() {
 
 <template>
     <Head title="Settings - Admin" />
+    <FlashMessage />
+
     <div class="space-y-6">
         <div>
             <h1 class="text-3xl font-bold text-ink-900 mb-1">Settings</h1>

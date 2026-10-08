@@ -377,7 +377,7 @@ class ValuetopupService
             'region_code' => $sku['region'] ?? '',
             'display_text' => $sku['skuName'] ?? $sku['productName'] ?? '',
             'localization_key' => '',
-            'send_value' => $sendValue,
+            'send_value' => max($sendValue, $receiveValue),
             'receive_value' => $receiveValue,
             'send_currency' => $sendCurrency,
             'receive_currency' => $receiveCurrency,

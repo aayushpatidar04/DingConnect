@@ -1,6 +1,7 @@
 <script setup>
 import { Head, useForm, Link } from "@inertiajs/vue3";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
+import FlashMessage from "@/Components/FlashMessage.vue";
 
 defineOptions({ layout: AdminLayout });
 
@@ -26,6 +27,8 @@ function submit() {
 
 <template>
     <Head title="Add Retailer - MK Network" />
+    <FlashMessage />
+
     <div>
         <div class="flex items-center gap-4 mb-8">
             <Link

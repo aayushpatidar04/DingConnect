@@ -20,11 +20,18 @@ class WalletController extends Controller
         $wallet = $walletService->getWallet($user);
         $availableBalance = $walletService->getAvailableBalance($wallet);
 
-        $topups = WalletTopup::where('user_id', $user->id)
-            ->latest()
-            ->paginate(20);
+        $filters = $request->only('status', 'from', 'to');
 
-        return Inertia::render('Retailer/Wallet/Index', compact('wallet', 'availableBalance', 'topups'));
+        $topups = WalletTopup::query()
+            ->where('user_id', $user->id)
+            ->when($filters['status'] ?? null, fn($q, $v) => $q->where('status', $v))
+            ->when($filters['from'] ?? null, fn($q, $v) => $q->whereDate('created_at', '>=', $v))
+            ->when($filters['to'] ?? null, fn($q, $v) => $q->whereDate('created_at', '<=', $v))
+            ->latest()
+            ->paginate(20)
+            ->withQueryString(); // keeps filters in the pagination links
+
+        return Inertia::render('Retailer/Wallet/Index', compact('wallet', 'availableBalance', 'topups', 'filters'));
     }
 
     public function topUpPage(Request $request)

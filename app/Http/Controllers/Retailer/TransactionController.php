@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Retailer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Operator;
 use App\Models\Transaction;
 use App\Services\DingConnectService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -16,28 +17,46 @@ class TransactionController extends Controller
     {
         $user = $request->user();
 
-        $query = Transaction::where('user_id', $user->id)->with(['operator', 'country']);
+        $filters = $request->only('search', 'status', 'type', 'operator_id', 'from', 'to');
 
-        if ($status = $request->input('status')) {
-            $query->where('status', $status);
-        }
+        $transactions = Transaction::query()
+            ->where('user_id', $user->id)
+            ->with(['operator:id,name', 'country:id,name'])
+            ->when($filters['search'] ?? null, function ($q, $search) {
+                // grouped, so the user_id condition always applies
+                $q->where(function ($q) use ($search) {
+                    $q->where('mobile_number', 'like', "%{$search}%")
+                        ->orWhere('receipt_number', 'like', "%{$search}%");
+                });
+            })
+            ->when($filters['status'] ?? null, fn($q, $v) => $q->where('status', $v))
+            ->when($filters['type'] ?? null, function ($q, $type) {
+                if ($type === 'Immediate') {
+                    // the page displays a null redemption_type as "Immediate"
+                    $q->where(fn($q) => $q->where('redemption_type', 'Immediate')
+                        ->orWhereNull('redemption_type'));
+                } else {
+                    $q->where('redemption_type', $type);
+                }
+            })
+            ->when($filters['operator_id'] ?? null, fn($q, $v) => $q->where('operator_id', $v))
+            ->when($filters['from'] ?? null, fn($q, $v) => $q->whereDate('created_at', '>=', $v))
+            ->when($filters['to'] ?? null, fn($q, $v) => $q->whereDate('created_at', '<=', $v))
+            ->orderByDesc('created_at')
+            ->paginate(25)
+            ->withQueryString(); // keeps filters in the pagination links
 
-        if ($search = $request->input('search')) {
-            $query->where('mobile_number', 'like', "%{$search}%")
-                ->orWhere('receipt_number', 'like', "%{$search}%");
-        }
+        // only operators this retailer has actually used
+        $operators = Operator::whereIn(
+            'id',
+            Transaction::where('user_id', $user->id)->whereNotNull('operator_id')->select('operator_id')
+        )->orderBy('name')->get(['id', 'name']);
 
-        if ($from = $request->input('from')) {
-            $query->whereDate('created_at', '>=', $from);
-        }
-
-        if ($to = $request->input('to')) {
-            $query->whereDate('created_at', '<=', $to);
-        }
-
-        $transactions = $query->orderByDesc('created_at')->paginate(25);
-
-        return Inertia::render('Retailer/Transactions/Index', compact('transactions'));
+        return Inertia::render('Retailer/Transactions/Index', [
+            'transactions' => $transactions,
+            'operators' => $operators,
+            'filters' => $filters,
+        ]);
     }
 
     public function show(Transaction $transaction, DingConnectService $dingService)

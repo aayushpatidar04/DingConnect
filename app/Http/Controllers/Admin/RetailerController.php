@@ -20,38 +20,29 @@ class RetailerController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::where('role', 'retailer')
-            ->with(['wallet', 'transactions']);
+        $filters = $request->only('search', 'status', 'kyc_status');
 
-        // Search
-        if ($search = $request->get('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%")
-                    ->orWhere('shop_name', 'like', "%{$search}%");
-            });
-        }
+        $retailers = User::where('role', 'retailer')
+            ->with('wallet')              // 'transactions' removed, see notes
+            ->filter($filters)
+            ->orderByDesc('created_at')
+            ->paginate(25)
+            ->withQueryString();          // keeps filters in the pagination links
 
-        // Filter by status
-        if ($status = $request->get('status')) {
-            if ($status === 'active')
-                $query->where('is_active', true);
-            if ($status === 'inactive')
-                $query->where('is_active', false);
-            if ($status === 'kyc_pending')
-                $query->where('kyc_status', 'pending');
-        }
+        return Inertia::render('Admin/Retailers/Index', compact('retailers', 'filters'));
+    }
 
-
-        $retailers = $query->orderByDesc('created_at')->paginate(25);
-
-        return Inertia::render('Admin/Retailers/Index', compact('retailers'));
+    public function export(Request $request)
+    {
+        return Excel::download(
+            new RetailersExport($request->only('search', 'status', 'kyc_status')),
+            'retailers_' . now()->format('Y-m-d') . '.xlsx'
+        );
     }
 
     public function show(User $retailer)
     {
-        $retailer->load(['wallet', 'transactions' => fn($q) => $q->latest()->limit(50)]);
+        $retailer->load(['wallet', 'transactions' => fn($q) => $q->with('operator')->latest()->limit(5)]);
 
         return Inertia::render('Admin/Retailers/Show', compact('retailer'));
     }
@@ -150,7 +141,7 @@ class RetailerController extends Controller
 
         $walletService = app(WalletService::class);
         $wallet = $walletService->getWallet($retailer);
-        $walletService->credit($wallet, $request->amount, 'admin_credit', null, $request->description ?? 'Manual credit by admin');
+        $walletService->credit($retailer->id, $request->amount, null, $request->description ?? 'Manual credit by admin');
 
         return back()->with('success', "£ {$request->amount} credited to {$retailer->name}'s wallet!");
     }
@@ -176,11 +167,6 @@ class RetailerController extends Controller
         }
 
         return back()->with('success', 'KYC ' . $validated['action'] . 'ed successfully!');
-    }
-
-    public function export(Request $request)
-    {
-        return Excel::download(new RetailersExport, 'retailers_' . now()->format('Y-m-d') . '.xlsx');
     }
 
     public function destroy(User $retailer)

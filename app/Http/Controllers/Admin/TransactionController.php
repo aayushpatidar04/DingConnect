@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\TransactionsExport;
 use App\Http\Controllers\Controller;
+use App\Models\Operator;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -14,51 +15,51 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class TransactionController extends Controller
 {
+    private const FILTER_KEYS = ['search', 'status', 'retailer_id', 'operator_id', 'from', 'to'];
+
     public function index(Request $request)
     {
-        $query = Transaction::query()->with(['user', 'operator', 'country']);
+        $filters = $request->only(self::FILTER_KEYS);
 
-        if ($search = $request->input('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('mobile_number', 'like', "%{$search}%")
-                    ->orWhere('receipt_number', 'like', "%{$search}%")
-                    ->orWhere('ding_transaction_id', 'like', "%{$search}%")
-                    ->orWhereHas('user', fn($q2) => $q2->where('name', 'like', "%{$search}%"));
-            });
-        }
+        $transactions = Transaction::query()
+            ->with(['user:id,name,shop_name', 'operator:id,name', 'country:id,name'])
+            ->filter($filters)
+            ->orderByDesc('created_at')
+            ->paginate(50)
+            ->withQueryString(); // keeps filters in the pagination links
 
-        if ($status = $request->input('status')) {
-            $query->where('status', $status);
-        }
+        // Platform-wide stats (unchanged behaviour), computed in one query instead of five
+        $row = Transaction::selectRaw("
+        COUNT(*) as total,
+        SUM(status = 'success') as success,
+        SUM(status = 'failed') as failed,
+        SUM(status = 'pending') as pending,
+        COALESCE(SUM(CASE WHEN status = 'success' THEN amount END), 0) as total_volume
+    ")->first();
 
-        if ($retailerId = $request->input('retailer_id')) {
-            $query->where('user_id', $retailerId);
-        }
-
-        if ($from = $request->input('from')) {
-            $query->whereDate('created_at', '>=', $from);
-        }
-
-        if ($to = $request->input('to')) {
-            $query->whereDate('created_at', '<=', $to);
-        }
-
-        $transactions = $query->orderByDesc('created_at')->paginate(50);
-
-        // Stats for the filter page
         $stats = [
-            'total' => Transaction::count(),
-            'success' => Transaction::where('status', 'success')->count(),
-            'failed' => Transaction::where('status', 'failed')->count(),
-            'pending' => Transaction::where('status', 'pending')->count(),
-            'total_volume' => Transaction::where('status', 'success')->sum('amount'),
+            'total' => (int) $row->total,
+            'success' => (int) $row->success,
+            'failed' => (int) $row->failed,
+            'pending' => (int) $row->pending,
+            'total_volume' => (float) $row->total_volume,
         ];
 
-        $retailers = User::where('role', 'retailer')->get(['id', 'name', 'shop_name']);
+        $retailers = User::where('role', 'retailer')
+            ->orderBy('name')
+            ->get(['id', 'name', 'shop_name']);
 
-        $filters = $request->only('status', 'retailer_id', 'from', 'to');
+        $operators = Operator::with('country:id,iso_code')
+            ->orderBy('name')
+            ->get(['id', 'name', 'country_id']);
 
-        return Inertia::render('Admin/Transactions/Index', compact('transactions', 'stats', 'retailers', 'filters'));
+        return Inertia::render('Admin/Transactions/Index', compact(
+            'transactions',
+            'stats',
+            'retailers',
+            'operators',
+            'filters'
+        ));
     }
 
     public function show(Transaction $transaction)
@@ -92,11 +93,7 @@ class TransactionController extends Controller
     public function export(Request $request)
     {
         return Excel::download(
-            new TransactionsExport(
-                $request->input('from'),
-                $request->input('to'),
-                $request->input('status'),
-            ),
+            new TransactionsExport($request->only(self::FILTER_KEYS)),
             'transactions_' . now()->format('Y-m-d') . '.xlsx'
         );
     }

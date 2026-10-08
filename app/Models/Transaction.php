@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -51,5 +52,22 @@ class Transaction extends Model
     public function commissions(): HasMany
     {
         return $this->hasMany(TransactionCommission::class);
+    }
+
+    public function scopeFilter(Builder $query, array $f): Builder
+    {
+        return $query
+            ->when($f['search'] ?? null, function ($q, $s) {
+                // grouped so it can't escape the other conditions
+                $q->where(function ($q) use ($s) {
+                    $q->where('mobile_number', 'like', "%{$s}%")
+                    ->orWhere('receipt_number', 'like', "%{$s}%");
+                });
+            })
+            ->when($f['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
+            ->when($f['retailer_id'] ?? null, fn ($q, $v) => $q->where('user_id', $v))
+            ->when($f['operator_id'] ?? null, fn ($q, $v) => $q->where('operator_id', $v))
+            ->when($f['from'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '>=', $v))
+            ->when($f['to'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '<=', $v));
     }
 }

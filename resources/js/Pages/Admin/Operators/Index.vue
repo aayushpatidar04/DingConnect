@@ -2,6 +2,7 @@
 import { Head, router } from "@inertiajs/vue3";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
 import { ref, computed } from "vue";
+import FlashMessage from "@/Components/FlashMessage.vue";
 
 defineOptions({ layout: AdminLayout });
 
@@ -72,6 +73,7 @@ function applyFilters() {
 
 <template>
     <Head title="Operators - Admin" />
+    <FlashMessage />
 
     <div class="space-y-6">
         <div class="flex items-center justify-between flex-wrap gap-4">

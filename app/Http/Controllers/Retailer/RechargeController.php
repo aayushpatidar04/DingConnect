@@ -220,13 +220,13 @@ class RechargeController extends Controller
             }
 
             $syncedProviders[] = [
-                'provider_code'  => $operator->provider_code,
-                'provider_id'    => $operator->id,
-                'name'           => $operator->name,
-                'logo_url'       => $operator->logo_url,
-                'country_iso'    => $countryIso,
-                'source'         => $operator->provider_code === 'vt-' . $item['operatorId'] ? 'valuetopup_only' : 'both',
-                'valuetopup_id'  => $item['operatorId'],
+                'provider_code' => $operator->provider_code,
+                'provider_id' => $operator->id,
+                'name' => $operator->name,
+                'logo_url' => $operator->logo_url,
+                'country_iso' => $countryIso,
+                'source' => $operator->provider_code === 'vt-' . $item['operatorId'] ? 'valuetopup_only' : 'both',
+                'valuetopup_id' => $item['operatorId'],
             ];
         }
 
@@ -245,7 +245,8 @@ class RechargeController extends Controller
         $vtLower = mb_strtolower($vtName);
 
         foreach ($existingOperators as $dingNameLower => $dingOperator) {
-            if ($vtLower === $dingNameLower
+            if (
+                $vtLower === $dingNameLower
                 || str_contains($dingNameLower, $vtLower)
                 || str_contains($vtLower, $dingNameLower)
             ) {
@@ -303,7 +304,7 @@ class RechargeController extends Controller
                         if ($sku) {
                             $descriptions[$sku] = [
                                 'description_markdown' => $descItem['DescriptionMarkdown'] ?? '',
-                                'readmore_markdown'    => $descItem['ReadMoreMarkdown'] ?? '',
+                                'readmore_markdown' => $descItem['ReadMoreMarkdown'] ?? '',
                             ];
                         }
                     }
@@ -314,7 +315,7 @@ class RechargeController extends Controller
                 $sku = $product['sku_code'];
                 if (isset($descriptions[$sku])) {
                     $product['description_markdown'] = $descriptions[$sku]['description_markdown'];
-                    $product['readmore_markdown']    = $descriptions[$sku]['readmore_markdown'];
+                    $product['readmore_markdown'] = $descriptions[$sku]['readmore_markdown'];
                 }
                 $product['_source'] = 'ding';
                 $allProducts[] = $product;
@@ -405,13 +406,13 @@ class RechargeController extends Controller
         return response()->json([
             'success' => true,
             'pricing' => [
-                'send_value'      => (float) ($payload['invoiceAmount'] ?? 0),
-                'send_currency'   => 'GBP',
-                'receive_value'   => (float) ($payload['localCurrencyAmount'] ?? 0),
+                'send_value' => (float) ($payload['invoiceAmount'] ?? 0),
+                'send_currency' => 'GBP',
+                'receive_value' => (float) ($payload['localCurrencyAmount'] ?? 0),
                 'receive_currency' => $payload['destinationCurrency'] ?? 'GBP',
-                'face_value'      => (float) ($payload['faceValue'] ?? 0),
+                'face_value' => (float) ($payload['faceValue'] ?? 0),
                 'face_value_currency' => $payload['faceValueCurrency'] ?? 'GBP',
-                'sales_tax'       => (float) ($payload['salesTaxAmount'] ?? 0),
+                'sales_tax' => (float) ($payload['salesTaxAmount'] ?? 0),
             ],
         ]);
     }
@@ -514,44 +515,61 @@ class RechargeController extends Controller
 
         $gateway = $request->input('gateway', 'ding');
         $digits = preg_replace('/[^0-9]/', '', $request->mobile_number);
+        $serialInput = preg_replace('/[^A-Za-z0-9\-]/', '', $request->mobile_number);
 
         // =====================================================================
         // STEP 1 — AllowedNumber check (same for both gateways)
+        // Stored values are 5+ chars, or "0" meaning "not provided",
+        // so anything shorter than 5 can never match a real value.
         // =====================================================================
-        $isPhone = strlen($digits) === 12 && str_starts_with($digits, '44');
-        $bareNumber = substr($digits, 2);
+        $notRegistered = fn() => response()->json([
+            'success' => false,
+            'error' => 'This number is not registered for recharges on this portal.',
+        ], 422);
 
-        if ($isPhone) {
-            $allowed = AllowedNumber::where('active', true)
-                ->where(function ($q) use ($digits, $bareNumber) {
-                    $q->where('number', $digits)
-                      ->orWhere('number', $bareNumber);
-                })
-                ->first();
-
-            if (!$allowed) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'This number is not registered for recharges on this portal.',
-                ], 422);
-            }
-        } else {
-            $allowed = AllowedNumber::where('active', true)
-                ->where('number', $digits)
-                ->first();
-
-            if (!$allowed) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'This number is not registered for recharges on this portal.',
-                ], 422);
-            }
+        if (strlen($serialInput) < 5) {
+            return $notRegistered();
         }
 
+        // UK numbers: 44XXXXXXXXXX, 0XXXXXXXXXX and XXXXXXXXXX are the same number
+        $national = null;
+        if (strlen($digits) === 12 && str_starts_with($digits, '44')) {
+            $national = substr($digits, 2);
+        } elseif (strlen($digits) === 11 && str_starts_with($digits, '0')) {
+            $national = substr($digits, 1);
+        }
+
+        $isPhone = $national !== null;
+
+        if ($isPhone) {
+            $digits = '44' . $national; // canonical form for lookups and the response
+        }
+
+        $mobileVariants = $isPhone
+            ? ['44' . $national, '0' . $national, $national]
+            : [$digits];
+
+        $allowed = AllowedNumber::where('active', true)
+            ->where(function ($q) use ($serialInput, $digits, $mobileVariants) {
+                $q->where('serial', $serialInput);
+                if (strlen($digits) >= 5) {
+                    $q->orWhereIn('mobile', $mobileVariants);
+                }
+            })
+            ->first();
+
+        if (!$allowed) {
+            return $notRegistered();
+        }
+
+        // Did the retailer enter the mobile side of the row (vs the serial side)?
+        $matchedAsMobile = $allowed->mobile !== '0'
+            && in_array($allowed->mobile, $mobileVariants, true);
+
         // =====================================================================
-        // STEP 2 — Gateway-specific lookup
+        // STEP 2 — Gateway-specific lookup (phone numbers only)
         // =====================================================================
-        if ($gateway === 'valuetopup') {
+        if ($gateway === 'valuetopup' && $isPhone) {
             // Resolve VT operator ID from the selected operator
             $operator = Operator::where('provider_code', $request->provider_code)
                 ->orWhere('provider_code', $request->input('valuetopup_id'))
@@ -597,8 +615,7 @@ class RechargeController extends Controller
             $payload = $result['payLoad'];
 
             // Check if the selected operator appears in the lookup results
-            // VT lookup returns operatorId(s) — check if our operator matches
-            $lookupOperatorId = (int) ($payload['operatorId'] ?? 0);
+            $lookupOperatorId = (int) ($payload[0]['operatorId'] ?? 0);
             $lookupOperatorIds = [];
 
             // Some responses may return multiple operators
@@ -628,7 +645,7 @@ class RechargeController extends Controller
         // =====================================================================
         // DINGCONNECT — AccountLookup with full 44-prefixed number
         // =====================================================================
-        if ($isPhone) {
+        if ($gateway === 'ding' && $isPhone) {
             try {
                 $result = $dingService->getAccountLookup($digits);
             } catch (\Throwable $e) {
@@ -657,13 +674,21 @@ class RechargeController extends Controller
                 ], 422);
             }
 
-            return response()->json(['success' => true, 'account_number' => $digits, 'gateway' => 'ding']);
+            return response()->json([
+                'success' => true,
+                'account_number' => $digits,
+                'gateway' => 'ding',
+            ]);
         }
 
         // =====================================================================
-        // SERIAL NUMBER — exact match, no lookup (both gateways)
+        // SERIAL NUMBER — exact match against allowed_numbers, no gateway lookup
         // =====================================================================
-        return response()->json(['success' => true, 'account_number' => $digits, 'gateway' => $gateway]);
+        return response()->json([
+            'success' => true,
+            'account_number' => $matchedAsMobile ? $digits : $serialInput,
+            'gateway' => $gateway,
+        ]);
     }
 
     /**
@@ -853,14 +878,14 @@ class RechargeController extends Controller
         // Update any existing transaction with this SKU for caching
         Transaction::where('sku_code', $request->sku_code)->update([
             'description_markdown' => $descriptionMarkdown,
-            'readmore_markdown'    => $readmoreMarkdown,
+            'readmore_markdown' => $readmoreMarkdown,
         ]);
 
         return response()->json([
-            'success'              => true,
+            'success' => true,
             'description_markdown' => $descriptionMarkdown,
-            'readmore_markdown'    => $readmoreMarkdown,
-            'source'               => 'api',
+            'readmore_markdown' => $readmoreMarkdown,
+            'source' => 'api',
         ]);
     }
 

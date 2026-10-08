@@ -2,6 +2,8 @@
 import { Head, Link } from "@inertiajs/vue3";
 import { computed } from 'vue';
 import AdminLayout from "@/Layouts/AdminLayout.vue";
+import FlashMessage from "@/Components/FlashMessage.vue";
+
 defineOptions({ layout: AdminLayout });
 
 const props = defineProps({
@@ -33,7 +35,7 @@ const formatCompact = (v) =>
     }).format(v);
 
 const formatDate = (d) =>
-    new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+    new Date(d).toLocaleDateString("en-GB", { timeZone: "Europe/London", day: "2-digit", month: "short" });
 
 const barHeight = (value) =>
     Math.max(2, (value / maxRevenue.value) * 100) + "%";
@@ -45,6 +47,7 @@ const showLabel = (index) =>
 
 <template>
     <Head title="Dashboard - Admin" />
+    <FlashMessage />
 
     <div class="space-y-6">
         <div>
@@ -320,7 +323,7 @@ const showLabel = (index) =>
                             class="group relative flex-1 h-full flex items-end"
                         >
                             <div
-                                class="w-full bg-primary/70 group-hover:bg-primary rounded-t transition-all"
+                                class="w-full bg-primary opacity-70 group-hover:opacity-100 rounded-t transition-all"
                                 :style="{ height: barHeight(point.revenue) }"
                             ></div>
 

@@ -1,37 +1,94 @@
 <script setup>
-import { Head, Link } from "@inertiajs/vue3";
-import { computed, reactive } from "vue";
+import { Head, Link, router } from "@inertiajs/vue3";
+import { computed, reactive, watch } from "vue";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
+import FlashMessage from "@/Components/FlashMessage.vue";
+import SearchableSelect from "@/Components/SearchableSelect.vue";
+
 defineOptions({ layout: AdminLayout });
 
 const props = defineProps({
     transactions: Object,
     stats: Object,
     retailers: Array,
+    operators: { type: Array, default: () => [] },
     filters: { type: Object, default: () => ({}) },
 });
 
 const filters = reactive({
+    search: props.filters.search ?? "",
     status: props.filters.status ?? "",
     retailer_id: props.filters.retailer_id ?? "",
+    operator_id: props.filters.operator_id ?? "",
     from: props.filters.from ?? "",
     to: props.filters.to ?? "",
 });
 
-const exportUrl = computed(() => {
-    const params = new URLSearchParams();
-    if (filters.from) params.set("from", filters.from);
-    if (filters.to) params.set("to", filters.to);
-    if (filters.status) params.set("status", filters.status);
-    if (filters.retailer_id) params.set("retailer_id", filters.retailer_id);
+const retailerOptions = computed(() =>
+    props.retailers.map((r) => ({
+        id: r.id,
+        label: r.name,
+        hint: r.shop_name,
+    })),
+);
+const operatorOptions = computed(() =>
+    props.operators.map((o) => ({
+        id: o.id,
+        label: o.name,
+        hint: o.country?.iso_code,
+    })),
+);
 
-    const qs = params.toString();
+const hasFilters = computed(() => Object.values(filters).some((v) => v !== ""));
+
+const activeParams = () =>
+    Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== ""));
+
+let timer = null;
+watch(
+    filters,
+    () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            router.get("/admin/transactions", activeParams(), {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            });
+        }, 400);
+    },
+    { deep: true },
+);
+
+function reset() {
+    Object.keys(filters).forEach((k) => (filters[k] = ""));
+}
+
+const exportUrl = computed(() => {
+    const qs = new URLSearchParams(activeParams()).toString();
     return "/admin/transactions/export" + (qs ? "?" + qs : "");
 });
+
+const inputClass =
+    "border border-surface-3 rounded-lg px-3 py-2 text-sm bg-surface-3 text-ink-900 input-dark";
+
+const formatDate = (date) => {
+    if (!date) return "-";
+    return new Date(date).toLocaleString("en-GB", {
+        timeZone: "Europe/London",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+};
 </script>
 
 <template>
     <Head title="Transactions - Admin" />
+    <FlashMessage />
+
     <div class="space-y-6">
         <div>
             <h1 class="text-3xl font-bold text-ink-900 mb-1">Transactions</h1>
@@ -65,7 +122,7 @@ const exportUrl = computed(() => {
                 </div>
             </div>
             <div class="bg-surface-2 rounded-2xl p-4 border border-surface-3">
-                <div class="text-sm text-blue-100">Total Volume</div>
+                <div class="text-sm text-ink-500">Total Volume</div>
                 <div class="text-xl font-bold text-primary-light">
                     £ {{ Number(stats.total_volume).toFixed(2) }}
                 </div>
@@ -73,16 +130,39 @@ const exportUrl = computed(() => {
         </div>
 
         <!-- Filters -->
-        <form
-            method="GET"
+        <div
             class="bg-surface-2 rounded-2xl p-4 border border-surface-3 flex flex-wrap gap-3 items-end"
         >
+            <div class="flex-1 min-w-[200px]">
+                <label class="text-xs text-ink-500 block mb-1">Search</label>
+                <input
+                    v-model="filters.search"
+                    type="search"
+                    placeholder="Mobile or receipt number"
+                    :class="[inputClass, 'w-full']"
+                />
+            </div>
             <div>
-                <label class="text-xs text-ink-500 block mb-1">Status</label
-                ><select
-                    name="status" v-model="filters.status"
-                    class="border border-surface-3 rounded-lg px-3 py-2 text-sm bg-surface-3 text-ink-900 input-dark"
-                >
+                <label class="text-xs text-ink-500 block mb-1">Retailer</label>
+                <SearchableSelect
+                    v-model="filters.retailer_id"
+                    :options="retailerOptions"
+                    all-label="All Retailers"
+                    search-placeholder="Search retailers..."
+                />
+            </div>
+            <div>
+                <label class="text-xs text-ink-500 block mb-1">Operator</label>
+                <SearchableSelect
+                    v-model="filters.operator_id"
+                    :options="operatorOptions"
+                    all-label="All Operators"
+                    search-placeholder="Search operators..."
+                />
+            </div>
+            <div>
+                <label class="text-xs text-ink-500 block mb-1">Status</label>
+                <select v-model="filters.status" :class="inputClass">
                     <option value="">All</option>
                     <option value="success">Success</option>
                     <option value="failed">Failed</option>
@@ -90,38 +170,20 @@ const exportUrl = computed(() => {
                 </select>
             </div>
             <div>
-                <label class="text-xs text-ink-500 block mb-1">Retailer</label
-                ><select
-                    name="retailer_id" v-model="filters.retailer_id"
-                    class="border border-surface-3 rounded-lg px-3 py-2 text-sm bg-surface-3 text-ink-900 input-dark"
-                >
-                    <option value="">All</option>
-                    <option v-for="r in retailers" :value="r.id" :key="r.id">
-                        {{ r.name }}
-                    </option>
-                </select>
+                <label class="text-xs text-ink-500 block mb-1">From</label>
+                <input v-model="filters.from" type="date" :class="inputClass" />
             </div>
             <div>
-                <label class="text-xs text-ink-500 block mb-1">From</label
-                ><input v-model="filters.from"
-                    type="date"
-                    name="from"
-                    class="border border-surface-3 rounded-lg px-3 py-2 text-sm bg-surface-3 text-ink-900 input-dark"
-                />
-            </div>
-            <div>
-                <label class="text-xs text-ink-500 block mb-1">To</label
-                ><input v-model="filters.to"
-                    type="date"
-                    name="to"
-                    class="border border-surface-3 rounded-lg px-3 py-2 text-sm bg-surface-3 text-ink-900 input-dark"
-                />
+                <label class="text-xs text-ink-500 block mb-1">To</label>
+                <input v-model="filters.to" type="date" :class="inputClass" />
             </div>
             <button
-                type="submit"
-                class="px-4 py-2 bg-primary text-ink-100 rounded-lg hover:bg-primary-dark transition text-sm"
+                v-if="hasFilters"
+                type="button"
+                @click="reset"
+                class="px-4 py-2 border border-surface-3 rounded-lg text-sm text-ink-500 hover:bg-surface-3 transition"
             >
-                Filter
+                Reset
             </button>
             <a
                 :href="exportUrl"
@@ -129,7 +191,7 @@ const exportUrl = computed(() => {
             >
                 Export
             </a>
-        </form>
+        </div>
 
         <!-- Table -->
         <div
@@ -191,7 +253,7 @@ const exportUrl = computed(() => {
                                 {{ txn.id }}
                             </td>
                             <td class="px-4 py-3 text-sm text-ink-700">
-                                {{ txn.created_at }}
+                                {{ formatDate(txn.created_at) }}
                             </td>
                             <td class="px-4 py-3 text-sm text-ink-700">
                                 {{ txn.user?.name || "-" }}

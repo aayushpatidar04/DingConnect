@@ -1,6 +1,8 @@
 <script setup>
 import { Head } from "@inertiajs/vue3";
 import RetailerLayout from "@/Layouts/RetailerLayout.vue";
+import FlashMessage from "@/Components/FlashMessage.vue";
+
 defineOptions({ layout: RetailerLayout });
 
 const props = defineProps({
@@ -12,6 +14,7 @@ const props = defineProps({
 
 <template>
     <Head title="Dashboard - MK Network" />
+    <FlashMessage />
 
     <div class="space-y-6">
         <div>
@@ -107,7 +110,8 @@ const props = defineProps({
                 >
                     <div class="text-xs text-ink-500">
                         {{
-                            new Date(day.date).toLocaleDateString("en-US", {
+                            new Date(day.date).toLocaleDateString("en-GB", {
+                                timeZone: "Europe/London",
                                 weekday: "short",
                             })
                         }}

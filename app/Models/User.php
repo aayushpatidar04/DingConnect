@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -78,5 +79,26 @@ class User extends Authenticatable
     public function activityLogs(): HasMany
     {
         return $this->hasMany(ActivityLog::class);
+    }
+
+    public function scopeFilter(Builder $query, array $filters): Builder
+    {
+        return $query
+            ->when($filters['search'] ?? null, function ($q, $search) {
+                // grouped, so it can't leak outside the other conditions
+                $q->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%")
+                        ->orWhere('shop_name', 'like', "%{$search}%");
+                });
+            })
+            ->when($filters['status'] ?? null, function ($q, $status) {
+                if ($status === 'active')
+                    $q->where('is_active', true);
+                if ($status === 'inactive')
+                    $q->where('is_active', false);
+            })
+            ->when($filters['kyc_status'] ?? null, fn($q, $v) => $q->where('kyc_status', $v));
     }
 }

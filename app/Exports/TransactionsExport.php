@@ -15,9 +15,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class TransactionsExport implements FromQuery, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
 {
     public function __construct(
-        protected ?string $from = null,
-        protected ?string $to = null,
-        protected ?string $status = null,
+        protected array $filters = []
     ) {
     }
 
@@ -44,9 +42,7 @@ class TransactionsExport implements FromQuery, WithHeadings, WithMapping, WithSt
     {
         return Transaction::query()
             ->with(['user:id,name,shop_name', 'operator:id,name', 'country:id,name'])
-            ->when($this->from, fn ($q) => $q->whereDate('created_at', '>=', $this->from))
-            ->when($this->to, fn ($q) => $q->whereDate('created_at', '<=', $this->to))
-            ->when($this->status, fn ($q) => $q->where('status', $this->status))
+            ->filter($this->filters)
             ->orderByDesc('created_at');
     }
 
