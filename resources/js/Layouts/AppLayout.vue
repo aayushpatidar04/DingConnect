@@ -110,7 +110,13 @@ import { useToast, toasts } from "@/composables/useToast.js";
                                 >support@mkallnetwork.com</a
                             >
                             <span class="block text-sm text-ink-500"
+                                >110, Regus House, Cardiff Gate Business Park, Malthouse Avenue, Pontprennau, Cardiff, Wales, CF23 8RU</span
+                            >
+                            <span class="block text-sm text-ink-500"
                                 >+44 29 2026 3355</span
+                            >
+                            <span class="block text-sm text-ink-500"
+                                >+44 7913 186054</span
                             >
                             <Link
                                 href="/contact"
