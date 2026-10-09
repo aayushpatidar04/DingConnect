@@ -36,7 +36,7 @@ class LandingController extends Controller
             ],
             'stats' => [
                 'retailers' => '500+',
-                'transactions' => '1L+',
+                'transactions' => '100K+',
                 'operators' => '200+',
                 'countries' => '50+',
             ],

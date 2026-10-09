@@ -78,7 +78,7 @@ defineOptions({ layout: AppLayout });
                         class="stat-gradient-2 rounded-2xl p-6 text-center card-hover"
                     >
                         <div class="text-4xl font-bold text-ink-100 mb-2">
-                            1L+
+                            100K+
                         </div>
                         <div class="text-green-100 text-sm">Transactions</div>
                     </div>

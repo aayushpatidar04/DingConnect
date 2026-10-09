@@ -107,10 +107,10 @@ import { useToast, toasts } from "@/composables/useToast.js";
                             <a
                                 href="mailto:support@mknetwork.com"
                                 class="block text-sm text-ink-500 hover:text-ink-900 transition"
-                                >support@mknetwork.com</a
+                                >support@mkallnetwork.com</a
                             >
                             <span class="block text-sm text-ink-500"
-                                >+91 96915 65883</span
+                                >+44 29 2026 3355</span
                             >
                             <Link
                                 href="/contact"
@@ -147,7 +147,7 @@ import { useToast, toasts } from "@/composables/useToast.js";
                         MK Network Communications. All rights reserved.
                     </p>
                     <p class="text-ink-500 text-xs mt-2 md:mt-0">
-                        Designed by InTouch Software Solutions.
+                        Designed by <a href="https://mkallnetworkcommunications.com" target="_blank">MK ALL NETWORK COMMUNICATIONS LTD.</a>
                     </p>
                 </div>
             </div>
