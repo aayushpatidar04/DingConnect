@@ -8,6 +8,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Models\WalletTopup;
 use App\Services\DingConnectService;
+use App\Services\ValuetopupService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -15,7 +16,7 @@ use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request, DingConnectService $dingService)
+    public function index(Request $request, DingConnectService $dingService, ValuetopupService $valuetopupService)
     {
         $totalTxns = Transaction::count();
         $successTxns = Transaction::where('status', 'success')->count();
@@ -32,6 +33,7 @@ class DashboardController extends Controller
             'monthly_revenue' => Transaction::whereMonth('created_at', now()->month)->where('status', 'success')->sum('amount'),
             'total_transactions' => $totalTxns,
             'ding_balance' => $this->getDingBalance($dingService),
+            'prepay_nation_balance' => $this->getPrepayNationBalance($valuetopupService),
         ];
 
         $topRetailers = User::where('role', 'retailer')
@@ -112,4 +114,39 @@ class DashboardController extends Controller
             return ['success' => false]; // frontend shows "N/A"
         }
     }
+
+    private function getPrepayNationBalance(
+        ValuetopupService $valuetopupService
+    ): array {
+        try {
+            $result = $valuetopupService->balance();
+
+            $data = $result['data'] ?? $result;
+
+            // Check Prepay Nation API success code.
+            if (($data['responseCode'] ?? null) !== '000') {
+                return ['success' => false];
+            }
+
+            // Balance is inside payLoad.balance.
+            $balance = $data['payLoad']['balance'] ?? null;
+
+            if (!is_numeric($balance)) {
+                return ['success' => false];
+            }
+
+            return [
+                'success' => true,
+                'balance' => number_format((float) $balance, 2),
+                'currency' => 'GBP',
+            ];
+        } catch (\Throwable $e) {
+            Log::warning(
+                'Prepay Nation balance fetch failed: ' . $e->getMessage()
+            );
+
+            return ['success' => false];
+        }
+    }
+
 }

@@ -1,5 +1,6 @@
-import MkLogo from '@/Components/MkLogo.vue'
 <template>
+    <Head title="Verify Email - MK Network" />
+    <FlashMessage />
     <div class="w-full">
         <div class="flex justify-center mb-8">
             <a href="/">
@@ -47,10 +48,12 @@ import MkLogo from '@/Components/MkLogo.vue'
 </template>
 
 <script setup>
+import MkLogo from '@/Components/MkLogo.vue'
 import GuestLayout from "@/Layouts/GuestLayout.vue";
 import PrimaryButton from "@/Components/PrimaryButton.vue";
 import { Head, useForm } from "@inertiajs/vue3";
 import { computed } from "vue";
+import FlashMessage from "@/Components/FlashMessage.vue";
 
 defineOptions({ layout: GuestLayout });
 

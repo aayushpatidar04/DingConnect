@@ -12,10 +12,19 @@ const flash = computed(() => page.props.flash ?? {});
 watch(
     flash,
     (f) => {
-        const text = f.error || f.success;
+        const text = f.error || f.success || f.status;
         if (!text) return;
-        type.value = f.error ? "error" : "success";
+
+        if (f.error) {
+            type.value = "error";
+        } else if (f.status) {
+            type.value = "status";
+        } else {
+            type.value = "success";
+        }
+
         message.value = text;
+
         clearTimeout(timer);
         timer = setTimeout(() => (message.value = null), 8000);
     },
@@ -39,6 +48,8 @@ onBeforeUnmount(() => clearTimeout(timer));
                 'fixed bottom-4 right-4 z-50 max-w-sm flex items-start gap-3 rounded-lg px-4 py-3 text-sm shadow-lg border bg-surface-2',
                 type === 'error'
                     ? 'border-red-500/40 text-red-600'
+                    : type === 'status'
+                    ? 'border-yellow-500/40 text-yellow-600'
                     : 'border-accent/40 text-accent-light',
             ]"
             role="alert"

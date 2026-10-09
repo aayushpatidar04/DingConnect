@@ -6,6 +6,7 @@ import InputLabel from "@/Components/InputLabel.vue";
 import PrimaryButton from "@/Components/PrimaryButton.vue";
 import TextInput from "@/Components/TextInput.vue";
 import { Head, Link, useForm } from "@inertiajs/vue3";
+import FlashMessage from "@/Components/FlashMessage.vue";
 
 defineOptions({ layout: GuestLayout });
 
@@ -18,12 +19,17 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.post(route("password.email"));
+    form.post(route("password.email"), {
+        onSuccess: () => {
+            form.reset();
+        },
+    });
 };
 </script>
 
 <template>
     <Head title="Forgot Password - MK Network" />
+    <FlashMessage />
 
     <div class="w-full">
         <!-- Logo -->

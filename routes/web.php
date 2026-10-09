@@ -34,6 +34,7 @@ use Inertia\Inertia;
 Route::get('/', [LandingController::class, 'index'])->name('home');
 
 Route::get('/contact', fn () => Inertia::render('Landing/Contact/Index'))->name('contact');
+Route::post('/contact', [LandingController::class, 'store'])->name('contact.submit');
 
 // ==========================================================================
 // AUTH
@@ -48,6 +49,9 @@ Route::middleware('guest')->group(function () {
     Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
     Route::get('/reset-password/{token}', fn ($token) => Inertia::render('Auth/ResetPassword', ['token' => $token]))->name('password.reset');
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.store');
+
+    Route::post('/login/verify-otp', [AuthController::class, 'verifyLoginOtp'])->name('login.otp.verify');
+    Route::post('/login/resend-otp', [AuthController::class, 'resendLoginOtp'])->name('login.otp.resend');
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])

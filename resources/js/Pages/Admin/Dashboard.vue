@@ -1,6 +1,6 @@
 <script setup>
 import { Head, Link } from "@inertiajs/vue3";
-import { computed } from 'vue';
+import { computed } from "vue";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
 import FlashMessage from "@/Components/FlashMessage.vue";
 
@@ -35,7 +35,11 @@ const formatCompact = (v) =>
     }).format(v);
 
 const formatDate = (d) =>
-    new Date(d).toLocaleDateString("en-GB", { timeZone: "Europe/London", day: "2-digit", month: "short" });
+    new Date(d).toLocaleDateString("en-GB", {
+        timeZone: "Europe/London",
+        day: "2-digit",
+        month: "short",
+    });
 
 const barHeight = (value) =>
     Math.max(2, (value / maxRevenue.value) * 100) + "%";
@@ -131,26 +135,56 @@ const showLabel = (index) =>
             </div>
         </div>
 
-        <!-- DingConnect Balance -->
-        <div class="bg-surface-2 rounded-2xl p-6 border border-surface-3">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="text-lg font-semibold text-ink-900">
-                        DingConnect Balance
-                    </h3>
-                    <p class="text-ink-500 text-sm mt-1">
-                        Your wholesale balance with DingConnect
-                    </p>
+        <!-- Provider Balances -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- DingConnect Balance -->
+            <div class="bg-surface-2 rounded-2xl p-6 border border-surface-3">
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <h3 class="text-lg font-semibold text-ink-900">
+                            DingConnect Balance
+                        </h3>
+                        <p class="text-ink-500 text-sm mt-1">
+                            Your wholesale balance with DingConnect
+                        </p>
+                    </div>
+
+                    <div class="text-right shrink-0">
+                        <div class="text-2xl font-bold text-primary-light">
+                            {{
+                                stats.ding_balance?.success
+                                    ? stats.ding_balance.balance +
+                                      " " +
+                                      stats.ding_balance.currency
+                                    : "N/A"
+                            }}
+                        </div>
+                    </div>
                 </div>
-                <div class="text-right">
-                    <div class="text-3xl font-bold text-primary-light">
-                        {{
-                            stats.ding_balance?.success
-                                ? stats.ding_balance.balance +
-                                  " " +
-                                  stats.ding_balance.currency
-                                : "N/A"
-                        }}
+            </div>
+
+            <!-- Prepay Nation Balance -->
+            <div class="bg-surface-2 rounded-2xl p-6 border border-surface-3">
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <h3 class="text-lg font-semibold text-ink-900">
+                            Prepay Nation Balance
+                        </h3>
+                        <p class="text-ink-500 text-sm mt-1">
+                            Your wholesale balance with Prepay Nation
+                        </p>
+                    </div>
+
+                    <div class="text-right shrink-0">
+                        <div class="text-2xl font-bold text-primary-light">
+                            {{
+                                stats.prepay_nation_balance?.success
+                                    ? stats.prepay_nation_balance.balance +
+                                      " " +
+                                      stats.prepay_nation_balance.currency
+                                    : "N/A"
+                            }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -233,7 +267,9 @@ const showLabel = (index) =>
                                     {{ (txn.operator || "?").charAt(0) }}
                                 </div>
                                 <div>
-                                    <div class="text-sm font-medium text-ink-900">
+                                    <div
+                                        class="text-sm font-medium text-ink-900"
+                                    >
                                         {{ txn.mobile }}
                                     </div>
                                     <div class="text-xs text-ink-500">

@@ -2,25 +2,43 @@
 import { Head, Link } from "@inertiajs/vue3";
 import AppLayout from "@/Layouts/AppLayout.vue";
 import { useToast } from "@/composables/useToast.js";
+import { useForm } from "@inertiajs/vue3";
+import FlashMessage from "@/Components/FlashMessage.vue";
 
 defineOptions({ layout: AppLayout });
 
 const { success } = useToast();
 
 const contactInfo = {
-    phone: "+91 96915 65883",
-    email: "support@mknetwork.com",
-    address: "MK Network Communications",
-    city: "India",
+    phone: "+44 29 2026 3355",
+    mobile: "+44 7913 186054",
+    email: "support@mkallnetwork.com",
+    address:
+        "110, Regus House, Cardiff Gate Business Park, Malthouse Avenue, Pontprennau",
+    city: "Cardiff, Wales, CF23 8RU",
 };
 
-function submit() {
-    success("Thank you for contacting us! We will get back to you soon.");
-}
+const form = useForm({
+    name: "",
+    email: "",
+    phone: "",
+    subject: "",
+    message: "",
+});
+
+const submit = () => {
+    form.post(route("contact.submit"), {
+        onSuccess: () => {
+            form.reset();
+            form.clearErrors();
+        },
+    });
+};
 </script>
 
 <template>
     <Head title="Contact Us - MK Network" />
+    <FlashMessage />
 
     <div class="py-20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -51,6 +69,7 @@ function submit() {
                                     type="text"
                                     class="w-full border border-surface-3 rounded-lg px-4 py-3 bg-surface-3 text-ink-900 input-dark"
                                     placeholder="Your name"
+                                    v-model="form.name"
                                     required
                                 />
                             </div>
@@ -63,6 +82,7 @@ function submit() {
                                     type="email"
                                     class="w-full border border-surface-3 rounded-lg px-4 py-3 bg-surface-3 text-ink-900 input-dark"
                                     placeholder="your@email.com"
+                                    v-model="form.email"
                                     required
                                 />
                             </div>
@@ -75,6 +95,7 @@ function submit() {
                             <input
                                 type="tel"
                                 class="w-full border border-surface-3 rounded-lg px-4 py-3 bg-surface-3 text-ink-900 input-dark"
+                                v-model="form.phone"
                                 placeholder="+91 99999 99999"
                             />
                         </div>
@@ -87,6 +108,7 @@ function submit() {
                                 type="text"
                                 class="w-full border border-surface-3 rounded-lg px-4 py-3 bg-surface-3 text-ink-900 input-dark"
                                 placeholder="How can we help?"
+                                v-model="form.subject"
                                 required
                             />
                         </div>
@@ -99,6 +121,7 @@ function submit() {
                                 rows="5"
                                 class="w-full border border-surface-3 rounded-lg px-4 py-3 bg-surface-3 text-ink-900 input-dark resize-none"
                                 placeholder="Tell us more about your requirements..."
+                                v-model="form.message"
                                 required
                             ></textarea>
                         </div>
@@ -142,6 +165,10 @@ function submit() {
                                 </h3>
                                 <p class="text-ink-500">
                                     {{ contactInfo.phone }}
+                                </p>
+
+                                <p class="text-ink-500 mt-1">
+                                    {{ contactInfo.mobile }}
                                 </p>
                                 <p class="text-ink-500 text-sm mt-1">
                                     Mon - Sat, 9am - 7pm

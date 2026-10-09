@@ -1,5 +1,7 @@
-import MkLogo from '@/Components/MkLogo.vue'
 <template>
+    <Head title="Reset Password - MK Network" />
+    <FlashMessage />
+
     <div class="w-full">
         <!-- Logo -->
         <div class="flex justify-center mb-8">
@@ -74,12 +76,14 @@ import MkLogo from '@/Components/MkLogo.vue'
 </template>
 
 <script setup>
+import MkLogo from '@/Components/MkLogo.vue'
 import GuestLayout from "@/Layouts/GuestLayout.vue";
 import InputError from "@/Components/InputError.vue";
 import InputLabel from "@/Components/InputLabel.vue";
 import PrimaryButton from "@/Components/PrimaryButton.vue";
 import TextInput from "@/Components/TextInput.vue";
 import { Head, useForm } from "@inertiajs/vue3";
+import FlashMessage from "@/Components/FlashMessage.vue";
 
 defineOptions({ layout: GuestLayout });
 

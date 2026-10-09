@@ -2,6 +2,7 @@
 import GuestLayout from "@/Layouts/GuestLayout.vue";
 import MkLogo from "@/Components/MkLogo.vue";
 import { Head, Link, useForm } from "@inertiajs/vue3";
+import FlashMessage from "@/Components/FlashMessage.vue";
 
 defineOptions({ layout: GuestLayout });
 
@@ -30,6 +31,7 @@ function submit() {
 
 <template>
     <Head title="Register as Retailer - MK Network" />
+    <FlashMessage />
 
     <div class="mx-auto py-10">
         <!-- Logo -->

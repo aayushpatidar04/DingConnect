@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Notifications\ContactUsNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Inertia;
 
 class LandingController extends Controller
@@ -39,5 +41,28 @@ class LandingController extends Controller
                 'countries' => '50+',
             ],
         ]);
+    }
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email'],
+            'phone' => ['nullable', 'string'],
+            'subject' => ['required', 'string'],
+            'message' => ['required', 'string'],
+        ]);
+
+        Notification::route(
+            'mail',
+            'support@mkallnetwork.com'
+        )->notify(
+                new ContactUsNotification($data)
+            );
+
+        return back()->with(
+            'success',
+            'Thank you for contacting us. We will get back to you shortly.'
+        );
     }
 }

@@ -44,6 +44,7 @@ class User extends Authenticatable
         'password',
         'ding_secret',
         'remember_token',
+        'login_otp_hash',
     ];
 
     protected $casts = [
@@ -52,6 +53,10 @@ class User extends Authenticatable
         'kyc_verified_at' => 'datetime',
         'is_active' => 'boolean',
         'password' => 'hashed',
+
+        'login_otp_expires_at' => 'datetime',
+        'login_otp_last_sent_at' => 'datetime',
+        'login_otp_attempts' => 'integer',
     ];
 
     // Relationships
