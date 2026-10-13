@@ -205,10 +205,11 @@ class RechargeController extends Controller
                 ]);
             } else {
                 // No DingConnect match — create a new operator row
-                $operator = Operator::create([
+                $operator = Operator::updateOrCreate([
+                    'provider_code' => 'vt-' . $item['operatorId'],
+                ],[
                     'name' => $vtName,
                     'slug' => Str::slug($vtName),
-                    'provider_code' => 'vt-' . $item['operatorId'],
                     'valuetopup_operator_id' => $item['operatorId'],
                     'country_id' => $country?->id,
                     'logo_url' => $item['imageUrl'] ?? null,
