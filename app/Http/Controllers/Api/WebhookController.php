@@ -21,6 +21,7 @@ class WebhookController extends Controller
 
     public function dingCallback(Request $request): JsonResponse
     {
+        \Log::info('DingConnect webhook received', ['payload' => $request->all()]);
         $signature = $request->header('X-Ding-Signature', '');
         $body = $request->getContent();
 

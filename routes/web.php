@@ -148,7 +148,6 @@ Route::prefix('api')->name('api.')->group(function () {
     Route::get('/transactions', [ApiTransactionController::class, 'history'])->middleware('auth:sanctum');
     Route::get('/transactions/{id}', [ApiTransactionController::class, 'show'])->middleware('auth:sanctum');
     Route::get('/transactions/{id}/status', [ApiTransactionController::class, 'status'])->middleware('auth:sanctum');
-    Route::post('/webhooks/ding', [WebhookController::class, 'dingCallback']);
 });
 
 // ==========================================================================
