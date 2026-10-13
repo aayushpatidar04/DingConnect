@@ -24,6 +24,7 @@ class ProcessDingWebhook implements ShouldQueue
 
     public function handle(DingConnectService $ding): void
     {
+        \Log::info(json_encode($this->payload));
         try {
             $transactionId = $this->payload['TransactionId'] ?? null;
             if (!$transactionId) {

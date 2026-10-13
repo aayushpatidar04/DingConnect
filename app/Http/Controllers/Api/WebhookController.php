@@ -21,15 +21,7 @@ class WebhookController extends Controller
 
     public function dingCallback(Request $request): JsonResponse
     {
-        \Log::info('DingConnect webhook received', ['payload' => $request->all()]);
-        $signature = $request->header('X-Ding-Signature', '');
         $body = $request->getContent();
-
-        $expected = hash_hmac('sha256', $body, config('ding.webhook_secret', ''));
-        if (!hash_equals($expected, $signature)) {
-            Log::warning('DingConnect webhook signature mismatch');
-            return response()->json(['message' => 'Invalid signature'], 401);
-        }
 
         try {
             $payload = json_decode($body, true);
