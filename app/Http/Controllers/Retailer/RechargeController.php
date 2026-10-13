@@ -262,6 +262,7 @@ class RechargeController extends Controller
 
         return null;
     }
+    
     /**
      * Fetch merged products for an operator: DingConnect + Valuetopup.
      *
