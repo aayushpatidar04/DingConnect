@@ -40,7 +40,6 @@ class SmsService
                 'Content-Type' => 'application/json',
             ]);
 
-            Log::info("OTP sent to {$phone}: " . $response->body());
             return $response->successful();
 
         } catch (\Exception $e) {

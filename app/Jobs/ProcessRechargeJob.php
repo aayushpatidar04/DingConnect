@@ -64,12 +64,6 @@ class ProcessRechargeJob implements ShouldQueue
             return;
         }
 
-        Log::info('ProcessRechargeJob: Sending transfer via DingConnect', [
-            'sku_code' => $skuCode,
-            'send_value' => $sendValue,
-            'account_number' => $accountNumber,
-        ]);
-
         $result = $dingService->sendTransfer(
             skuCode: $skuCode,
             sendValue: $sendValue,
@@ -163,13 +157,6 @@ class ProcessRechargeJob implements ShouldQueue
         $sendValue = (float) $this->transaction->send_value;
         $currency = $this->transaction->send_currency ?? 'GBP';
 
-        Log::info('ProcessRechargeJob: Sending transfer via Valuetopup', [
-            'sku_id' => $skuId,
-            'correlation_id' => $correlationId,
-            'send_value' => $sendValue,
-            'category' => $category,
-        ]);
-
         // Step 1: Execute the transaction
         if ($isPin) {
             $recipient = $this->transaction->mobile_number ?: 'customer';
@@ -211,10 +198,6 @@ class ProcessRechargeJob implements ShouldQueue
                 return;
             }
 
-            Log::info("Valuetopup status poll attempt {$attempt} still in progress", [
-                'transaction_id' => $this->transaction->id,
-                'correlation_id' => $correlationId,
-            ]);
         }
 
         // Still in progress after all polls — mark as processing, let cron handle it

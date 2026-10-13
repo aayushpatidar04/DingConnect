@@ -17,8 +17,6 @@ class DingConnectController extends Controller
 
     public function callback(Request $request)
     {
-        Log::info('DingConnect callback received', $request->all());
-
         try {
             $transaction = $this->dingService->processCallback($request->all());
 

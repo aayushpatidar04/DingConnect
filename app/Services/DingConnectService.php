@@ -33,16 +33,9 @@ class DingConnectService
                 $url .= '?' . http_build_query($params);
             }
 
-            Log::info('DingConnect GET', ['url' => $url]);
-
             $response = Http::timeout(30)
                 ->withHeaders(['api_key' => $this->apiKey])
                 ->get($url);
-
-            Log::info('DingConnect GET response', [
-                'status' => $response->status(),
-                'body' => substr($response->body(), 0, 500),
-            ]);
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -65,17 +58,10 @@ class DingConnectService
         try {
             $url = $this->baseUrl . $endpoint;
 
-            Log::info('DingConnect POST form', ['url' => $url, 'data' => $formData]);
-
             $response = Http::timeout(90)
                 ->withHeaders(['api_key' => $this->apiKey])
                 ->asForm()
                 ->post($url, $formData);
-
-            Log::info('DingConnect POST form response', [
-                'status' => $response->status(),
-                'body' => substr($response->body(), 0, 500),
-            ]);
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -98,14 +84,10 @@ class DingConnectService
         try {
             $url = $this->baseUrl . $endpoint;
 
-            Log::info('DingConnect POST json', ['url' => $url, 'data' => $jsonData]);
-
             $response = Http::timeout(90)
                 ->withHeaders(['api_key' => $this->apiKey])
                 ->withHeader('Content-Type', 'application/json')
                 ->post($url, $jsonData);
-
-            Log::info('DingConnect POST json response', ['status' => $response->status(), 'body' => substr($response->body(), 0, 500)]);
 
             if ($response->successful()) {
                 $data = $response->json();
