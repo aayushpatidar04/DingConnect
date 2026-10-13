@@ -1,5 +1,5 @@
 <template>
-    <Head title="Reset Password - MK Network" />
+    <Head title="Reset Password - MK All Network" />
     <FlashMessage />
 
     <div class="w-full">

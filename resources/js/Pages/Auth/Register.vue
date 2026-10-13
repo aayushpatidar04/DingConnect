@@ -30,7 +30,7 @@ function submit() {
 </script>
 
 <template>
-    <Head title="Register as Retailer - MK Network" />
+    <Head title="Register as Retailer - MK All Network" />
     <FlashMessage />
 
     <div class="mx-auto py-10">
@@ -45,7 +45,7 @@ function submit() {
             Retailer Registration
         </h2>
         <p class="text-ink-500 text-center mb-8">
-            Create an account to start recharging with MK Network
+            Create an account to start recharging with MK All Network
         </p>
 
         <!-- Pending notice -->

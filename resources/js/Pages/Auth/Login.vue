@@ -58,7 +58,7 @@ const resendOtp = () => {
 </script>
 
 <template>
-    <Head title="Login - MK Network" />
+    <Head title="Login - MK All Network" />
     <FlashMessage />
 
     <div class="w-full">

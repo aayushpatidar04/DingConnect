@@ -22,7 +22,7 @@ const submit = () => {
 </script>
 
 <template>
-    <Head title="Confirm Password - MK Network" />
+    <Head title="Confirm Password - MK All Network" />
     <FlashMessage />
     <div class="w-full">
         <!-- Logo -->

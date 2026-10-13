@@ -8,7 +8,7 @@ defineOptions({ layout: AppLayout });
 
 <template>
     <div>
-        <Head title="MK Network - Mobile Top-Up Platform" />
+        <Head title="MK All Network - Mobile Top-Up Platform" />
         <FlashMessage />
         <!-- Hero Section -->
         <section class="relative bg-surface-0 overflow-hidden">
@@ -43,7 +43,7 @@ defineOptions({ layout: AppLayout });
                     >
                         The complete B2B solution for retailers. Fund your
                         wallet, process recharges instantly, and grow your
-                        business with MK Network.
+                        business with MK All Network.
                     </p>
 
                     <div
@@ -107,7 +107,7 @@ defineOptions({ layout: AppLayout });
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-16">
                     <h2 class="text-4xl font-bold text-ink-900 mb-4">
-                        Why Choose MK Network?
+                        Why Choose MK All Network?
                     </h2>
                     <p class="text-lg text-ink-500">
                         Everything you need to run a successful mobile recharge

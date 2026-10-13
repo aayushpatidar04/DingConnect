@@ -62,7 +62,7 @@ const formatDate = (date) => {
 </script>
 
 <template>
-    <Head title="Wallet - MK Network" />
+    <Head title="Wallet - MK All Network" />
     <FlashMessage />
 
     <div class="space-y-6">

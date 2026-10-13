@@ -28,7 +28,7 @@ const submit = () => {
 </script>
 
 <template>
-    <Head title="Forgot Password - MK Network" />
+    <Head title="Forgot Password - MK All Network" />
     <FlashMessage />
 
     <div class="w-full">

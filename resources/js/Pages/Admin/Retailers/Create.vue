@@ -26,7 +26,7 @@ function submit() {
 </script>
 
 <template>
-    <Head title="Add Retailer - MK Network" />
+    <Head title="Add Retailer - MK All Network" />
     <FlashMessage />
 
     <div>

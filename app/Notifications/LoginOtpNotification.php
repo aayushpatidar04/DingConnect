@@ -22,7 +22,7 @@ class LoginOtpNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Your MK Network Login OTP')
+            ->subject('Your MK All Network Login OTP')
             ->greeting('Hello!')
             ->line('Use the following OTP to complete your login.')
             ->line("Your OTP is: {$this->otp}")

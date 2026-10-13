@@ -14,7 +14,7 @@ defineProps({
 <template>
     <img
         :src="logo"
-        alt="MK Network Communications"
+        alt="MK All Network Communications"
         class="w-auto object-contain"
         :class="[
             size === 'sm'

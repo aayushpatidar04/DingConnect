@@ -9,7 +9,7 @@ import { useToast, toasts } from "@/composables/useToast.js";
     <div class="min-h-screen flex flex-col bg-surface-0">
         <Head>
             <title>
-                {{ $page.component?.props?.pageTitle || "MK Network" }}
+                {{ $page.component?.props?.pageTitle || "MK All Network" }}
             </title>
         </Head>
 
@@ -105,7 +105,7 @@ import { useToast, toasts } from "@/composables/useToast.js";
                         <h3 class="font-semibold text-ink-900 mb-3">Contact</h3>
                         <div class="space-y-2">
                             <a
-                                href="mailto:support@mknetwork.com"
+                                href="mailto:support@mkallnetwork.com"
                                 class="block text-sm text-ink-500 hover:text-ink-900 transition"
                                 >support@mkallnetwork.com</a
                             >
@@ -150,7 +150,7 @@ import { useToast, toasts } from "@/composables/useToast.js";
                     class="border-t border-surface-3 mt-8 pt-6 flex flex-col md:flex-row items-center justify-between"
                 >
                     <p class="text-ink-500 text-sm">
-                        MK Network Communications. All rights reserved.
+                        MK All Network Communications. All rights reserved.
                     </p>
                     <p class="text-ink-500 text-xs mt-2 md:mt-0">
                         Designed by <a href="https://mkallnetworkcommunications.com" target="_blank">MK ALL NETWORK COMMUNICATIONS LTD.</a>

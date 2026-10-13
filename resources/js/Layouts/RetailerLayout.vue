@@ -326,7 +326,7 @@ function logout() {
         <footer class="bg-surface-2 border-t border-surface-3 mt-auto">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                 <p class="text-center text-sm text-ink-500">
-                    MK Network Communications. All rights reserved.
+                    MK All Network Communications. All rights reserved.
                 </p>
             </div>
         </footer>

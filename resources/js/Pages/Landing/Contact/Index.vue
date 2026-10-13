@@ -37,7 +37,7 @@ const submit = () => {
 </script>
 
 <template>
-    <Head title="Contact Us - MK Network" />
+    <Head title="Contact Us - MK All Network" />
     <FlashMessage />
 
     <div class="py-20">
@@ -266,7 +266,7 @@ const submit = () => {
                             Become a Retailer
                         </h3>
                         <p class="text-ink-500 text-sm mb-4">
-                            Join 500+ retailers already using MK Network for
+                            Join 500+ retailers already using MK All Network for
                             their recharge business.
                         </p>
                         <Link
