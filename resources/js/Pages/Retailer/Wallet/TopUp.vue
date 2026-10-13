@@ -168,7 +168,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head title="Top Up Wallet - MK All Network" />
+    <Head title="Top Up Wallet - MK All Network Communications" />
     <FlashMessage />
 
     <div class="max-w-2xl mx-auto space-y-6">

@@ -13,7 +13,7 @@ const props = defineProps({
 </script>
 
 <template>
-    <Head title="Dashboard - MK All Network" />
+    <Head title="Dashboard - MK All Network Communications" />
     <FlashMessage />
 
     <div class="space-y-6">

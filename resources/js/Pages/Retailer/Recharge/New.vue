@@ -705,7 +705,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <Head title="New Recharge - MK All Network" />
+    <Head title="New Recharge - MK All Network Communications" />
     <FlashMessage />
 
     <div class="max-w-5xl mx-auto">
@@ -713,7 +713,7 @@ onMounted(() => {
         <div class="mb-6">
             <h1 class="text-3xl font-bold text-ink-900 mb-1">New Recharge</h1>
             <p class="text-ink-500">
-                Instant mobile top-up powered by MK All Network
+                Instant mobile top-up powered by MK All Network Communications
             </p>
         </div>
 

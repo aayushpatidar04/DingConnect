@@ -31,7 +31,7 @@ class AdminSeeder extends Seeder
 
         // Create default settings
         $defaultSettings = [
-            ['platform_name', 'MK All Network - TopUp Platform', 'string', 'general', 'Platform display name'],
+            ['platform_name', 'MK All Network Communications - TopUp Platform', 'string', 'general', 'Platform display name'],
             ['platform_currency', 'GBP', 'string', 'general', 'Default currency'],
             ['platform_min_recharge', '10', 'number', 'recharge', 'Minimum recharge amount'],
             ['platform_max_recharge', '10000', 'number', 'recharge', 'Maximum recharge amount'],

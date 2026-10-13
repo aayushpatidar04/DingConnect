@@ -195,7 +195,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <Head title="Transaction - MK All Network" />
+    <Head title="Transaction - MK All Network Communications" />
     <FlashMessage />
 
     <div class="max-w-3xl mx-auto">

@@ -149,7 +149,7 @@ async function confirmRecharge() {
 </script>
 
 <template>
-    <Head title="PIN Recharge - MK All Network" />
+    <Head title="PIN Recharge - MK All Network Communications" />
     <div class="max-w-4xl mx-auto">
         <!-- Header -->
         <div class="mb-8">

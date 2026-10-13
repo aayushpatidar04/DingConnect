@@ -56,7 +56,7 @@ const showLabel = (index) =>
     <div class="space-y-6">
         <div>
             <h1 class="text-3xl font-bold text-ink-900 mb-1">Dashboard</h1>
-            <p class="text-ink-500">Welcome to the MK All Network Admin Panel</p>
+            <p class="text-ink-500">Welcome to the MK All Network Communications Admin Panel</p>
         </div>
 
         <!-- Stats Grid -->

@@ -1,5 +1,5 @@
 <template>
-    <Head title="Verify Email - MK All Network" />
+    <Head title="Verify Email - MK All Network Communications" />
     <FlashMessage />
     <div class="w-full">
         <div class="flex justify-center mb-8">

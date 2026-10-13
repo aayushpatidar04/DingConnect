@@ -195,7 +195,7 @@
 <body>
     <div class="receipt">
         <div class="header">
-            <img src="{{ public_path('logo.png') }}" style="width: 100px; height: auto;" alt="MK All Network">
+            <img src="{{ public_path('logo.png') }}" style="width: 100px; height: auto;" alt="MK All Network Communications">
             <div class="sub">Mobile Recharge Receipt</div>
         </div>
 
@@ -310,7 +310,7 @@
         </div>
 
         <div class="footer">
-            <p>MK All Network &middot; Powered by InTouch Software Solutions</p>
+            <p>MK All Network Communications &middot; Powered by InTouch Software Solutions</p>
             <p style="margin-top:2px;">This is a computer-generated receipt.</p>
         </div>
     </div>

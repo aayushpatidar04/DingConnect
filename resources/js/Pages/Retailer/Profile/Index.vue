@@ -43,7 +43,7 @@ const labelClass = "block text-sm font-medium text-ink-700 mb-2";
 </script>
 
 <template>
-    <Head title="My Profile - MK All Network" />
+    <Head title="My Profile - MK All Network Communications" />
     <FlashMessage />
     <div class="max-w-3xl space-y-6">
         <div>
