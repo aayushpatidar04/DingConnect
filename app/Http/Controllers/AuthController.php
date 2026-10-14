@@ -261,15 +261,4 @@ class AuthController extends Controller
             'email' => [trans($status)],
         ]);
     }
-
-    public function resetPassword(Request $request)
-    {
-        $request->validate([
-            'token' => 'required',
-            'email' => 'required|email',
-            'password' => 'required|min:8|confirmed',
-        ]);
-
-        return redirect('/login')->with('success', 'Password reset successful. Please login.');
-    }
 }

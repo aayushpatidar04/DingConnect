@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\{
     WalletController as ApiWalletController,
     WebhookController
 };
+use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Retailer\{
@@ -47,8 +48,8 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'store']);
     Route::get('/forgot-password', fn () => Inertia::render('Auth/ForgotPassword'))->name('password.request');
     Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
-    Route::get('/reset-password/{token}', fn ($token) => Inertia::render('Auth/ResetPassword', ['token' => $token]))->name('password.reset');
-    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.store');
+    Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
+    Route::post('/reset-password', [NewPasswordController::class, 'store'])->name('password.store');
 
     Route::post('/login/verify-otp', [AuthController::class, 'verifyLoginOtp'])->name('login.otp.verify');
     Route::post('/login/resend-otp', [AuthController::class, 'resendLoginOtp'])->name('login.otp.resend');
