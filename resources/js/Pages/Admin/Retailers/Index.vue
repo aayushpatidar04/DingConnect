@@ -127,6 +127,11 @@ const inputClass =
                             <th
                                 class="px-6 py-3 text-left text-xs font-medium text-ink-700 uppercase tracking-wider"
                             >
+                                S.No.
+                            </th>
+                            <th
+                                class="px-6 py-3 text-left text-xs font-medium text-ink-700 uppercase tracking-wider"
+                            >
                                 Retailer
                             </th>
                             <th
@@ -158,10 +163,13 @@ const inputClass =
                     </thead>
                     <tbody class="divide-y divide-dark-600">
                         <tr
-                            v-for="retailer in retailers.data"
+                            v-for="(retailer, index) in retailers.data"
                             :key="retailer.id"
                             class="hover:bg-surface-2 transition"
                         >
+                            <td class="px-6 py-4 text-sm text-ink-700">
+                                {{ (retailers.from || 0) + index }}
+                            </td>
                             <td class="px-6 py-4">
                                 <div class="font-medium text-ink-900">
                                     {{ retailer.name }}

@@ -572,70 +572,70 @@ class RechargeController extends Controller
         // STEP 2 — Gateway-specific lookup (phone numbers only)
         // =====================================================================
         if ($gateway === 'valuetopup' && $isPhone) {
-            // Resolve VT operator ID from the selected operator
-            $operator = Operator::where('provider_code', $request->provider_code)
-                ->orWhere('provider_code', $request->input('valuetopup_id'))
-                ->first();
+            // // Resolve VT operator ID from the selected operator
+            // $operator = Operator::where('provider_code', $request->provider_code)
+            //     ->orWhere('provider_code', $request->input('valuetopup_id'))
+            //     ->first();
 
-            $valuetopupId = null;
-            if ($operator) {
-                $valuetopupId = (int) ($operator->valuetopup_operator_id ?? 0);
-            }
+            // $valuetopupId = null;
+            // if ($operator) {
+            //     $valuetopupId = (int) ($operator->valuetopup_operator_id ?? 0);
+            // }
 
-            if (!$valuetopupId) {
-                // Fallback: try to infer from provider_code "vt-123"
-                if (str_starts_with($request->provider_code, 'vt-')) {
-                    $valuetopupId = (int) substr($request->provider_code, 3);
-                }
-            }
+            // if (!$valuetopupId) {
+            //     // Fallback: try to infer from provider_code "vt-123"
+            //     if (str_starts_with($request->provider_code, 'vt-')) {
+            //         $valuetopupId = (int) substr($request->provider_code, 3);
+            //     }
+            // }
 
-            if (!$valuetopupId) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Could not resolve operator for validation.',
-                ], 400);
-            }
+            // if (!$valuetopupId) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'error' => 'Could not resolve operator for validation.',
+            //     ], 400);
+            // }
 
-            // VT Mobile Lookup
-            try {
-                $result = $vtService->lookupMobile($digits);
-            } catch (\Throwable $e) {
-                Log::error('VT Mobile Lookup failed for ' . $digits . ': ' . $e->getMessage());
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Could not verify this number right now. Please try again.',
-                ], 500);
-            }
+            // // VT Mobile Lookup
+            // try {
+            //     $result = $vtService->lookupMobile($digits);
+            // } catch (\Throwable $e) {
+            //     Log::error('VT Mobile Lookup failed for ' . $digits . ': ' . $e->getMessage());
+            //     return response()->json([
+            //         'success' => false,
+            //         'error' => 'Could not verify this number right now. Please try again.',
+            //     ], 500);
+            // }
 
-            if (($result['responseCode'] ?? '') !== '000' || empty($result['payLoad'])) {
-                return response()->json([
-                    'success' => false,
-                    'error' => $result['responseMessage'] ?? 'This number could not be verified. Please check it and try again.',
-                ], 422);
-            }
+            // if (($result['responseCode'] ?? '') !== '000' || empty($result['payLoad'])) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'error' => $result['responseMessage'] ?? 'This number could not be verified. Please check it and try again.',
+            //     ], 422);
+            // }
 
-            $payload = $result['payLoad'];
+            // $payload = $result['payLoad'];
 
-            // Check if the selected operator appears in the lookup results
-            $lookupOperatorId = (int) ($payload[0]['operatorId'] ?? 0);
-            $lookupOperatorIds = [];
+            // // Check if the selected operator appears in the lookup results
+            // $lookupOperatorId = (int) ($payload[0]['operatorId'] ?? 0);
+            // $lookupOperatorIds = [];
 
-            // Some responses may return multiple operators
-            if (isset($payload['operators']) && is_array($payload['operators'])) {
-                foreach ($payload['operators'] as $op) {
-                    $lookupOperatorIds[] = (int) ($op['operatorId'] ?? $op['id'] ?? 0);
-                }
-            }
+            // // Some responses may return multiple operators
+            // if (isset($payload['operators']) && is_array($payload['operators'])) {
+            //     foreach ($payload['operators'] as $op) {
+            //         $lookupOperatorIds[] = (int) ($op['operatorId'] ?? $op['id'] ?? 0);
+            //     }
+            // }
 
-            $allIds = $lookupOperatorIds ?: [$lookupOperatorId];
+            // $allIds = $lookupOperatorIds ?: [$lookupOperatorId];
 
-            if (!in_array($valuetopupId, $allIds)) {
-                $operatorName = $operator->name ?? $request->provider_code;
-                return response()->json([
-                    'success' => false,
-                    'error' => "This number does not belong to {$operatorName}. Please check the number or change provider.",
-                ], 422);
-            }
+            // if (!in_array($valuetopupId, $allIds)) {
+            //     $operatorName = $operator->name ?? $request->provider_code;
+            //     return response()->json([
+            //         'success' => false,
+            //         'error' => "This number does not belong to {$operatorName}. Please check the number or change provider.",
+            //     ], 422);
+            // }
 
             return response()->json([
                 'success' => true,
