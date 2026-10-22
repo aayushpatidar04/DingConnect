@@ -207,7 +207,7 @@ class RechargeController extends Controller
                 // No DingConnect match — create a new operator row
                 $operator = Operator::updateOrCreate([
                     'provider_code' => 'vt-' . $item['operatorId'],
-                ],[
+                ], [
                     'name' => $vtName,
                     'slug' => Str::slug($vtName),
                     'valuetopup_operator_id' => $item['operatorId'],
@@ -243,26 +243,50 @@ class RechargeController extends Controller
      */
     private function findMatchingDingOperator(string $vtName, $existingOperators): ?Operator
     {
+        // Helper function to normalize common number words to digits
+        $normalizeNumbers = function (string $text) {
+            $replacements = [
+                'one' => '1',
+                'two' => '2',
+                'three' => '3',
+                'four' => '4',
+                'five' => '5',
+                'six' => '6',
+                'seven' => '7',
+                'eight' => '8',
+                'nine' => '9',
+                'ten' => '10'
+            ];
+            return strtr($text, $replacements);
+        };
+
         $vtLower = mb_strtolower($vtName);
+        $vtNormalized = $normalizeNumbers($vtLower);
 
         foreach ($existingOperators as $dingNameLower => $dingOperator) {
+            $dingLower = mb_strtolower($dingNameLower); // Ensure it's lowercase
+            $dingNormalized = $normalizeNumbers($dingLower);
+
+            // 1. Check exact or partial matches on normalized strings
             if (
-                $vtLower === $dingNameLower
-                || str_contains($dingNameLower, $vtLower)
-                || str_contains($vtLower, $dingNameLower)
+                $vtNormalized === $dingNormalized ||
+                str_contains($dingNormalized, $vtNormalized) ||
+                str_contains($vtNormalized, $dingNormalized)
             ) {
                 return $dingOperator;
             }
 
-            $dingFirstWord = explode(' ', $dingNameLower)[0];
-            if ($vtLower === $dingFirstWord) {
+            // 2. Check first-word match on normalized strings
+            $dingFirstWord = explode(' ', $dingNormalized)[0];
+            if ($vtNormalized === $dingFirstWord) {
                 return $dingOperator;
             }
         }
 
         return null;
     }
-    
+
+
     /**
      * Fetch merged products for an operator: DingConnect + Valuetopup.
      *
