@@ -508,7 +508,7 @@ async function performBackendValidation() {
             `/retailer/recharge/validate-number?${params.toString()}`,
         );
         const data = await res.json();
-
+        
         if (!data.success) {
             errorMessage.value = data.error || "Number validation failed.";
             isNumberVerified.value = false;
@@ -518,7 +518,7 @@ async function performBackendValidation() {
         if (data.account_number) {
             cleanedPhone.value = data.account_number;
         }
-
+        
         isNumberVerified.value = true;
         allowedOperator.value = data.provider;
 
@@ -1222,7 +1222,7 @@ onMounted(() => {
                     v-if="isNumberVerified && !validatingNumber"
                     class="text-xs text-green-600 mt-2"
                 >
-                    ✓ Number verified successfully. This is MK ALL NETWORK SIM ({{ allowedOperator.value }})
+                    ✓ Number verified successfully. This is MK ALL NETWORK SIM ({{ allowedOperator }})
                 </p>
 
                 <!-- Button now checks 'isNumberVerified' state -->
