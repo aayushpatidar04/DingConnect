@@ -641,6 +641,7 @@ class RechargeController extends Controller
                 'success' => true,
                 'account_number' => $digits,
                 'gateway' => 'valuetopup',
+                'provider' => $allowed->provider,
             ]);
         }
 
@@ -680,6 +681,7 @@ class RechargeController extends Controller
                 'success' => true,
                 'account_number' => $digits,
                 'gateway' => 'ding',
+                'provider' => $allowed->provider,
             ]);
         }
 
@@ -690,6 +692,7 @@ class RechargeController extends Controller
             'success' => true,
             'account_number' => $matchedAsMobile ? $digits : $serialInput,
             'gateway' => $gateway,
+            'provider' => $allowed->provider,
         ]);
     }
 

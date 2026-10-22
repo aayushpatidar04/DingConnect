@@ -124,10 +124,21 @@ class AllowedNumberController extends Controller
         $header[0] = preg_replace('/^\xEF\xBB\xBF/', '', (string) $header[0]); // strip Excel BOM
         $col = array_flip(array_map(fn($h) => strtolower(trim((string) $h)), $header));
 
-        if (!isset($col['mobile']) || !isset($col['serial'])) {
+        $requiredColumns = ['mobile', 'serial', 'provider', 'country'];
+        $missingColumns = [];
+
+        foreach ($requiredColumns as $required) {
+            if (!isset($col[$required])) {
+                $missingColumns[] = "\"{$required}\"";
+            }
+        }
+
+        // 2. Reject the file immediately if any mandatory column is missing
+        if (!empty($missingColumns)) {
             fclose($handle);
+            $missingList = implode(', ', $missingColumns);
             return back()->withErrors([
-                'file' => 'CSV must have "mobile" and "serial" column headers (optional: provider, country).',
+                'file' => "The CSV file is missing mandatory column headers: {$missingList}. Please ensure your file includes mobile, serial, provider and country columns.",
             ]);
         }
 
@@ -323,7 +334,7 @@ class AllowedNumberController extends Controller
                 'string',
                 'max:50',
                 Rule::unique('allowed_numbers', 'mobile')
-                    ->where(fn ($q) => $q->where('serial', $serial))
+                    ->where(fn($q) => $q->where('serial', $serial))
                     ->ignore($ignoreId),
             ],
             'serial' => ['required', 'string', 'max:100'],

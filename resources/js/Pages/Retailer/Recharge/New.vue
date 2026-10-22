@@ -243,7 +243,8 @@ async function loadProviders() {
 async function selectProvider(provider) {
     selectedProvider.value = provider;
     form.provider_code = provider.provider_code;
-    selectedProductSource.value = provider.source === "valuetopup_only" ? "valuetopup" : "ding";
+    selectedProductSource.value =
+        provider.source === "valuetopup_only" ? "valuetopup" : "ding";
     errorMessage.value = "";
 }
 
@@ -298,7 +299,10 @@ async function loadProducts() {
     params.append("provider_code", provider.provider_code);
     // Pass valuetopup_id so backend can also fetch VT products
     if (provider.valuetopup_id || provider.source === "valuetopup_only") {
-        params.append("valuetopup_id", provider.valuetopup_id || provider.provider_id);
+        params.append(
+            "valuetopup_id",
+            provider.valuetopup_id || provider.provider_id,
+        );
     }
 
     try {
@@ -311,7 +315,7 @@ async function loadProducts() {
             const dingItems = [];
             const vtItems = [];
 
-            for (const p of (data.products || [])) {
+            for (const p of data.products || []) {
                 if (p._source === "valuetopup") {
                     vtItems.push(p);
                 } else {
@@ -405,8 +409,10 @@ async function selectProduct(product) {
     form.display_text = product.display_text;
     form.default_display_text = product.display_text;
     form.validity_period = product.validity_period;
-    form.description_markdown = productDescription.value || product.description_markdown || "";
-    form.readmore_markdown = productReadmore.value || product.readmore_markdown || "";
+    form.description_markdown =
+        productDescription.value || product.description_markdown || "";
+    form.readmore_markdown =
+        productReadmore.value || product.readmore_markdown || "";
     form.benefits = product.benefits || [];
     form.redemption_type = product.redemption_type || "Immediate";
     form.product_type = product.product_type || "";
@@ -459,18 +465,45 @@ function backToProducts() {
 
 const validatingNumber = ref(false);
 
-async function proceedToConfirmFromNumber() {
-    if (!validatePhone()) return;
+// Add a reactive state variable to track verification success
+const isNumberVerified = ref(false);
+const allowedOperator = ref("");
 
+// 1. Handle real-time input checks
+async function handlePhoneInput() {
+    // Reset states on new keystroke
+    isNumberVerified.value = false;
     errorMessage.value = "";
+
+    // Basic format/character validation runner (your original function)
+    validatePhone();
+    if (phoneError.value) return;
+
+    // Clean the number to count pure digits
+    const rawDigits = mobileNumber.value.replace(/[^0-9]/g, "");
+
+    // Trigger instant validation once it hits 10 digits
+    // (Adjust the length check if your input includes the country code prefix)
+    if (rawDigits.length === 10) {
+        await performBackendValidation();
+    }
+}
+
+// 2. Extracted API Call logic so it can run independently
+async function performBackendValidation() {
     validatingNumber.value = true;
+    errorMessage.value = "";
 
     try {
         const params = new URLSearchParams({
             mobile_number: cleanedPhone.value,
             provider_code: selectedProvider.value.provider_code,
-            gateway: selectedProductSource.value === "valuetopup" ? "valuetopup" : "ding",
+            gateway:
+                selectedProductSource.value === "valuetopup"
+                    ? "valuetopup"
+                    : "ding",
         });
+
         const res = await fetch(
             `/retailer/recharge/validate-number?${params.toString()}`,
         );
@@ -478,16 +511,33 @@ async function proceedToConfirmFromNumber() {
 
         if (!data.success) {
             errorMessage.value = data.error || "Number validation failed.";
-            return;
+            isNumberVerified.value = false;
+            return false;
         }
 
-        // Use the canonical number the gateway verified
-        if (data.account_number) cleanedPhone.value = data.account_number;
+        if (data.account_number) {
+            cleanedPhone.value = data.account_number;
+        }
+
+        isNumberVerified.value = true;
+        allowedOperator.value = data.provider;
+
+        return true;
     } catch (e) {
         errorMessage.value = "Network error. Please try again.";
-        return;
+        isNumberVerified.value = false;
+        return false;
     } finally {
         validatingNumber.value = false;
+    }
+}
+
+// 3. Simplified Click Handler
+async function proceedToConfirmFromNumber() {
+    // If the number was somehow cleared or altered without passing validation
+    if (!isNumberVerified.value) {
+        const isValid = await performBackendValidation();
+        if (!isValid) return;
     }
 
     if (props.availableBalance < form.send_value) {
@@ -496,6 +546,7 @@ async function proceedToConfirmFromNumber() {
         return;
     }
 
+    // Move directly to the review step
     currentStep.value = 5;
 }
 
@@ -523,21 +574,17 @@ async function fetchFreeRangePricing() {
                 amount: freeRangeAmount.value,
                 currency: form.send_currency,
             };
-            const res = await fetch(
-                "/retailer/recharge/estimate-cost",
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(body),
-                },
-            );
+            const res = await fetch("/retailer/recharge/estimate-cost", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+            });
             const data = await res.json();
             if (data.success && data.pricing) {
                 freeRangePricing.value = data.pricing;
                 form.send_value = data.pricing.send_value;
                 form.receive_value = data.pricing.receive_value;
-                form.receive_value_excluding_tax =
-                    data.pricing.sales_tax || 0;
+                form.receive_value_excluding_tax = data.pricing.sales_tax || 0;
             } else {
                 freeRangePricing.value = null;
             }
@@ -599,7 +646,9 @@ function validateBeforeSubmit() {
 function submitRecharge(action = "buy") {
     if (action === "review") {
         if (!validateBeforeSubmit()) return;
-        reviewTimestamp.value = new Date().toLocaleString("en-GB", { timeZone: "Europe/London" });
+        reviewTimestamp.value = new Date().toLocaleString("en-GB", {
+            timeZone: "Europe/London",
+        });
         reviewReference.value = "RCPT-" + Date.now();
         showReviewModal.value = true;
         return;
@@ -845,10 +894,16 @@ onMounted(() => {
                     class="rounded-2xl p-5 border border-surface-3 bg-surface-2/80"
                 >
                     <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 bg-surface-3 rounded-lg animate-pulse shrink-0"></div>
+                        <div
+                            class="w-12 h-12 bg-surface-3 rounded-lg animate-pulse shrink-0"
+                        ></div>
                         <div class="flex-1 space-y-2">
-                            <div class="h-4 bg-surface-3 rounded w-3/4 animate-pulse"></div>
-                            <div class="h-3 bg-surface-3 rounded w-1/2 animate-pulse"></div>
+                            <div
+                                class="h-4 bg-surface-3 rounded w-3/4 animate-pulse"
+                            ></div>
+                            <div
+                                class="h-3 bg-surface-3 rounded w-1/2 animate-pulse"
+                            ></div>
                         </div>
                     </div>
                 </div>
@@ -878,12 +933,12 @@ onMounted(() => {
                         'rounded-2xl p-5 text-left transition relative',
                         selectedProvider?.provider_code ===
                         provider.provider_code
-                            ? (provider.source === 'valuetopup_only'
+                            ? provider.source === 'valuetopup_only'
                                 ? 'bg-yellow-500/20 border-2 border-yellow-500'
-                                : 'bg-primary/20 border-2 border-primary')
-                            : (provider.source === 'valuetopup_only'
-                                ? 'bg-surface-2 border border-yellow-500/50'
-                                : 'bg-surface-2 border border-surface-3 hover:border-primary/50'),
+                                : 'bg-primary/20 border-2 border-primary'
+                            : provider.source === 'valuetopup_only'
+                              ? 'bg-surface-2 border border-yellow-500/50'
+                              : 'bg-surface-2 border border-surface-3 hover:border-primary/50',
                     ]"
                 >
                     <div class="flex items-center gap-3">
@@ -914,9 +969,11 @@ onMounted(() => {
                             provider.provider_code
                         "
                         class="text-xs mt-2 font-semibold"
-                        :class="provider.source === 'valuetopup_only'
-                            ? 'text-yellow-600'
-                            : 'text-primary'"
+                        :class="
+                            provider.source === 'valuetopup_only'
+                                ? 'text-yellow-600'
+                                : 'text-primary'
+                        "
                     >
                         &#10003; Selected
                     </div>
@@ -938,7 +995,9 @@ onMounted(() => {
              ================================================================= -->
         <div v-if="currentStep === 3">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-semibold text-ink-900">Select Product</h2>
+                <h2 class="text-xl font-semibold text-ink-900">
+                    Select Product
+                </h2>
                 <button
                     @click="backToStep(2)"
                     class="text-sm text-ink-500 hover:text-ink-900"
@@ -989,19 +1048,39 @@ onMounted(() => {
             <div v-if="loadingProducts" class="space-y-8">
                 <!-- Category skeleton: tabs -->
                 <div class="flex gap-2 mb-6">
-                    <div v-for="n in 4" :key="n" class="h-9 bg-surface-3/80 rounded-xl w-20 animate-pulse"></div>
+                    <div
+                        v-for="n in 4"
+                        :key="n"
+                        class="h-9 bg-surface-3/80 rounded-xl w-20 animate-pulse"
+                    ></div>
                 </div>
                 <!-- Category skeleton: products -->
                 <div v-for="n in 2" :key="n" class="mb-8">
-                    <div class="h-7 bg-surface-3/80 rounded-lg w-32 mb-4 animate-pulse"></div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div v-for="m in 6" :key="m" class="rounded-2xl p-5 border border-surface-3/60 bg-surface-2/60">
-                            <div class="h-5 bg-surface-3 rounded w-3/4 mb-3 animate-pulse"></div>
+                    <div
+                        class="h-7 bg-surface-3/80 rounded-lg w-32 mb-4 animate-pulse"
+                    ></div>
+                    <div
+                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                    >
+                        <div
+                            v-for="m in 6"
+                            :key="m"
+                            class="rounded-2xl p-5 border border-surface-3/60 bg-surface-2/60"
+                        >
+                            <div
+                                class="h-5 bg-surface-3 rounded w-3/4 mb-3 animate-pulse"
+                            ></div>
                             <div class="flex gap-1.5 mb-3">
-                                <div class="h-5 bg-surface-3 rounded-full w-14 animate-pulse"></div>
-                                <div class="h-5 bg-surface-3 rounded-full w-10 animate-pulse"></div>
+                                <div
+                                    class="h-5 bg-surface-3 rounded-full w-14 animate-pulse"
+                                ></div>
+                                <div
+                                    class="h-5 bg-surface-3 rounded-full w-10 animate-pulse"
+                                ></div>
                             </div>
-                            <div class="h-8 bg-surface-3 rounded-lg w-24 animate-pulse"></div>
+                            <div
+                                class="h-8 bg-surface-3 rounded-lg w-24 animate-pulse"
+                            ></div>
                         </div>
                     </div>
                 </div>
@@ -1094,13 +1173,22 @@ onMounted(() => {
                 ></div>
             </div>
 
-            <div class="bg-surface-2 border border-surface-3 rounded-2xl p-6 relative">
-                <div v-if="validatingNumber" class="absolute inset-0 bg-surface-0/60 rounded-2xl flex items-center justify-center z-10">
-                    <div class="inline-block w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <div
+                class="bg-surface-2 border border-surface-3 rounded-2xl p-6 relative"
+            >
+                <div
+                    v-if="validatingNumber"
+                    class="absolute inset-0 bg-surface-0/60 rounded-2xl flex items-center justify-center z-10"
+                >
+                    <div
+                        class="inline-block w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin"
+                    ></div>
                 </div>
+
                 <label class="text-sm text-ink-500 mb-2 block">
                     Mobile Number ({{ selectedCountry?.name }})
                 </label>
+
                 <div
                     class="flex items-center bg-surface-3 border border-surface-3 rounded-xl overflow-hidden"
                     :class="{ 'opacity-50': validatingNumber }"
@@ -1110,22 +1198,41 @@ onMounted(() => {
                     >
                         +{{ selectedCountry?.calling_code }}
                     </span>
+                    <!-- Keep @input="handlePhoneInput" to catch changes in real-time -->
                     <input
                         v-model="mobileNumber"
                         type="tel"
                         placeholder="Enter phone number"
                         class="flex-1 bg-transparent px-4 py-3 text-ink-900 outline-none"
-                        @input="validatePhone"
+                        @input="handlePhoneInput"
                         :disabled="validatingNumber"
                     />
                 </div>
-                <p v-if="phoneError" class="text-xs text-red-600 mt-2">
-                    {{ phoneError }}
+
+                <!-- Error Message -->
+                <p
+                    v-if="phoneError || errorMessage"
+                    class="text-xs text-red-600 mt-2"
+                >
+                    {{ phoneError || errorMessage }}
                 </p>
 
+                <!-- Instant Success Message -->
+                <p
+                    v-if="isNumberVerified && !validatingNumber"
+                    class="text-xs text-green-600 mt-2"
+                >
+                    ✓ Number verified successfully. This is MK ALL NETWORK SIM ({{ allowedOperator.value }})
+                </p>
+
+                <!-- Button now checks 'isNumberVerified' state -->
                 <button
                     @click="proceedToConfirmFromNumber"
-                    :disabled="!canProceedFromPhone || validatingNumber"
+                    :disabled="
+                        !canProceedFromPhone ||
+                        validatingNumber ||
+                        !isNumberVerified
+                    "
                     class="mt-6 w-full btn-primary text-ink-100 py-3 rounded-xl font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                     {{
@@ -1328,7 +1435,8 @@ onMounted(() => {
                             "
                             class="text-sm text-yellow-600 mt-1"
                         >
-                            Face value: {{ freeRangePricing.face_value_currency || 'GBP' }}
+                            Face value:
+                            {{ freeRangePricing.face_value_currency || "GBP" }}
                             {{ freeRangePricing.face_value.toFixed(2) }}
                         </div>
                     </div>
@@ -1450,7 +1558,9 @@ onMounted(() => {
                         </div>
                         <div v-if="!isPinProduct" class="flex justify-between">
                             <span class="text-ink-500">Phone</span>
-                            <span class="text-ink-900">+{{ cleanedPhone }}</span>
+                            <span class="text-ink-900"
+                                >+{{ cleanedPhone }}</span
+                            >
                         </div>
                         <div class="flex justify-between">
                             <span class="text-ink-500">Operator</span>
@@ -1557,7 +1667,9 @@ onMounted(() => {
                                 <div class="text-xs text-ink-500 mb-1">
                                     Receipt Number
                                 </div>
-                                <div class="text-ink-900 font-mono text-sm mb-3">
+                                <div
+                                    class="text-ink-900 font-mono text-sm mb-3"
+                                >
                                     {{ receiptNumber }}
                                 </div>
                                 <div class="text-xs text-ink-500 mb-1">
