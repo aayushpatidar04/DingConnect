@@ -86,7 +86,7 @@ const inputClass =
                 <input
                     v-model="filters.search"
                     type="search"
-                    placeholder="Name, email, phone or shop"
+                    placeholder="Name, email, phone, postcode or shop name"
                     :class="[inputClass, 'w-full']"
                 />
             </div>
@@ -142,6 +142,11 @@ const inputClass =
                             <th
                                 class="px-6 py-3 text-left text-xs font-medium text-ink-700 uppercase tracking-wider"
                             >
+                                Postcode
+                            </th>
+                            <th
+                                class="px-6 py-3 text-left text-xs font-medium text-ink-700 uppercase tracking-wider"
+                            >
                                 Wallet
                             </th>
                             <th
@@ -183,6 +188,9 @@ const inputClass =
                             </td>
                             <td class="px-6 py-4 text-sm text-ink-700">
                                 {{ retailer.shop_name || "-" }}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-ink-700">
+                                {{ retailer.postcode || "-" }}
                             </td>
                             <td
                                 class="px-6 py-4 text-sm font-medium text-ink-900"

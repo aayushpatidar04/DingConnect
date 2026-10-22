@@ -86,6 +86,12 @@ const formatDate = (date) => {
                             </p>
                         </div>
                         <div>
+                            <span class="text-ink-500">Postcode:</span>
+                            <p class="font-medium text-ink-900">
+                                {{ retailer.postcode || "-" }}
+                            </p>
+                        </div>
+                        <div>
                             <span class="text-ink-500">VAT:</span>
                             <p class="font-medium text-ink-900">
                                 {{ retailer.vat_number || "-" }}

@@ -96,6 +96,7 @@ class User extends Authenticatable
                     $q->where('name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%")
                         ->orWhere('phone', 'like', "%{$search}%")
+                        ->orWhere('postcode', 'like', "%{$search}%")
                         ->orWhere('shop_name', 'like', "%{$search}%");
                 });
             })
