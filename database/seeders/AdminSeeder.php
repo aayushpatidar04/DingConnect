@@ -2,20 +2,19 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Setting;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 
 class AdminSeeder extends Seeder
 {
     public function run(): void
     {
         // Create roles
-        Role::create(['name' => 'admin']);
-        Role::create(['name' => 'retailer']);
+        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'retailer', 'guard_name' => 'web']);
 
         // Create default admin
         $admin = User::create([

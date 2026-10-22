@@ -1,0 +1,707 @@
+{
+  "info": {
+    "_postman_id": "e331be21-4ef8-49f9-bdf6-23574dacda41",
+    "name": "DingConnect API",
+    "description": "DingConnect mobile application API. Set base_url to the application origin and token to a Sanctum bearer token. See API_DOCUMENTATION.md for request details, validation, and response behavior.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "country_iso",
+      "value": "GB",
+      "type": "string"
+    },
+    {
+      "key": "retailer_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "operator_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "transaction_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "allowed_number_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "allowed_file_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "auth": {
+        "type": "noauth"
+      },
+      "item": [
+        {
+          "name": "Register retailer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.data && body.data.access_token) pm.collectionVariables.set('token', body.data.access_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example Retailer\",\n  \"email\": \"retailer@example.com\",\n  \"phone\": \"447700900123\",\n  \"password\": \"ChangeMe123!\",\n  \"password_confirmation\": \"ChangeMe123!\",\n  \"shop_name\": \"Example Shop\",\n  \"address\": \"1 Example Street\",\n  \"city\": \"London\",\n  \"postcode\": \"SW1A 1AA\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/auth/register"
+          }
+        },
+        {
+          "name": "Login - request OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"retailer@example.com\",\n  \"password\": \"ChangeMe123!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/auth/login"
+          }
+        },
+        {
+          "name": "Verify OTP - save token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.data && body.data.access_token) pm.collectionVariables.set('token', body.data.access_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"retailer@example.com\",\n  \"otp\": \"123456\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/auth/verify-otp"
+          }
+        },
+        {
+          "name": "Resend OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"retailer@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/auth/resend-otp"
+          }
+        },
+        {
+          "name": "Forgot password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"retailer@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/auth/forgot-password"
+          }
+        },
+        {
+          "name": "Reset password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"<reset-token-from-email>\",\n  \"email\": \"retailer@example.com\",\n  \"password\": \"NewSecret123!\",\n  \"password_confirmation\": \"NewSecret123!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/auth/reset-password"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/api/auth/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public lookups",
+      "auth": { "type": "noauth" },
+      "item": [
+        {
+          "name": "List countries",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/countries" }
+        },
+        {
+          "name": "Operators by country",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/countries/{{country_iso}}/operators" }
+        },
+        {
+          "name": "Search operators",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/operators/search?q=vodafone&country_id=1" }
+        }
+      ]
+    },
+    {
+      "name": "Current user and profile",
+      "item": [
+        {
+          "name": "Current user",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/auth/me" }
+        },
+        {
+          "name": "Get profile",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/profile" }
+        },
+        {
+          "name": "Update profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example Retailer\",\n  \"email\": \"retailer@example.com\",\n  \"phone\": \"447700900123\",\n  \"shop_name\": \"Example Shop\",\n  \"address\": \"1 Example Street\",\n  \"city\": \"London\",\n  \"county\": \"Greater London\",\n  \"postcode\": \"SW1A 1AA\",\n  \"vat_number\": \"\",\n  \"company_reg_number\": \"\",\n  \"utr_number\": \"\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/profile"
+          }
+        },
+        {
+          "name": "Change password",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"ChangeMe123!\",\n  \"password\": \"NewSecret123!\",\n  \"password_confirmation\": \"NewSecret123!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/password"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Retailer dashboard and wallet",
+      "item": [
+        {
+          "name": "Dashboard",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/dashboard" }
+        },
+        {
+          "name": "Retailer profile",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/profile" }
+        },
+        {
+          "name": "Update retailer profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example Retailer\",\n  \"email\": \"retailer@example.com\",\n  \"phone\": \"447700900123\",\n  \"shop_name\": \"Example Shop\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/retailer/profile"
+          }
+        },
+        {
+          "name": "Wallet and top-ups",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/wallet?status=pending&from=2025-01-01&to=2025-12-31&page=1" }
+        },
+        {
+          "name": "Wallet top-up details",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/wallet/topup" }
+        },
+        {
+          "name": "Create wallet top-up PaymentIntent",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 25\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/api/retailer/wallet/topup"
+          }
+        },
+        {
+          "name": "Wallet ledger",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/wallet/ledger?page=1" }
+        }
+      ]
+    },
+    {
+      "name": "Retailer recharge",
+      "item": [
+        {
+          "name": "Find providers by phone",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/recharge/operators?phone_number=447700900123&country_iso=GB" }
+        },
+        {
+          "name": "Providers by country",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/recharge/providers?country_iso=GB" }
+        },
+        {
+          "name": "Valuetopup operators",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/recharge/valuetopup/operators?country_iso=GB" }
+        },
+        {
+          "name": "Provider status",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/recharge/provider-status?provider_code=provider-code" }
+        },
+        {
+          "name": "Products",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/recharge/products?country_iso=GB&provider_code=provider-code&valuetopup_id=1" }
+        },
+        {
+          "name": "Promotions",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/recharge/promotions?country_isos=GB&provider_codes=provider-code" }
+        },
+        {
+          "name": "Estimate Ding pricing",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/recharge/pricing?sku_code=SKU-CODE&send_value=10&send_currency_iso=GBP" }
+        },
+        {
+          "name": "Estimate Valuetopup cost",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"sku_id\": 1,\n  \"amount\": 10,\n  \"currency\": \"GBP\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/api/retailer/recharge/estimate-cost"
+          }
+        },
+        {
+          "name": "Validate number",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/recharge/validate-number?mobile_number=447700900123&provider_code=provider-code&gateway=ding" }
+        },
+        {
+          "name": "Product description",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/recharge/product-description?sku_code=SKU-CODE" }
+        },
+        {
+          "name": "Submit recharge",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku_code\": \"SKU-CODE\",\n  \"send_value\": 10,\n  \"send_currency\": \"GBP\",\n  \"receive_value\": 10,\n  \"receive_currency\": \"GBP\",\n  \"redemption_type\": \"Immediate\",\n  \"mobile_number\": \"447700900123\",\n  \"country_id\": 1,\n  \"operator_id\": 1,\n  \"gateway\": \"ding\",\n  \"provider_code\": \"provider-code\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/retailer/recharge"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Retailer transactions",
+      "item": [
+        {
+          "name": "List transactions",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/transactions?search=447700900123&status=success&type=Immediate&operator_id={{operator_id}}&from=2025-01-01&to=2025-12-31&page=1" }
+        },
+        {
+          "name": "Transaction details",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/transactions/{{transaction_id}}" }
+        },
+        {
+          "name": "Transaction status",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/transactions/{{transaction_id}}/status" }
+        },
+        {
+          "name": "Transaction receipt",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/transactions/{{transaction_id}}/receipt" }
+        },
+        {
+          "name": "Legacy transaction list alias",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/transactions" }
+        },
+        {
+          "name": "Legacy transaction details alias",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/transactions/{{transaction_id}}" }
+        },
+        {
+          "name": "Legacy transaction status alias",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/transactions/{{transaction_id}}/status" }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Dashboard",
+          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/dashboard" }
+        },
+        {
+          "name": "Retailers",
+          "item": [
+            {
+              "name": "List retailers",
+              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/retailers?search=example&status=active&kyc_status=pending&page=1" }
+            },
+            {
+              "name": "Create retailer",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"New Retailer\",\n  \"email\": \"new-retailer@example.com\",\n  \"phone\": \"447700900124\",\n  \"password\": \"ChangeMe123!\",\n  \"password_confirmation\": \"ChangeMe123!\",\n  \"shop_name\": \"New Shop\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": "{{base_url}}/api/admin/retailers"
+              }
+            },
+            {
+              "name": "Retailer details",
+              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}" }
+            },
+            {
+              "name": "Update retailer",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Example Retailer\",\n  \"email\": \"retailer@example.com\",\n  \"phone\": \"447700900123\",\n  \"shop_name\": \"Example Shop\",\n  \"is_active\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}"
+              }
+            },
+            {
+              "name": "Patch retailer",
+              "request": {
+                "method": "PATCH",
+                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Example Retailer\",\n  \"email\": \"retailer@example.com\",\n  \"phone\": \"447700900123\",\n  \"is_active\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}"
+              }
+            },
+            {
+              "name": "Deactivate retailer",
+              "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}" }
+            },
+            {
+              "name": "Approve retailer KYC",
+              "request": { "method": "POST", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}/approve" }
+            },
+            {
+              "name": "Toggle retailer block",
+              "request": { "method": "POST", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}/block" }
+            },
+            {
+              "name": "Credit retailer wallet",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\n  \"amount\": 25,\n  \"description\": \"Admin wallet credit\"\n}", "options": { "raw": { "language": "json" } } },
+                "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}/credit"
+              }
+            },
+            {
+              "name": "Process KYC - reject example",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\n  \"action\": \"reject\",\n  \"rejection_reason\": \"Please provide the missing business document.\"\n}", "options": { "raw": { "language": "json" } } },
+                "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}/kyc"
+              }
+            },
+            {
+              "name": "Export retailers",
+              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/octet-stream" }], "url": "{{base_url}}/api/admin/retailers/export" }
+            }
+          ]
+        },
+        {
+          "name": "Transactions",
+          "item": [
+            {
+              "name": "List transactions",
+              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/transactions?search=447700900123&status=success&retailer_id={{retailer_id}}&operator_id={{operator_id}}&from=2025-01-01&to=2025-12-31&page=1" }
+            },
+            {
+              "name": "Transaction details",
+              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/transactions/{{transaction_id}}" }
+            },
+            {
+              "name": "Refund transaction",
+              "request": { "method": "POST", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/transactions/{{transaction_id}}/refund" }
+            },
+            {
+              "name": "Export transactions",
+              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/octet-stream" }], "url": "{{base_url}}/api/admin/transactions/export" }
+            }
+          ]
+        },
+        {
+          "name": "Operators",
+          "item": [
+            {
+              "name": "List operators",
+              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/operators?search=vodafone&country_id=1&is_active=true&page=1" }
+            },
+            {
+              "name": "Create operator",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Example Operator\",\n  \"provider_code\": \"example-provider\",\n  \"country_id\": 1,\n  \"logo_url\": \"https://example.com/logo.png\",\n  \"display_order\": 1,\n  \"is_active\": true,\n  \"is_premium\": false,\n  \"region_codes\": \"\",\n  \"payment_types\": \"\",\n  \"validation_regex\": \"\",\n  \"customer_care_number\": \"\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": "{{base_url}}/api/admin/operators"
+              }
+            },
+            {
+              "name": "Operator details",
+              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/operators/{{operator_id}}" }
+            },
+            {
+              "name": "Update operator",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Example Operator\",\n  \"provider_code\": \"example-provider\",\n  \"country_id\": 1,\n  \"is_active\": true,\n  \"is_premium\": false\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": "{{base_url}}/api/admin/operators/{{operator_id}}"
+              }
+            },
+            {
+              "name": "Patch operator",
+              "request": {
+                "method": "PATCH",
+                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Example Operator\",\n  \"provider_code\": \"example-provider\",\n  \"country_id\": 1,\n  \"is_active\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": "{{base_url}}/api/admin/operators/{{operator_id}}"
+              }
+            },
+            {
+              "name": "Delete operator",
+              "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/operators/{{operator_id}}" }
+            },
+            {
+              "name": "Sync Ding providers for GB",
+              "request": { "method": "POST", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/operators/sync" }
+            }
+          ]
+        },
+        {
+          "name": "Settings",
+          "item": [
+            {
+              "name": "List settings",
+              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/settings" }
+            },
+            {
+              "name": "Update settings",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\n  \"settings\": [\n    { \"id\": 1, \"value\": \"Example\" },\n    { \"id\": 2, \"value\": true }\n  ]\n}", "options": { "raw": { "language": "json" } } },
+                "url": "{{base_url}}/api/admin/settings"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Allowed numbers",
+          "item": [
+            {
+              "name": "List folders and numbers",
+              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/allowed-numbers?search=447700900123&folder=manual&inactive=false&page=1" }
+            },
+            {
+              "name": "Create allowed number",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\n  \"mobile\": \"447700900123\",\n  \"serial\": \"SERIAL-001\",\n  \"provider\": \"Example Provider\",\n  \"country\": \"GB\"\n}", "options": { "raw": { "language": "json" } } },
+                "url": "{{base_url}}/api/admin/allowed-numbers"
+              }
+            },
+            {
+              "name": "Update allowed number",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\n  \"mobile\": \"447700900123\",\n  \"serial\": \"SERIAL-001\",\n  \"provider\": \"Example Provider\",\n  \"country\": \"GB\",\n  \"active\": true\n}", "options": { "raw": { "language": "json" } } },
+                "url": "{{base_url}}/api/admin/allowed-numbers/{{allowed_number_id}}"
+              }
+            },
+            {
+              "name": "Patch allowed number",
+              "request": {
+                "method": "PATCH",
+                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"mobile\": \"447700900123\",\n  \"serial\": \"SERIAL-001\",\n  \"provider\": \"Example Provider\",\n  \"country\": \"GB\",\n  \"active\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": "{{base_url}}/api/admin/allowed-numbers/{{allowed_number_id}}"
+              }
+            },
+            {
+              "name": "Delete allowed number",
+              "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/allowed-numbers/{{allowed_number_id}}" }
+            },
+            {
+              "name": "Import allowed-number CSV",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Accept", "value": "application/json" }],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    { "key": "file", "type": "file", "src": "" }
+                  ]
+                },
+                "url": "{{base_url}}/api/admin/allowed-numbers/import-file"
+              }
+            },
+            {
+              "name": "Download sample CSV",
+              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/octet-stream" }], "url": "{{base_url}}/api/admin/allowed-numbers/sample" }
+            },
+            {
+              "name": "Download imported file",
+              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/octet-stream" }], "url": "{{base_url}}/api/admin/allowed-numbers/files/{{allowed_file_id}}/download" }
+            },
+            {
+              "name": "Delete imported file",
+              "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/allowed-numbers/files/{{allowed_file_id}}" }
+            }
+          ]
+        },
+        {
+          "name": "Legacy recharge alias",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku_code\": \"SKU-CODE\",\n  \"send_value\": 10,\n  \"redemption_type\": \"Immediate\",\n  \"mobile_number\": \"447700900123\",\n  \"country_id\": 1,\n  \"operator_id\": 1,\n  \"gateway\": \"ding\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/transactions/topup"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Provider webhooks (server-to-server)",
+      "auth": { "type": "noauth" },
+      "item": [
+        {
+          "name": "Ding webhook callback",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"example\": \"replace-with-provider-callback-payload\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/api/webhooks/ding"
+          }
+        },
+        {
+          "name": "Stripe webhook callback",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"example\": \"replace-with-provider-event-payload\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/api/webhooks/stripe"
+          }
+        }
+      ]
+    }
+  ]
+}

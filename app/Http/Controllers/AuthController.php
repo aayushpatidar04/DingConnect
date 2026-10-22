@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
-use App\Services\WalletService;
 use App\Notifications\LoginOtpNotification;
+use App\Services\WalletService;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use Spatie\Permission\Models\Role;
 
 class AuthController extends Controller
 {
@@ -72,7 +74,7 @@ class AuthController extends Controller
 
         $userId = $request->session()->get('login_otp_user_id');
 
-        if (!$userId) {
+        if (! $userId) {
             throw ValidationException::withMessages([
                 'otp' => 'Your verification session has expired. Please log in again.',
             ]);
@@ -90,7 +92,7 @@ class AuthController extends Controller
 
         $expiresAt = $request->session()->get('login_otp_expires_at');
 
-        if (!$expiresAt || now()->timestamp >= $expiresAt) {
+        if (! $expiresAt || now()->timestamp >= $expiresAt) {
             $this->clearLoginOtp($request);
 
             throw ValidationException::withMessages([
@@ -100,7 +102,7 @@ class AuthController extends Controller
 
         $otpHash = $request->session()->get('login_otp_hash');
 
-        if (!$otpHash || !Hash::check($request->otp, $otpHash)) {
+        if (! $otpHash || ! Hash::check($request->otp, $otpHash)) {
             $request->session()->increment('login_otp_attempts');
 
             throw ValidationException::withMessages([
@@ -110,7 +112,7 @@ class AuthController extends Controller
 
         $user = User::find($userId);
 
-        if (!$user) {
+        if (! $user) {
             $this->clearLoginOtp($request);
 
             throw ValidationException::withMessages([
@@ -143,7 +145,7 @@ class AuthController extends Controller
     {
         $userId = $request->session()->get('login_otp_user_id');
 
-        if (!$userId) {
+        if (! $userId) {
             return redirect()->route('login')
                 ->withErrors(['otp' => 'Please log in again to request an OTP.']);
         }
@@ -159,7 +161,7 @@ class AuthController extends Controller
 
         $user = User::find($userId);
 
-        if (!$user) {
+        if (! $user) {
             $this->clearLoginOtp($request);
 
             return redirect()->route('login')
@@ -234,11 +236,12 @@ class AuthController extends Controller
         ]);
 
         // Assign role and create wallet
+        Role::firstOrCreate(['name' => 'retailer', 'guard_name' => 'web']);
         $user->assignRole('retailer');
         $walletService = app(WalletService::class);
         $walletService->getWallet($user);
 
-        event(new \Illuminate\Auth\Events\Registered($user));
+        event(new Registered($user));
 
         Auth::login($user);
 

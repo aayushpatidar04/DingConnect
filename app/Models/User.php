@@ -2,12 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -15,12 +13,14 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
     protected $fillable = [
         'name',
         'email',
+        'email_verified_at',
         'password',
+        'role',
         'phone',
         'shop_name',
         'address',
@@ -46,6 +46,9 @@ class User extends Authenticatable
         'ding_secret',
         'remember_token',
         'login_otp_hash',
+        'login_otp_expires_at',
+        'login_otp_attempts',
+        'login_otp_last_sent_at',
     ];
 
     protected $casts = [
@@ -76,7 +79,6 @@ class User extends Authenticatable
         return $this->hasMany(WalletTopup::class);
     }
 
-
     public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class);
@@ -101,11 +103,13 @@ class User extends Authenticatable
                 });
             })
             ->when($filters['status'] ?? null, function ($q, $status) {
-                if ($status === 'active')
+                if ($status === 'active') {
                     $q->where('is_active', true);
-                if ($status === 'inactive')
+                }
+                if ($status === 'inactive') {
                     $q->where('is_active', false);
+                }
             })
-            ->when($filters['kyc_status'] ?? null, fn($q, $v) => $q->where('kyc_status', $v));
+            ->when($filters['kyc_status'] ?? null, fn ($q, $v) => $q->where('kyc_status', $v));
     }
 }

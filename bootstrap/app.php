@@ -1,29 +1,39 @@
 <?php
 
+use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\EnsureActiveAccount;
+use App\Http\Middleware\EnsureKycApproved;
+use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\RetailerMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
-            \App\Http\Middleware\HandleInertiaRequests::class,
-            \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+            HandleInertiaRequests::class,
+            AddLinkHeadersForPreloadedAssets::class,
         ]);
 
         $middleware->alias([
-            'admin'     => \App\Http\Middleware\AdminMiddleware::class,
-            'retailer'  => \App\Http\Middleware\RetailerMiddleware::class,
-            'role'      => \Spatie\Permission\Middleware\RoleMiddleware::class,
-            'permission'=> \Spatie\Permission\Middleware\PermissionMiddleware::class,
-            'kyc.approved' => \App\Http\Middleware\EnsureKycApproved::class,
+            'admin' => AdminMiddleware::class,
+            'retailer' => RetailerMiddleware::class,
+            'role' => RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+            'kyc.approved' => EnsureKycApproved::class,
+            'active' => EnsureActiveAccount::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

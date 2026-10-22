@@ -7,11 +7,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Operator;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\WalletService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
-
 
 class TransactionController extends Controller
 {
@@ -76,10 +76,14 @@ class TransactionController extends Controller
         }
 
         DB::transaction(function () use ($transaction) {
-            $walletService = app(\App\Services\WalletService::class);
-            $wallet = $walletService->getWallet($transaction->user);
-
-            $walletService->credit($wallet, (float) ($transaction->retailer_charged ?? 0), 'refund', $transaction->id, "Refund for transaction #{$transaction->receipt_number}");
+            $walletService = app(WalletService::class);
+            $walletService->getWallet($transaction->user);
+            $walletService->refund(
+                $transaction->user_id,
+                (float) $transaction->amount,
+                $transaction->id,
+                "Refund for transaction #{$transaction->receipt_number}",
+            );
 
             $transaction->update([
                 'status' => 'refunded',
@@ -94,7 +98,7 @@ class TransactionController extends Controller
     {
         return Excel::download(
             new TransactionsExport($request->only(self::FILTER_KEYS)),
-            'transactions_' . now()->format('Y-m-d') . '.xlsx'
+            'transactions_'.now()->format('Y-m-d').'.xlsx'
         );
     }
 }

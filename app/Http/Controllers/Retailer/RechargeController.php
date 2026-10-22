@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers\Retailer;
 
+use App\Events\RechargeProcessing;
 use App\Http\Controllers\Controller;
 use App\Jobs\ProcessRechargeJob;
+use App\Models\AllowedNumber;
 use App\Models\Country;
 use App\Models\Operator;
 use App\Models\Transaction;
-use App\Models\AllowedNumber;
 use App\Services\DingConnectService;
 use App\Services\ValuetopupService;
 use App\Services\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -56,7 +56,7 @@ class RechargeController extends Controller
 
         $result = $dingService->getProviders($countryIso, null, $accountNumber);
 
-        if (!$result['success']) {
+        if (! $result['success']) {
             return response()->json(['success' => false, 'error' => $result['error']], 400);
         }
 
@@ -89,7 +89,7 @@ class RechargeController extends Controller
                 'region_codes' => $item['RegionCodes'] ?? [],
                 'payment_types' => $item['PaymentTypes'] ?? [],
             ];
-        })->filter(fn($p) => !empty($p['provider_code']))->values();
+        })->filter(fn ($p) => ! empty($p['provider_code']))->values();
 
         return response()->json([
             'success' => true,
@@ -112,7 +112,7 @@ class RechargeController extends Controller
         $countryIso = $request->query('country_iso');
         $result = $dingService->getProviders($countryIso);
 
-        if (!$result['success'] || empty($result['data'])) {
+        if (! $result['success'] || empty($result['data'])) {
             return response()->json(['success' => true, 'providers' => []]);
         }
 
@@ -144,7 +144,7 @@ class RechargeController extends Controller
                 'logo_url' => $operator->logo_url,
                 'country_iso' => $countryIso,
             ];
-        })->filter(fn($p) => !empty($p['provider_code']))->values()->all();
+        })->filter(fn ($p) => ! empty($p['provider_code']))->values()->all();
 
         return response()->json(['success' => true, 'providers' => $providers]);
     }
@@ -165,7 +165,7 @@ class RechargeController extends Controller
 
         $result = $vt->operators();
 
-        if (!($result['responseCode'] ?? '') === '000' || empty($result['payLoad'])) {
+        if (! ($result['responseCode'] ?? '') === '000' || empty($result['payLoad'])) {
             return response()->json(['success' => true, 'providers' => []]);
         }
 
@@ -174,12 +174,12 @@ class RechargeController extends Controller
             ->whereNotNull('provider_code')
             ->where('provider_code', 'not like', 'vt-%')
             ->get()
-            ->keyBy(fn($o) => mb_strtolower($o->name));
+            ->keyBy(fn ($o) => mb_strtolower($o->name));
 
         // Reverse lookup: VT ID -> Ding operator name (for already-linked operators)
         $vtIdToDingName = $existingOperators
-            ->filter(fn($o) => !empty($o->valuetopup_operator_id))
-            ->mapWithKeys(fn($o) => [(string) $o->valuetopup_operator_id => $o->name])
+            ->filter(fn ($o) => ! empty($o->valuetopup_operator_id))
+            ->mapWithKeys(fn ($o) => [(string) $o->valuetopup_operator_id => $o->name])
             ->all();
 
         $syncedProviders = [];
@@ -206,7 +206,7 @@ class RechargeController extends Controller
             } else {
                 // No DingConnect match — create a new operator row
                 $operator = Operator::updateOrCreate([
-                    'provider_code' => 'vt-' . $item['operatorId'],
+                    'provider_code' => 'vt-'.$item['operatorId'],
                 ], [
                     'name' => $vtName,
                     'slug' => Str::slug($vtName),
@@ -226,7 +226,7 @@ class RechargeController extends Controller
                 'name' => $operator->name,
                 'logo_url' => $operator->logo_url,
                 'country_iso' => $countryIso,
-                'source' => $operator->provider_code === 'vt-' . $item['operatorId'] ? 'valuetopup_only' : 'both',
+                'source' => $operator->provider_code === 'vt-'.$item['operatorId'] ? 'valuetopup_only' : 'both',
                 'valuetopup_id' => $item['operatorId'],
             ];
         }
@@ -255,8 +255,9 @@ class RechargeController extends Controller
                 'seven' => '7',
                 'eight' => '8',
                 'nine' => '9',
-                'ten' => '10'
+                'ten' => '10',
             ];
+
             return strtr($text, $replacements);
         };
 
@@ -286,7 +287,6 @@ class RechargeController extends Controller
         return null;
     }
 
-
     /**
      * Fetch merged products for an operator: DingConnect + Valuetopup.
      *
@@ -314,7 +314,7 @@ class RechargeController extends Controller
         // =========================================================================
         $dingResult = $dingService->getProducts($countryIso, $providerCode);
 
-        if ($dingResult['success'] && !empty($dingResult['data']['Items'] ?? [])) {
+        if ($dingResult['success'] && ! empty($dingResult['data']['Items'] ?? [])) {
             $dingProducts = collect($dingResult['data']['Items'] ?? [])->map(function ($item) {
                 return $this->transformProduct($item);
             })->values();
@@ -322,9 +322,9 @@ class RechargeController extends Controller
             // Fetch product descriptions
             $skuCodes = $dingProducts->pluck('sku_code')->filter()->unique()->values()->all();
             $descriptions = [];
-            if (!empty($skuCodes)) {
+            if (! empty($skuCodes)) {
                 $descResult = $dingService->getProductDescriptions($skuCodes);
-                if ($descResult['success'] && !empty($descResult['data'])) {
+                if ($descResult['success'] && ! empty($descResult['data'])) {
                     foreach ($descResult['data'] as $descItem) {
                         $sku = $descItem['SkuCode'] ?? null;
                         if ($sku) {
@@ -354,7 +354,7 @@ class RechargeController extends Controller
         // =========================================================================
         $dingKeys = [];
         foreach ($allProducts as $p) {
-            $key = strtolower($p['product_type'] ?? 'rtr') . ':' . round((float) ($p['send_value'] ?? 0), 2);
+            $key = strtolower($p['product_type'] ?? 'rtr').':'.round((float) ($p['send_value'] ?? 0), 2);
             $dingKeys[$key] = true;
         }
 
@@ -362,7 +362,7 @@ class RechargeController extends Controller
         // 3. Fetch Valuetopup products and SKUs
         // =========================================================================
         $valuetopupId = (int) $request->query('valuetopup_id');
-        if (!$valuetopupId) {
+        if (! $valuetopupId) {
             $operator = Operator::where('provider_code', $providerCode)->first();
             $valuetopupId = (int) ($operator->valuetopup_operator_id ?? 0);
         }
@@ -370,7 +370,7 @@ class RechargeController extends Controller
         if ($valuetopupId > 0) {
             $productsResult = $vt->products($valuetopupId);
 
-            if (($productsResult['responseCode'] ?? '') === '000' && !empty($productsResult['payLoad'])) {
+            if (($productsResult['responseCode'] ?? '') === '000' && ! empty($productsResult['payLoad'])) {
                 foreach ($productsResult['payLoad'] as $product) {
                     $productId = $product['productId'];
 
@@ -387,7 +387,7 @@ class RechargeController extends Controller
                         // 4. Dedup: skip VT product if Ding already has same
                         //    category + denomination
                         // =============================================================
-                        $vtKey = strtolower($transformed['product_type'] ?? 'rtr') . ':' . round((float) ($transformed['send_value'] ?? 0), 2);
+                        $vtKey = strtolower($transformed['product_type'] ?? 'rtr').':'.round((float) ($transformed['send_value'] ?? 0), 2);
                         if (isset($dingKeys[$vtKey])) {
                             continue; // Ding already has this plan
                         }
@@ -397,6 +397,7 @@ class RechargeController extends Controller
                 }
             }
         }
+
         return response()->json(['success' => true, 'products' => $allProducts]);
     }
 
@@ -423,7 +424,7 @@ class RechargeController extends Controller
             $request->currency ?? 'GBP'
         );
 
-        if (!($result['responseCode'] ?? '') === '000' || empty($result['payLoad'])) {
+        if (! ($result['responseCode'] ?? '') === '000' || empty($result['payLoad'])) {
             return response()->json(['success' => false, 'error' => $result['responseMessage'] ?? 'Could not estimate cost'], 400);
         }
 
@@ -456,7 +457,7 @@ class RechargeController extends Controller
 
         $result = $dingService->getPromotions($request->country_isos, $request->provider_codes);
 
-        if (!$result['success']) {
+        if (! $result['success']) {
             return response()->json(['success' => true, 'promotions' => []]);
         }
 
@@ -491,7 +492,7 @@ class RechargeController extends Controller
             $request->send_currency_iso
         );
 
-        if (!$result['success']) {
+        if (! $result['success']) {
             return response()->json(['success' => false, 'error' => $result['error']], 400);
         }
 
@@ -519,7 +520,7 @@ class RechargeController extends Controller
 
         $result = $dingService->getProviderStatus($request->provider_code);
 
-        if (!$result['success']) {
+        if (! $result['success']) {
             return response()->json(['success' => false, 'error' => $result['error']], 400);
         }
 
@@ -548,7 +549,7 @@ class RechargeController extends Controller
         // Stored values are 5+ chars, or "0" meaning "not provided",
         // so anything shorter than 5 can never match a real value.
         // =====================================================================
-        $notRegistered = fn() => response()->json([
+        $notRegistered = fn () => response()->json([
             'success' => false,
             'error' => 'This number is not registered for recharges on this portal.',
         ], 422);
@@ -568,11 +569,11 @@ class RechargeController extends Controller
         $isPhone = $national !== null;
 
         if ($isPhone) {
-            $digits = '44' . $national; // canonical form for lookups and the response
+            $digits = '44'.$national; // canonical form for lookups and the response
         }
 
         $mobileVariants = $isPhone
-            ? ['44' . $national, '0' . $national, $national]
+            ? ['44'.$national, '0'.$national, $national]
             : [$digits];
 
         $allowed = AllowedNumber::where('active', true)
@@ -584,7 +585,7 @@ class RechargeController extends Controller
             })
             ->first();
 
-        if (!$allowed) {
+        if (! $allowed) {
             return $notRegistered();
         }
 
@@ -676,7 +677,8 @@ class RechargeController extends Controller
             try {
                 $result = $dingService->getAccountLookup($digits);
             } catch (\Throwable $e) {
-                Log::error('AccountLookup failed for ' . $digits . ': ' . $e->getMessage());
+                Log::error('AccountLookup failed for '.$digits.': '.$e->getMessage());
+
                 return response()->json([
                     'success' => false,
                     'error' => 'Could not verify this number right now. Please try again.',
@@ -694,10 +696,10 @@ class RechargeController extends Controller
 
             $providers = collect($data['Items'])->pluck('ProviderCode');
 
-            if (!$providers->contains($request->provider_code)) {
+            if (! $providers->contains($request->provider_code)) {
                 return response()->json([
                     'success' => false,
-                    'error' => 'This number does not belong to ' . $request->provider_code . '. Please check the number or change provider.',
+                    'error' => 'This number does not belong to '.$request->provider_code.'. Please check the number or change provider.',
                 ], 422);
             }
 
@@ -763,11 +765,18 @@ class RechargeController extends Controller
         $availableBalance = $walletService->getAvailableBalance($wallet);
 
         if ($availableBalance < $retailerCharged) {
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Insufficient wallet balance. Please top up your wallet.',
+                ], 422);
+            }
+
             return back()->with('error', 'Insufficient wallet balance. Please top up your wallet.');
         }
 
-        $orderReference = 'ORD-' . strtoupper(Str::random(12));
-        $receiptNumber = 'TXN-' . now()->format('Ymd') . '-' . str_pad(Transaction::whereDate('created_at', today())->count() + 1, 5, '0', STR_PAD_LEFT);
+        $orderReference = 'ORD-'.strtoupper(Str::random(12));
+        $receiptNumber = 'TXN-'.now()->format('Ymd').'-'.str_pad(Transaction::whereDate('created_at', today())->count() + 1, 5, '0', STR_PAD_LEFT);
 
         // Determine account number for SendTransfer
         $accountNumber = $isPin ? '' : preg_replace('/[^0-9]/', '', $request->mobile_number);
@@ -776,7 +785,7 @@ class RechargeController extends Controller
         if ($request->region_code) {
             $settings['RegionCode'] = $request->region_code;
         }
-        if ($request->provider_code && !$operator) {
+        if ($request->provider_code && ! $operator) {
             $settings['ProviderCode'] = $request->provider_code;
         }
         if ($request->redemption_type) {
@@ -789,7 +798,7 @@ class RechargeController extends Controller
             }
         }
 
-        $transaction = DB::transaction(function () use ($user, $operator, $country, $request, $retailerCharged, $orderReference, $receiptNumber, $accountNumber, $settings, $isPin, $gateway) {
+        $transaction = DB::transaction(function () use ($user, $operator, $country, $request, $retailerCharged, $orderReference, $receiptNumber, $accountNumber, $gateway) {
             $transaction = Transaction::create([
                 'user_id' => $user->id,
                 'mobile_number' => $accountNumber ?: ($request->mobile_number ?? ''),
@@ -819,7 +828,7 @@ class RechargeController extends Controller
                 'ding_order_reference' => $orderReference,
                 'receipt_number' => $receiptNumber,
                 'gateway' => $gateway,
-                'valuetopup_correlation_id' => $gateway === 'valuetopup' ? 'VT-' . strtoupper(Str::random(16)) : null,
+                'valuetopup_correlation_id' => $gateway === 'valuetopup' ? 'VT-'.strtoupper(Str::random(16)) : null,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
@@ -833,7 +842,15 @@ class RechargeController extends Controller
 
         ProcessRechargeJob::dispatch($transaction, $accountNumber, $settings);
 
-        broadcast(new \App\Events\RechargeProcessing($transaction));
+        broadcast(new RechargeProcessing($transaction));
+
+        if ($request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Recharge request submitted. Processing...',
+                'data' => ['transaction' => $transaction->fresh()->load(['operator', 'country'])],
+            ], 202);
+        }
 
         return redirect()->route('retailer.transactions.show', $transaction->id)
             ->with('success', 'Recharge request submitted! Processing...');
@@ -888,7 +905,7 @@ class RechargeController extends Controller
      * Fetch product description from DingConnect (always from API).
      * GET /retailer/recharge/product-description?sku_code=xxx
      */
-    public function productDescription(Request $request, DingConnectService $dingService): \Illuminate\Http\JsonResponse
+    public function productDescription(Request $request, DingConnectService $dingService): JsonResponse
     {
         $request->validate([
             'sku_code' => 'required|string',
@@ -896,7 +913,7 @@ class RechargeController extends Controller
 
         $result = $dingService->getProductDescriptions([$request->sku_code]);
 
-        if (!$result['success'] || empty($result['data'])) {
+        if (! $result['success'] || empty($result['data'])) {
             return response()->json(['success' => false, 'description_markdown' => null, 'readmore_markdown' => null]);
         }
 

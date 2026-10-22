@@ -34,7 +34,7 @@ class AllowedNumberController extends Controller
 
         if ($currentFolder || $search !== '') {
             $numbers = AllowedNumber::query()
-                ->when($currentFolder, fn($q) => $currentFolder['is_manual']
+                ->when($currentFolder, fn ($q) => $currentFolder['is_manual']
                     ? $q->whereNull('file_name')
                     : $q->where('file_name', $currentFolder['name']))
                 ->when($search !== '', function ($q) use ($search) {
@@ -45,7 +45,7 @@ class AllowedNumberController extends Controller
                             ->orWhere('provider', 'like', "%{$search}%");
                     });
                 })
-                ->when($request->boolean('inactive'), fn($q) => $q->where('active', false))
+                ->when($request->boolean('inactive'), fn ($q) => $q->where('active', false))
                 ->orderByDesc('created_at')
                 ->paginate(50)
                 ->withQueryString();
@@ -55,13 +55,19 @@ class AllowedNumberController extends Controller
                 ->get();
         }
 
-        return Inertia::render('Admin/AllowedNumbers/Index', [
+        $data = [
             'folders' => $folders,
             'manualCount' => AllowedNumber::whereNull('file_name')->count(),
             'numbers' => $numbers,
             'currentFolder' => $currentFolder,
             'filters' => $filters,
-        ]);
+        ];
+
+        if ($request->is('api/*')) {
+            return response()->json(['success' => true, 'data' => $data]);
+        }
+
+        return Inertia::render('Admin/AllowedNumbers/Index', $data);
     }
 
     // ---------- Manual entry ----------
@@ -72,7 +78,11 @@ class AllowedNumberController extends Controller
         $validated = $request->validate($this->rules(null, $request->input('serial')), $this->messages());
 
         unset($validated['active']);
-        AllowedNumber::create($validated + ['user_id' => Auth::id(), 'active' => true]);
+        $allowedNumber = AllowedNumber::create($validated + ['user_id' => Auth::id(), 'active' => true]);
+
+        if ($request->is('api/*')) {
+            return response()->json(['success' => true, 'data' => $allowedNumber], 201);
+        }
 
         return back()->with('success', 'Number added successfully.');
     }
@@ -87,12 +97,20 @@ class AllowedNumberController extends Controller
 
         $allowedNumber->update($validated);
 
+        if ($request->is('api/*')) {
+            return response()->json(['success' => true, 'data' => $allowedNumber->fresh()]);
+        }
+
         return back()->with('success', 'Updated successfully.');
     }
 
     public function destroy(AllowedNumber $allowedNumber)
     {
         $allowedNumber->delete();
+
+        if (request()->is('api/*')) {
+            return response()->json(['success' => true, 'message' => 'Number removed.']);
+        }
 
         return back()->with('success', 'Removed successfully.');
     }
@@ -108,6 +126,12 @@ class AllowedNumberController extends Controller
 
         // same file name can't be uploaded twice (case-insensitive under utf8mb4_unicode_ci)
         if (AllowedNumberFile::where('name', $name)->exists()) {
+            if ($request->is('api/*')) {
+                throw ValidationException::withMessages([
+                    'file' => "A file named \"{$name}\" was already uploaded. Rename it or delete the existing one first.",
+                ]);
+            }
+
             return back()->withErrors([
                 'file' => "A file named \"{$name}\" was already uploaded. Rename it or delete the existing one first.",
             ]);
@@ -116,27 +140,37 @@ class AllowedNumberController extends Controller
         $handle = fopen($upload->getRealPath(), 'r');
         $header = fgetcsv($handle, 0, ',', '"', '\\');
 
-        if (!$header || $header === [null]) {
+        if (! $header || $header === [null]) {
             fclose($handle);
+            if ($request->is('api/*')) {
+                throw ValidationException::withMessages(['file' => 'The uploaded file is empty.']);
+            }
+
             return back()->withErrors(['file' => 'The uploaded file is empty.']);
         }
 
         $header[0] = preg_replace('/^\xEF\xBB\xBF/', '', (string) $header[0]); // strip Excel BOM
-        $col = array_flip(array_map(fn($h) => strtolower(trim((string) $h)), $header));
+        $col = array_flip(array_map(fn ($h) => strtolower(trim((string) $h)), $header));
 
         $requiredColumns = ['mobile', 'serial', 'provider', 'country'];
         $missingColumns = [];
 
         foreach ($requiredColumns as $required) {
-            if (!isset($col[$required])) {
+            if (! isset($col[$required])) {
                 $missingColumns[] = "\"{$required}\"";
             }
         }
 
         // 2. Reject the file immediately if any mandatory column is missing
-        if (!empty($missingColumns)) {
+        if (! empty($missingColumns)) {
             fclose($handle);
             $missingList = implode(', ', $missingColumns);
+            if ($request->is('api/*')) {
+                throw ValidationException::withMessages([
+                    'file' => "The CSV file is missing mandatory column headers: {$missingList}. Please ensure your file includes mobile, serial, provider and country columns.",
+                ]);
+            }
+
             return back()->withErrors([
                 'file' => "The CSV file is missing mandatory column headers: {$missingList}. Please ensure your file includes mobile, serial, provider and country columns.",
             ]);
@@ -153,7 +187,7 @@ class AllowedNumberController extends Controller
         while (($cells = fgetcsv($handle, 0, ',', '"', '\\')) !== false) {
             $line++;
 
-            if (count(array_filter($cells, fn($c) => trim((string) $c) !== '')) === 0) {
+            if (count(array_filter($cells, fn ($c) => trim((string) $c) !== '')) === 0) {
                 continue; // blank line
             }
 
@@ -165,12 +199,14 @@ class AllowedNumberController extends Controller
             // skip only when BOTH are missing/invalid
             if ($mobile === '0' && $serial === '0') {
                 $skipped[] = ['line' => $line, 'mobile' => $rawMobile, 'serial' => $rawSerial, 'reason' => 'invalid'];
+
                 continue;
             }
 
-            $key = $mobile . '|' . strtolower($serial);
+            $key = $mobile.'|'.strtolower($serial);
             if (isset($seen[$key])) {
                 $skipped[] = ['line' => $line, 'mobile' => $mobile, 'serial' => $serial, 'reason' => 'duplicate_in_file'];
+
                 continue;
             }
             $seen[$key] = true;
@@ -187,11 +223,11 @@ class AllowedNumberController extends Controller
         // pairs that already exist in the table
         $existing = [];
         $remember = function ($r) use (&$existing) {
-            $existing[$r->mobile . '|' . strtolower($r->serial)] = true;
+            $existing[$r->mobile.'|'.strtolower($r->serial)] = true;
         };
 
-        $mobiles = array_values(array_unique(array_filter(array_column($rows, 'mobile'), fn($m) => $m !== '0')));
-        $serials = array_values(array_unique(array_filter(array_column($rows, 'serial'), fn($s) => $s !== '0')));
+        $mobiles = array_values(array_unique(array_filter(array_column($rows, 'mobile'), fn ($m) => $m !== '0')));
+        $serials = array_values(array_unique(array_filter(array_column($rows, 'serial'), fn ($s) => $s !== '0')));
 
         foreach (array_chunk($mobiles, 1000) as $chunk) {
             AllowedNumber::whereIn('mobile', $chunk)->get(['mobile', 'serial'])->each($remember);
@@ -202,8 +238,9 @@ class AllowedNumberController extends Controller
 
         $toInsert = [];
         foreach ($rows as $r) {
-            if (isset($existing[$r['mobile'] . '|' . strtolower($r['serial'])])) {
+            if (isset($existing[$r['mobile'].'|'.strtolower($r['serial'])])) {
                 $skipped[] = ['line' => null, 'mobile' => $r['mobile'], 'serial' => $r['serial'], 'reason' => 'duplicate_existing'];
+
                 continue;
             }
             $toInsert[] = $r;
@@ -227,7 +264,7 @@ class AllowedNumberController extends Controller
                 ]);
 
                 foreach (array_chunk($toInsert, 500) as $chunk) {
-                    AllowedNumber::insert(array_map(fn($r) => $r + [
+                    AllowedNumber::insert(array_map(fn ($r) => $r + [
                         'user_id' => Auth::id(),
                         'file_name' => $name,
                         'active' => true,
@@ -241,6 +278,19 @@ class AllowedNumberController extends Controller
             throw $e;
         }
 
+        if ($request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => "Uploaded {$name}: {$imported} imported, {$skippedCount} skipped.",
+                'data' => [
+                    'file' => AllowedNumberFile::where('name', $name)->first(),
+                    'imported' => $imported,
+                    'skipped' => $skippedCount,
+                    'import_results' => array_slice($skipped, 0, 200),
+                ],
+            ], 201);
+        }
+
         return back()
             ->with('success', "Uploaded {$name}: {$imported} imported, {$skippedCount} skipped.")
             ->with('import_results', array_slice($skipped, 0, 200));
@@ -248,7 +298,11 @@ class AllowedNumberController extends Controller
 
     public function downloadFile(AllowedNumberFile $allowedNumberFile)
     {
-        if (!Storage::exists($allowedNumberFile->path)) {
+        if (! Storage::exists($allowedNumberFile->path)) {
+            if (request()->is('api/*')) {
+                abort(404, 'The stored file could not be found on the server.');
+            }
+
             return back()->with('error', 'The stored file could not be found on the server.');
         }
 
@@ -263,6 +317,10 @@ class AllowedNumberController extends Controller
         });
 
         Storage::delete($allowedNumberFile->path);
+
+        if (request()->is('api/*')) {
+            return response()->json(['success' => true, 'message' => "Deleted \"{$allowedNumberFile->name}\" and its numbers."]);
+        }
 
         return redirect('/admin/allowed-numbers')
             ->with('success', "Deleted \"{$allowedNumberFile->name}\" and its numbers.");
@@ -299,7 +357,7 @@ class AllowedNumberController extends Controller
 
         // UK trunk-prefix form 0XXXXXXXXXX -> 44XXXXXXXXXX
         if (strlen($c) === 11 && str_starts_with($c, '0')) {
-            $c = '44' . substr($c, 1);
+            $c = '44'.substr($c, 1);
         }
 
         return strlen($c) >= 5 ? $c : '0';
@@ -308,6 +366,7 @@ class AllowedNumberController extends Controller
     private function serialOrZero(?string $v): string
     {
         $c = $this->cleanSerial($v);
+
         return strlen($c) >= 5 ? $c : '0';
     }
 
@@ -334,7 +393,7 @@ class AllowedNumberController extends Controller
                 'string',
                 'max:50',
                 Rule::unique('allowed_numbers', 'mobile')
-                    ->where(fn($q) => $q->where('serial', $serial))
+                    ->where(fn ($q) => $q->where('serial', $serial))
                     ->ignore($ignoreId),
             ],
             'serial' => ['required', 'string', 'max:100'],

@@ -2,19 +2,17 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\RetailersExport;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Wallet;
-use App\Models\WalletLedger;
-use App\Models\Transaction;
 use App\Services\WalletService;
-use App\Services\SmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\RetailersExport;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
+use Spatie\Permission\Models\Role;
 
 class RetailerController extends Controller
 {
@@ -36,20 +34,20 @@ class RetailerController extends Controller
     {
         return Excel::download(
             new RetailersExport($request->only('search', 'status', 'kyc_status')),
-            'retailers_' . now()->format('Y-m-d') . '.xlsx'
+            'retailers_'.now()->format('Y-m-d').'.xlsx'
         );
     }
 
     public function show(User $retailer)
     {
-        $retailer->load(['wallet', 'transactions' => fn($q) => $q->with('operator')->latest()->limit(5)]);
+        $retailer->load(['wallet', 'transactions' => fn ($q) => $q->with('operator')->latest()->limit(5)]);
 
         return Inertia::render('Admin/Retailers/Show', compact('retailer'));
     }
 
     public function create()
     {
-        return Inertia::render("Admin/Retailers/Create");
+        return Inertia::render('Admin/Retailers/Create');
     }
 
     public function store(Request $request)
@@ -73,6 +71,7 @@ class RetailerController extends Controller
             'email_verified_at' => now(), // Auto-verify admin-created accounts
         ]);
 
+        Role::firstOrCreate(['name' => 'retailer', 'guard_name' => 'web']);
         $user->assignRole('retailer');
 
         // Create wallet
@@ -83,7 +82,7 @@ class RetailerController extends Controller
 
     public function edit(User $retailer)
     {
-        return Inertia::render("Admin/Retailers/Edit", compact("retailer"));
+        return Inertia::render('Admin/Retailers/Edit', compact('retailer'));
     }
 
     public function update(Request $request, User $retailer)
@@ -120,6 +119,7 @@ class RetailerController extends Controller
             'is_active' => true,
         ]);
 
+        Role::firstOrCreate(['name' => 'retailer', 'guard_name' => 'web']);
         $retailer->assignRole('retailer');
 
         return back()->with('success', 'Retailer KYC approved!');
@@ -127,7 +127,7 @@ class RetailerController extends Controller
 
     public function block(Request $request, User $retailer)
     {
-        $retailer->update(['is_active' => !$retailer->is_active]);
+        $retailer->update(['is_active' => ! $retailer->is_active]);
 
         return back()->with('success', $retailer->is_active ? 'Retailer activated!' : 'Retailer deactivated!');
     }
@@ -154,6 +154,8 @@ class RetailerController extends Controller
         ]);
 
         if ($validated['action'] === 'approve') {
+            Role::firstOrCreate(['name' => 'retailer', 'guard_name' => 'web']);
+            $retailer->assignRole('retailer');
             $retailer->update([
                 'kyc_status' => 'approved',
                 'kyc_verified_at' => now(),
@@ -166,7 +168,7 @@ class RetailerController extends Controller
             ]);
         }
 
-        return back()->with('success', 'KYC ' . $validated['action'] . 'ed successfully!');
+        return back()->with('success', 'KYC '.$validated['action'].'ed successfully!');
     }
 
     public function destroy(User $retailer)

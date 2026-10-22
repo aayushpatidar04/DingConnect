@@ -1,30 +1,20 @@
 <?php
 
-use App\Http\Controllers\Admin\{
-    DashboardController as AdminDashboardController,
-    OperatorController as AdminOperatorController,
-    RetailerController as AdminRetailerController,
-    SettingController as AdminSettingController,
-    TransactionController as AdminTransactionController,
-    AllowedNumberController
-};
-use App\Http\Controllers\Api\{
-    CountryController,
-    OperatorController as ApiOperatorController,
-    TransactionController as ApiTransactionController,
-    WalletController as ApiWalletController,
-    WebhookController
-};
+use App\Http\Controllers\Admin\AllowedNumberController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\OperatorController as AdminOperatorController;
+use App\Http\Controllers\Admin\RetailerController as AdminRetailerController;
+use App\Http\Controllers\Admin\SettingController as AdminSettingController;
+use App\Http\Controllers\Admin\TransactionController as AdminTransactionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LandingController;
-use App\Http\Controllers\Retailer\{
-    DashboardController as RetailerDashboardController,
-    ProfileController as RetailerProfileController,
-    RechargeController,
-    TransactionController as RetailerTransactionController,
-    WalletController as RetailerWalletController
-};
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Retailer\DashboardController as RetailerDashboardController;
+use App\Http\Controllers\Retailer\ProfileController as RetailerProfileController;
+use App\Http\Controllers\Retailer\RechargeController;
+use App\Http\Controllers\Retailer\TransactionController as RetailerTransactionController;
+use App\Http\Controllers\Retailer\WalletController as RetailerWalletController;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -132,26 +122,6 @@ Route::prefix('retailer')->name('retailer.')->middleware(['auth', 'retailer', 'k
 });
 
 // ==========================================================================
-// REST API (auth:sanctum)
-// ==========================================================================
-
-Route::prefix('api')->name('api.')->group(function () {
-    Route::post('/auth/register', [\App\Http\Controllers\Api\Auth\AuthController::class, 'register']);
-    Route::post('/auth/login', [\App\Http\Controllers\Api\Auth\AuthController::class, 'login']);
-    Route::post('/auth/logout', [\App\Http\Controllers\Api\Auth\AuthController::class, 'logout'])->middleware('auth:sanctum');
-    Route::get('/auth/me', [\App\Http\Controllers\Api\Auth\AuthController::class, 'me'])->middleware('auth:sanctum');
-
-    Route::get('/countries', [CountryController::class, 'index']);
-    Route::get('/countries/{iso}/operators', [ApiOperatorController::class, 'byCountry']);
-    Route::get('/operators/search', [ApiOperatorController::class, 'search']);
-
-    Route::post('/transactions/topup', [ApiTransactionController::class, 'topUp'])->middleware('auth:sanctum');
-    Route::get('/transactions', [ApiTransactionController::class, 'history'])->middleware('auth:sanctum');
-    Route::get('/transactions/{id}', [ApiTransactionController::class, 'show'])->middleware('auth:sanctum');
-    Route::get('/transactions/{id}/status', [ApiTransactionController::class, 'status'])->middleware('auth:sanctum');
-});
-
-// ==========================================================================
 // BROADCASTING
 // ==========================================================================
 
@@ -170,7 +140,7 @@ Route::get('/retailer', fn () => redirect('/retailer/dashboard'))->middleware(['
 // ==========================================================================
 
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [\App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });

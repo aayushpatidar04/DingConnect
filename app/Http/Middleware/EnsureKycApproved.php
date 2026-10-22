@@ -23,12 +23,16 @@ class EnsureKycApproved
             default => 'Your KYC is not approved. Please contact support.',
         };
 
+        if ($request->is('api/*')) {
+            return response()->json(['message' => $message], 403);
+        }
+
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         // The recharge/* endpoints are likely called via fetch/axios, so return JSON for those
-        if ($request->expectsJson() && !$request->header('X-Inertia')) {
+        if ($request->expectsJson() && ! $request->header('X-Inertia')) {
             return response()->json(['message' => $message], 403);
         }
 
