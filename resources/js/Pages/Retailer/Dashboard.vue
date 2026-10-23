@@ -2,6 +2,11 @@
 import { Head } from "@inertiajs/vue3";
 import RetailerLayout from "@/Layouts/RetailerLayout.vue";
 import FlashMessage from "@/Components/FlashMessage.vue";
+import {
+    benefitLabel,
+    offerRange,
+    formatOfferDate,
+} from "@/Composables/useOffers";
 
 defineOptions({ layout: RetailerLayout });
 
@@ -9,6 +14,7 @@ const props = defineProps({
     stats: Object,
     recentTransactions: Array,
     chartData: Array,
+    offers: { type: Array, default: () => [] },
 });
 </script>
 
@@ -56,6 +62,59 @@ const props = defineProps({
                         href="/retailer/wallet"
                         class="mt-2 inline-block text-sm font-medium text-red-600 underline hover:text-red-600"
                         >Top Up Now</a
+                    >
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Offers -->
+        <div v-if="offers.length">
+            <h2 class="text-lg font-semibold text-ink-900 mb-3">
+                Offers for you
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div
+                    v-for="offer in offers"
+                    :key="offer.id"
+                    class="bg-surface-2 rounded-2xl border border-primary/30 p-5"
+                >
+                    <div class="flex items-start justify-between gap-3">
+                        <h3 class="font-semibold text-ink-900">
+                            {{ offer.title }}
+                        </h3>
+                        <span
+                            class="px-2 py-0.5 rounded-full text-xs bg-primary/15 text-primary-light whitespace-nowrap"
+                            >{{ benefitLabel(offer) }}</span
+                        >
+                    </div>
+                    <p
+                        v-if="offer.description"
+                        class="text-sm text-ink-500 mt-1"
+                    >
+                        {{ offer.description }}
+                    </p>
+                    <div class="flex flex-wrap gap-1.5 mt-3">
+                        <span
+                            v-for="name in offer.providers.length
+                                ? offer.providers
+                                : ['All providers']"
+                            :key="name"
+                            class="px-2 py-0.5 rounded-lg text-xs bg-surface-3 text-ink-700"
+                            >{{ name }}</span
+                        >
+                    </div>
+                    <div class="text-xs text-ink-500 mt-3 space-y-0.5">
+                        <div>Recharge: {{ offerRange(offer) }}</div>
+                        <div>Ends {{ formatOfferDate(offer.expires_at) }}</div>
+                        <div v-if="offer.remaining !== null">
+                            {{ offer.remaining }}
+                            {{ offer.remaining === 1 ? "use" : "uses" }} left
+                        </div>
+                    </div>
+                    <a
+                        href="/retailer/recharge"
+                        class="inline-block mt-3 text-sm font-medium text-primary-light hover:text-primary"
+                        >Recharge now &rarr;</a
                     >
                 </div>
             </div>

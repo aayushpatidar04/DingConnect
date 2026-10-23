@@ -2,8 +2,9 @@
 import { Head, useForm } from "@inertiajs/vue3";
 import RetailerLayout from "@/Layouts/RetailerLayout.vue";
 import ProductCategories from "@/Components/ProductCategories.vue";
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import FlashMessage from "@/Components/FlashMessage.vue";
+import { benefitLabel, formatOfferDate } from "@/Composables/useOffers";
 
 defineOptions({ layout: RetailerLayout });
 
@@ -92,6 +93,7 @@ const form = useForm({
     receive_value_excluding_tax: 0,
     gateway: "ding",
     valuetopup_sku_id: null,
+    offer_id: null,
 });
 
 // =========================================================================
@@ -495,7 +497,7 @@ function handlePhoneInput() {
     if (rawDigits.length >= 10) {
         // Wait for 600ms of typing inactivity before running the API check
         debounceTimer = setTimeout(async () => {
-            await performBackendValidation();
+        await performBackendValidation();
             phoneInputRef.value?.focus();
         }, 1200);
     }
@@ -519,7 +521,7 @@ async function performBackendValidation() {
             `/retailer/recharge/validate-number?${params.toString()}`,
         );
         const data = await res.json();
-
+        
         if (!data.success) {
             errorMessage.value = data.error || "Validation failed.";
             isNumberVerified.value = false;
@@ -699,6 +701,8 @@ function doSubmit() {
         form.valuetopup_sku_id = null;
     }
 
+    form.offer_id = isPinProduct.value ? null : selectedOfferId.value;
+
     form.post("/retailer/recharge", {
         onSuccess: () => {
             showReviewModal.value = false;
@@ -708,6 +712,7 @@ function doSubmit() {
         },
         onError: (errors) => {
             errorMessage.value = Object.values(errors)[0] || "Recharge failed";
+            if (errors.offer_id) fetchEligibleOffers();
             submitting.value = false;
         },
         onFinish: () => {
@@ -768,6 +773,39 @@ onMounted(() => {
         );
     }
 });
+
+// =========================================================================
+// OFFERS
+// =========================================================================
+
+const eligibleOffers = ref([]);
+const selectedOfferId = ref(null);
+const offersLoading = ref(false);
+
+async function fetchEligibleOffers() {
+    selectedOfferId.value = null;
+    eligibleOffers.value = [];
+
+    if (currentStep.value !== 5 || isPinProduct.value) return;
+
+    const operatorId = selectedProvider.value?.provider_id;
+    const amount = Number(form.send_value);
+    if (!operatorId || !amount) return;
+
+    offersLoading.value = true;
+    try {
+        const { data } = await window.axios.get("/retailer/offers/eligible", {
+            params: { operator_id: operatorId, amount },
+        });
+        eligibleOffers.value = data.offers ?? [];
+    } catch (e) {
+        eligibleOffers.value = [];
+    } finally {
+        offersLoading.value = false;
+    }
+}
+
+watch([() => currentStep.value, () => form.send_value], fetchEligibleOffers);
 </script>
 
 <template>
@@ -1243,7 +1281,7 @@ onMounted(() => {
                     <p>
                         ✓ Number verified successfully. This is MK ALL NETWORK
                         SIM ({{ allowedOperator }})
-                    </p>
+                </p>
                     <p v-if="displayedSerialNumber">
                         Serial:
                         <span class="font-mono bg-surface-3 px-1 rounded">{{
@@ -1472,6 +1510,81 @@ onMounted(() => {
                             {{ freeRangePricing.face_value_currency || "GBP" }}
                             {{ freeRangePricing.face_value.toFixed(2) }}
                         </div>
+                    </div>
+                </div>
+
+                <!-- Offers: only one can be used per recharge, and it is optional -->
+                <div
+                    v-if="!isPinProduct && (offersLoading || eligibleOffers.length)"
+                    class="mb-5"
+                >
+                    <div class="text-sm font-medium text-ink-900 mb-2">
+                        Available offers
+                        <span class="text-ink-500 font-normal"
+                            >(choose one, or none)</span
+                        >
+                    </div>
+                    <div v-if="offersLoading" class="text-sm text-ink-500">
+                        Checking offers...
+                    </div>
+                    <div v-else class="space-y-2">
+                        <label
+                            v-for="offer in eligibleOffers"
+                            :key="offer.id"
+                            class="flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition"
+                            :class="
+                                selectedOfferId === offer.id
+                                    ? 'border-primary bg-primary/10'
+                                    : 'border-surface-3 bg-surface-3 hover:border-primary/50'
+                            "
+                        >
+                            <input
+                                type="radio"
+                                name="offer"
+                                :checked="selectedOfferId === offer.id"
+                                @change="selectedOfferId = offer.id"
+                                class="mt-1"
+                            />
+                            <div class="flex-1">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <span class="font-medium text-ink-900">{{
+                                        offer.title
+                                    }}</span>
+                                    <span
+                                        class="text-sm font-semibold text-primary-light"
+                                        >You get £{{ offer.benefit.toFixed(2) }} back</span
+                                    >
+                                </div>
+                                <div class="text-xs text-ink-500 mt-0.5">
+                                    {{ benefitLabel(offer) }} · ends
+                                    {{ formatOfferDate(offer.expires_at) }}
+                                    <template v-if="offer.remaining !== null">
+                                        · {{ offer.remaining }} use{{
+                                            offer.remaining === 1 ? "" : "s"
+                                        }}
+                                        left
+                                    </template>
+                                </div>
+                            </div>
+                        </label>
+                        <label
+                            class="flex items-center gap-3 rounded-xl border p-3 cursor-pointer transition"
+                            :class="
+                                selectedOfferId === null
+                                    ? 'border-primary bg-primary/10'
+                                    : 'border-surface-3 bg-surface-3 hover:border-primary/50'
+                            "
+                        >
+                            <input
+                                type="radio"
+                                name="offer"
+                                :checked="selectedOfferId === null"
+                                @change="selectedOfferId = null"
+                            />
+                            <span class="text-sm text-ink-900"
+                                >No offer for this recharge</span
+                            >
+                        </label>
                     </div>
                 </div>
 

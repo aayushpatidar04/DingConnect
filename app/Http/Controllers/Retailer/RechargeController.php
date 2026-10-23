@@ -207,7 +207,7 @@ class RechargeController extends Controller
                 // No DingConnect match — create a new operator row
                 $operator = Operator::updateOrCreate([
                     'provider_code' => 'vt-' . $item['operatorId'],
-                ], [
+                ],[
                     'name' => $vtName,
                     'slug' => Str::slug($vtName),
                     'valuetopup_operator_id' => $item['operatorId'],
@@ -286,7 +286,7 @@ class RechargeController extends Controller
 
         return null;
     }
-
+    
     /**
      * Fetch merged products for an operator: DingConnect + Valuetopup.
      *
@@ -397,7 +397,6 @@ class RechargeController extends Controller
                 }
             }
         }
-
         return response()->json(['success' => true, 'products' => $allProducts]);
     }
 
@@ -605,112 +604,112 @@ class RechargeController extends Controller
         // =====================================================================
         if ($targetMobile) {
             if ($gateway === 'valuetopup') {
-                // // Resolve VT operator ID from the selected operator
-                // $operator = Operator::where('provider_code', $request->provider_code)
-                //     ->orWhere('provider_code', $request->input('valuetopup_id'))
-                //     ->first();
-    
-                // $valuetopupId = null;
-                // if ($operator) {
-                //     $valuetopupId = (int) ($operator->valuetopup_operator_id ?? 0);
-                // }
-    
-                // if (!$valuetopupId) {
-                //     // Fallback: try to infer from provider_code "vt-123"
-                //     if (str_starts_with($request->provider_code, 'vt-')) {
-                //         $valuetopupId = (int) substr($request->provider_code, 3);
-                //     }
-                // }
-    
-                // if (!$valuetopupId) {
-                //     return response()->json([
-                //         'success' => false,
-                //         'error' => 'Could not resolve operator for validation.',
-                //     ], 400);
-                // }
-    
-                // // VT Mobile Lookup
-                // try {
-                //     $result = $vtService->lookupMobile($digits);
-                // } catch (\Throwable $e) {
-                //     Log::error('VT Mobile Lookup failed for ' . $digits . ': ' . $e->getMessage());
-                //     return response()->json([
-                //         'success' => false,
-                //         'error' => 'Could not verify this number right now. Please try again.',
-                //     ], 500);
-                // }
-    
-                // if (($result['responseCode'] ?? '') !== '000' || empty($result['payLoad'])) {
-                //     return response()->json([
-                //         'success' => false,
-                //         'error' => $result['responseMessage'] ?? 'This number could not be verified. Please check it and try again.',
-                //     ], 422);
-                // }
-    
-                // $payload = $result['payLoad'];
-    
-                // // Check if the selected operator appears in the lookup results
-                // $lookupOperatorId = (int) ($payload[0]['operatorId'] ?? 0);
-                // $lookupOperatorIds = [];
-    
-                // // Some responses may return multiple operators
-                // if (isset($payload['operators']) && is_array($payload['operators'])) {
-                //     foreach ($payload['operators'] as $op) {
-                //         $lookupOperatorIds[] = (int) ($op['operatorId'] ?? $op['id'] ?? 0);
-                //     }
-                // }
-    
-                // $allIds = $lookupOperatorIds ?: [$lookupOperatorId];
-    
-                // if (!in_array($valuetopupId, $allIds)) {
-                //     $operatorName = $operator->name ?? $request->provider_code;
-                //     return response()->json([
-                //         'success' => false,
-                //         'error' => "This number does not belong to {$operatorName}. Please check the number or change provider.",
-                //     ], 422);
-                // }
-    
-                return response()->json([
-                    'success' => true,
-                    'account_number' => $digits,
-                    'gateway' => 'valuetopup',
-                    'provider' => $allowed->provider,
-                ]);
-            }
+            // // Resolve VT operator ID from the selected operator
+            // $operator = Operator::where('provider_code', $request->provider_code)
+            //     ->orWhere('provider_code', $request->input('valuetopup_id'))
+            //     ->first();
 
-            // =====================================================================
-            // DINGCONNECT — AccountLookup with full 44-prefixed number
-            // =====================================================================
+            // $valuetopupId = null;
+            // if ($operator) {
+            //     $valuetopupId = (int) ($operator->valuetopup_operator_id ?? 0);
+            // }
+
+            // if (!$valuetopupId) {
+            //     // Fallback: try to infer from provider_code "vt-123"
+            //     if (str_starts_with($request->provider_code, 'vt-')) {
+            //         $valuetopupId = (int) substr($request->provider_code, 3);
+            //     }
+            // }
+
+            // if (!$valuetopupId) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'error' => 'Could not resolve operator for validation.',
+            //     ], 400);
+            // }
+
+            // // VT Mobile Lookup
+            // try {
+            //     $result = $vtService->lookupMobile($digits);
+            // } catch (\Throwable $e) {
+            //     Log::error('VT Mobile Lookup failed for ' . $digits . ': ' . $e->getMessage());
+            //     return response()->json([
+            //         'success' => false,
+            //         'error' => 'Could not verify this number right now. Please try again.',
+            //     ], 500);
+            // }
+
+            // if (($result['responseCode'] ?? '') !== '000' || empty($result['payLoad'])) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'error' => $result['responseMessage'] ?? 'This number could not be verified. Please check it and try again.',
+            //     ], 422);
+            // }
+
+            // $payload = $result['payLoad'];
+
+            // // Check if the selected operator appears in the lookup results
+            // $lookupOperatorId = (int) ($payload[0]['operatorId'] ?? 0);
+            // $lookupOperatorIds = [];
+
+            // // Some responses may return multiple operators
+            // if (isset($payload['operators']) && is_array($payload['operators'])) {
+            //     foreach ($payload['operators'] as $op) {
+            //         $lookupOperatorIds[] = (int) ($op['operatorId'] ?? $op['id'] ?? 0);
+            //     }
+            // }
+
+            // $allIds = $lookupOperatorIds ?: [$lookupOperatorId];
+
+            // if (!in_array($valuetopupId, $allIds)) {
+            //     $operatorName = $operator->name ?? $request->provider_code;
+            //     return response()->json([
+            //         'success' => false,
+            //         'error' => "This number does not belong to {$operatorName}. Please check the number or change provider.",
+            //     ], 422);
+            // }
+
+            return response()->json([
+                'success' => true,
+                'account_number' => $digits,
+                'gateway' => 'valuetopup',
+                'provider' => $allowed->provider,
+            ]);
+        }
+
+        // =====================================================================
+        // DINGCONNECT — AccountLookup with full 44-prefixed number
+        // =====================================================================
     
             if ($gateway === 'ding') {
-                try {
+            try {
                     $result = $dingService->getAccountLookup($targetMobile);
-                } catch (\Throwable $e) {
+            } catch (\Throwable $e) {
                     Log::error('AccountLookup failed for ' . $targetMobile . ': ' . $e->getMessage());
     
-                    return response()->json([
-                        'success' => false,
-                        'error' => 'Could not verify this number right now. Please try again.',
-                    ], 500);
-                }
-    
-                $data = $result['data'] ?? $result;
-    
-                if (($data['ResultCode'] ?? 0) !== 1 || empty($data['Items'])) {
-                    return response()->json([
-                        'success' => false,
-                        'error' => 'This number could not be verified. Please check it and try again.',
-                    ], 422);
-                }
-    
-                $providers = collect($data['Items'])->pluck('ProviderCode');
-    
-                if (!$providers->contains($request->provider_code)) {
-                    return response()->json([
-                        'success' => false,
-                        'error' => 'This number does not belong to ' . $request->provider_code . '. Please check the number or change provider.',
-                    ], 422);
-                }
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Could not verify this number right now. Please try again.',
+                ], 500);
+            }
+
+            $data = $result['data'] ?? $result;
+
+            if (($data['ResultCode'] ?? 0) !== 1 || empty($data['Items'])) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'This number could not be verified. Please check it and try again.',
+                ], 422);
+            }
+
+            $providers = collect($data['Items'])->pluck('ProviderCode');
+
+            if (!$providers->contains($request->provider_code)) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'This number does not belong to ' . $request->provider_code . '. Please check the number or change provider.',
+                ], 422);
+            }
             }
         }
 
@@ -756,6 +755,7 @@ class RechargeController extends Controller
             'operator_id' => ['required', 'exists:operators,id'],
             'gateway' => ['nullable', 'string', 'in:ding,valuetopup'],
             'valuetopup_sku_id' => ['nullable', 'integer'],
+            'offer_id' => ['nullable', 'integer'],
         ]);
 
         $user = $request->user();
@@ -802,7 +802,7 @@ class RechargeController extends Controller
             }
         }
 
-        $transaction = DB::transaction(function () use ($user, $operator, $country, $request, $retailerCharged, $orderReference, $receiptNumber, $accountNumber, $gateway) {
+        $transaction = DB::transaction(function () use ($user, $operator, $country, $request, $retailerCharged, $orderReference, $receiptNumber, $accountNumber, $settings, $isPin, $gateway) {
             $transaction = Transaction::create([
                 'user_id' => $user->id,
                 'mobile_number' => $accountNumber ?: ($request->mobile_number ?? ''),
@@ -840,6 +840,18 @@ class RechargeController extends Controller
             $walletService = app(WalletService::class);
             $wallet = $walletService->getWallet($user);
             $walletService->hold($user->id, $retailerCharged, $transaction->id, "Hold for recharge - {$accountNumber}");
+
+            // Optional offer chosen by the retailer: reserve one use (throws if no longer valid,
+            // which rolls this whole recharge request back).
+            if ($request->filled('offer_id')) {
+                if ($isPin) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'offer_id' => 'Offers are not available for PIN purchases.',
+                    ]);
+                }
+
+                app(\App\Services\OfferService::class)->reserve($user, (int) $request->offer_id, $transaction);
+            }
 
             return $transaction;
         });

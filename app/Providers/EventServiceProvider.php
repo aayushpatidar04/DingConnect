@@ -11,10 +11,12 @@ class EventServiceProvider extends ServiceProvider
             \App\Listeners\SendRechargeSuccessNotification::class,
             \App\Listeners\SendRechargeSuccessSms::class,
             \App\Listeners\CreditRechargeCommission::class,
+            \App\Listeners\CreditOfferCashback::class,
         ],
         \App\Events\RechargeFailed::class => [
             \App\Listeners\SendRechargeFailedNotification::class,
             \App\Listeners\SendRechargeFailedSms::class,
+            \App\Listeners\ReleaseOfferRedemption::class,
         ],
         \App\Events\WalletCredited::class => [
             \App\Listeners\SendWalletCreditNotification::class,

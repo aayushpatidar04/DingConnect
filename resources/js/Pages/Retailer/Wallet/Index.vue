@@ -64,12 +64,15 @@ const sourceLabel = (topup) => {
     if (topup.payment_gateway === "commission") return "Commission";
     if (topup.payment_gateway === "bonus") return "Bonus";
     if (topup.payment_gateway === "admin") return "Admin credit";
+    if (topup.payment_gateway === "offer") return "Offer cashback";
     return topup.payment_method;
 };
 
 const sourceDetail = (topup) => {
     const r = topup.payment_response;
     if (r?.source === "admin") return r.description ?? "";
+    if (r?.source === "offer")
+        return [r.title, r.operator, r.number].filter(Boolean).join(" · ");
     if (!r || r.source !== "commission") return "";
     return [
         r.type === "first" ? "First top-up" : `Top-up #${r.sequence}`,

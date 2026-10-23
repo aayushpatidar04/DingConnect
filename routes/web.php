@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\{
     CommissionLevelController,
+    OfferController,
     CommissionRateController,
     CommissionReportController,
     RetailerLevelController,
@@ -24,6 +25,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Retailer\{
     CommissionController as RetailerCommissionController,
+    OfferController as RetailerOfferController,
     DashboardController as RetailerDashboardController,
     ProfileController as RetailerProfileController,
     RechargeController,
@@ -119,6 +121,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
 
     Route::get('commissions', [CommissionReportController::class, 'index'])->name('commissions.index');
     Route::get('commissions/export', [CommissionReportController::class, 'export'])->name('commissions.export');
+
+    // Offers
+    Route::get('offers', [OfferController::class, 'index'])->name('offers.index');
+    Route::post('offers', [OfferController::class, 'store'])->name('offers.store');
+    Route::get('offers/{offer}/redemptions', [OfferController::class, 'redemptions'])->name('offers.redemptions');
+    Route::put('offers/{offer}', [OfferController::class, 'update'])->name('offers.update');
+    Route::delete('offers/{offer}', [OfferController::class, 'destroy'])->name('offers.destroy');
 });
 
 // ==========================================================================
@@ -153,6 +162,7 @@ Route::prefix('retailer')->name('retailer.')->middleware(['auth', 'retailer', 'k
     Route::post('/recharge/estimate-cost', [RechargeController::class, 'estimateCost'])->name('recharge.estimate-cost');
 
     Route::get('/commissions', [RetailerCommissionController::class, 'index'])->name('commissions.index');
+    Route::get('/offers/eligible', [RetailerOfferController::class, 'eligible'])->name('offers.eligible');
 
     Route::get('/profile', [RetailerProfileController::class, 'index'])->name('profile.index');
     Route::put('/profile', [RetailerProfileController::class, 'update'])->name('profile.update');

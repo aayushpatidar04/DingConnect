@@ -66,6 +66,8 @@ class DashboardController extends Controller
             ];
         }
 
-        return Inertia::render('Retailer/Dashboard', compact('stats', 'recentTransactions', 'chartData'));
+        $offers = app(\App\Services\OfferService::class)->activeFor($user);
+
+        return Inertia::render('Retailer/Dashboard', compact('stats', 'recentTransactions', 'chartData', 'offers'));
     }
 }
