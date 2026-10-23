@@ -462,41 +462,52 @@ function backToProducts() {
 // =========================================================================
 // NUMBER INPUT (Step 4 — only for Immediate/Top-up)
 // =========================================================================
+const phoneInputRef = ref(null);
 
 const validatingNumber = ref(false);
-
-// Add a reactive state variable to track verification success
 const isNumberVerified = ref(false);
 const allowedOperator = ref("");
 
-// 1. Handle real-time input checks
-async function handlePhoneInput() {
-    // Reset states on new keystroke
+// Track these separately
+const displayedSerialNumber = ref("");
+const underlyingMobileNumber = ref("");
+
+// 1. Create a holder variable for the debounce timer
+let debounceTimer = null;
+
+// 2. Updated real-time input handler
+function handlePhoneInput() {
+    // Clear any pending validation timers immediately on a new keystroke
+    clearTimeout(debounceTimer);
+
+    // Reset verification states as the user is actively typing changes
     isNumberVerified.value = false;
     errorMessage.value = "";
+    displayedSerialNumber.value = "";
+    underlyingMobileNumber.value = "";
 
-    // Basic format/character validation runner (your original function)
     validatePhone();
     if (phoneError.value) return;
 
-    // Clean the number to count pure digits
-    const rawDigits = mobileNumber.value.replace(/[^0-9]/g, "");
+    const rawDigits = mobileNumber.value.replace(/[^A-Za-z0-9]/g, "");
 
-    // Trigger instant validation once it hits 10 digits
-    // (Adjust the length check if your input includes the country code prefix)
-    if (rawDigits.length === 10) {
-        await performBackendValidation();
+    // Only consider validation if it meets the minimum threshold length
+    if (rawDigits.length >= 10) {
+        // Wait for 600ms of typing inactivity before running the API check
+        debounceTimer = setTimeout(async () => {
+            await performBackendValidation();
+            phoneInputRef.value?.focus();
+        }, 1200);
     }
 }
 
-// 2. Extracted API Call logic so it can run independently
+// 2. Extracted API Call logic
 async function performBackendValidation() {
     validatingNumber.value = true;
     errorMessage.value = "";
-
     try {
         const params = new URLSearchParams({
-            mobile_number: cleanedPhone.value,
+            mobile_number: mobileNumber.value, // Send what's currently in the input field
             provider_code: selectedProvider.value.provider_code,
             gateway:
                 selectedProductSource.value === "valuetopup"
@@ -508,19 +519,23 @@ async function performBackendValidation() {
             `/retailer/recharge/validate-number?${params.toString()}`,
         );
         const data = await res.json();
-        
+
         if (!data.success) {
-            errorMessage.value = data.error || "Number validation failed.";
+            errorMessage.value = data.error || "Validation failed.";
             isNumberVerified.value = false;
             return false;
         }
 
-        if (data.account_number) {
-            cleanedPhone.value = data.account_number;
-        }
-        
+        // Save states locally
         isNumberVerified.value = true;
         allowedOperator.value = data.provider;
+
+        // Save both values!
+        underlyingMobileNumber.value = data.mobile_number;
+        displayedSerialNumber.value = data.serial_number || "";
+
+        // Update your form payload with the REAL phone number for processing the top-up
+        cleanedPhone.value = data.mobile_number;
 
         return true;
     } catch (e) {
@@ -532,9 +547,8 @@ async function performBackendValidation() {
     }
 }
 
-// 3. Simplified Click Handler
+// 3. Click Handler
 async function proceedToConfirmFromNumber() {
-    // If the number was somehow cleared or altered without passing validation
     if (!isNumberVerified.value) {
         const isValid = await performBackendValidation();
         if (!isValid) return;
@@ -546,7 +560,10 @@ async function proceedToConfirmFromNumber() {
         return;
     }
 
-    // Move directly to the review step
+    // Map final destination payload values right before navigating steps
+    form.mobile_number = underlyingMobileNumber.value;
+    form.serial_number = displayedSerialNumber.value;
+
     currentStep.value = 5;
 }
 
@@ -1206,6 +1223,7 @@ onMounted(() => {
                         class="flex-1 bg-transparent px-4 py-3 text-ink-900 outline-none"
                         @input="handlePhoneInput"
                         :disabled="validatingNumber"
+                        ref="phoneInputRef"
                     />
                 </div>
 
@@ -1218,12 +1236,27 @@ onMounted(() => {
                 </p>
 
                 <!-- Instant Success Message -->
-                <p
+                <div
                     v-if="isNumberVerified && !validatingNumber"
-                    class="text-xs text-green-600 mt-2"
+                    class="text-xs text-green-600 mt-2 space-y-1"
                 >
-                    ✓ Number verified successfully. This is MK ALL NETWORK SIM ({{ allowedOperator }})
-                </p>
+                    <p>
+                        ✓ Number verified successfully. This is MK ALL NETWORK
+                        SIM ({{ allowedOperator }})
+                    </p>
+                    <p v-if="displayedSerialNumber">
+                        Serial:
+                        <span class="font-mono bg-surface-3 px-1 rounded">{{
+                            displayedSerialNumber
+                        }}</span>
+                    </p>
+                    <p>
+                        Linked Phone:
+                        <span class="font-semibold"
+                            >+{{ underlyingMobileNumber }}</span
+                        >
+                    </p>
+                </div>
 
                 <!-- Button now checks 'isNumberVerified' state -->
                 <button
