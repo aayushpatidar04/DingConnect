@@ -1,20 +1,35 @@
 <?php
 
-use App\Http\Controllers\Admin\AllowedNumberController;
-use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Admin\OperatorController as AdminOperatorController;
-use App\Http\Controllers\Admin\RetailerController as AdminRetailerController;
-use App\Http\Controllers\Admin\SettingController as AdminSettingController;
-use App\Http\Controllers\Admin\TransactionController as AdminTransactionController;
+use App\Http\Controllers\Admin\{
+    CommissionLevelController,
+    CommissionRateController,
+    CommissionReportController,
+    RetailerLevelController,
+    DashboardController as AdminDashboardController,
+    OperatorController as AdminOperatorController,
+    RetailerController as AdminRetailerController,
+    SettingController as AdminSettingController,
+    TransactionController as AdminTransactionController,
+    AllowedNumberController
+};
+use App\Http\Controllers\Api\{
+    CountryController,
+    OperatorController as ApiOperatorController,
+    TransactionController as ApiTransactionController,
+    WalletController as ApiWalletController,
+    WebhookController
+};
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LandingController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\Retailer\DashboardController as RetailerDashboardController;
-use App\Http\Controllers\Retailer\ProfileController as RetailerProfileController;
-use App\Http\Controllers\Retailer\RechargeController;
-use App\Http\Controllers\Retailer\TransactionController as RetailerTransactionController;
-use App\Http\Controllers\Retailer\WalletController as RetailerWalletController;
+use App\Http\Controllers\Retailer\{
+    CommissionController as RetailerCommissionController,
+    DashboardController as RetailerDashboardController,
+    ProfileController as RetailerProfileController,
+    RechargeController,
+    TransactionController as RetailerTransactionController,
+    WalletController as RetailerWalletController
+};
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -84,6 +99,25 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::delete('allowed-numbers/files/{allowedNumberFile}', [AllowedNumberController::class, 'destroyFile']);
     // ...your existing index / store / update / destroy routes
     Route::resource('allowed-numbers', AllowedNumberController::class)->only(['index', 'store', 'update', 'destroy']);
+
+    // Commission levels, rates and retailer levels
+    Route::get('commission-levels', [CommissionLevelController::class, 'index'])->name('commission-levels.index');
+    Route::post('commission-levels', [CommissionLevelController::class, 'store'])->name('commission-levels.store');
+    Route::put('commission-levels/{level}', [CommissionLevelController::class, 'update'])->name('commission-levels.update');
+    Route::delete('commission-levels/{level}', [CommissionLevelController::class, 'destroy'])->name('commission-levels.destroy');
+    Route::post('commission-levels/{level}/copy-rates', [CommissionLevelController::class, 'copyRates'])->name('commission-levels.copy-rates');
+
+    Route::post('commission-rates', [CommissionRateController::class, 'store'])->name('commission-rates.store');
+    Route::put('commission-rates/{rate}', [CommissionRateController::class, 'update'])->name('commission-rates.update');
+    Route::delete('commission-rates/{rate}', [CommissionRateController::class, 'destroy'])->name('commission-rates.destroy');
+
+    Route::get('retailer-levels', [RetailerLevelController::class, 'index'])->name('retailer-levels.index');
+    Route::post('retailer-levels/bulk', [RetailerLevelController::class, 'bulk'])->name('retailer-levels.bulk');
+    Route::get('retailer-levels/{retailer}/history', [RetailerLevelController::class, 'history'])->name('retailer-levels.history');
+    Route::put('retailer-levels/{retailer}', [RetailerLevelController::class, 'update'])->name('retailer-levels.update');
+
+    Route::get('commissions', [CommissionReportController::class, 'index'])->name('commissions.index');
+    Route::get('commissions/export', [CommissionReportController::class, 'export'])->name('commissions.export');
 });
 
 // ==========================================================================
@@ -117,8 +151,30 @@ Route::prefix('retailer')->name('retailer.')->middleware(['auth', 'retailer', 'k
     Route::get('/recharge/valuetopup/operators', [RechargeController::class, 'getValuetopupOperators'])->name('recharge.valuetopup.operators');
     Route::post('/recharge/estimate-cost', [RechargeController::class, 'estimateCost'])->name('recharge.estimate-cost');
 
+    Route::get('/commissions', [RetailerCommissionController::class, 'index'])->name('commissions.index');
+
     Route::get('/profile', [RetailerProfileController::class, 'index'])->name('profile.index');
     Route::put('/profile', [RetailerProfileController::class, 'update'])->name('profile.update');
+});
+
+// ==========================================================================
+// REST API (auth:sanctum)
+// ==========================================================================
+
+Route::prefix('api')->name('api.')->group(function () {
+    Route::post('/auth/register', [\App\Http\Controllers\Api\Auth\AuthController::class, 'register']);
+    Route::post('/auth/login', [\App\Http\Controllers\Api\Auth\AuthController::class, 'login']);
+    Route::post('/auth/logout', [\App\Http\Controllers\Api\Auth\AuthController::class, 'logout'])->middleware('auth:sanctum');
+    Route::get('/auth/me', [\App\Http\Controllers\Api\Auth\AuthController::class, 'me'])->middleware('auth:sanctum');
+
+    Route::get('/countries', [CountryController::class, 'index']);
+    Route::get('/countries/{iso}/operators', [ApiOperatorController::class, 'byCountry']);
+    Route::get('/operators/search', [ApiOperatorController::class, 'search']);
+
+    Route::post('/transactions/topup', [ApiTransactionController::class, 'topUp'])->middleware('auth:sanctum');
+    Route::get('/transactions', [ApiTransactionController::class, 'history'])->middleware('auth:sanctum');
+    Route::get('/transactions/{id}', [ApiTransactionController::class, 'show'])->middleware('auth:sanctum');
+    Route::get('/transactions/{id}/status', [ApiTransactionController::class, 'status'])->middleware('auth:sanctum');
 });
 
 // ==========================================================================
@@ -140,7 +196,7 @@ Route::get('/retailer', fn () => redirect('/retailer/dashboard'))->middleware(['
 // ==========================================================================
 
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [\App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
 });

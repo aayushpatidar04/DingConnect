@@ -193,6 +193,34 @@ onUnmounted(() => {
                     </Link>
 
                     <Link
+                        href="/admin/commission-levels"
+                        class="flex items-center px-3 py-3 rounded-xl transition-all duration-200"
+                        :class="
+                            $page.url.includes('/commission') ||
+                            $page.url.includes('/retailer-levels')
+                                ? 'bg-primary text-ink-100 shadow-lg shadow-primary/20'
+                                : 'text-ink-500 hover:bg-surface-2 hover:text-ink-900'
+                        "
+                    >
+                        <svg
+                            class="w-5 h-5 flex-shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"
+                            />
+                        </svg>
+                        <span v-if="showMobileMenu" class="ml-3 font-medium"
+                            >Commission</span
+                        >
+                    </Link>
+
+                    <Link
                         href="/admin/settings"
                         class="flex items-center px-3 py-3 rounded-xl transition-all duration-200"
                         :class="

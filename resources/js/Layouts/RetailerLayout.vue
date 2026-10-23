@@ -126,7 +126,8 @@ function logout() {
                                 $page.url.startsWith('/retailer') &&
                                 !$page.url.includes('recharge') &&
                                 !$page.url.includes('wallet') &&
-                                !$page.url.includes('transactions')
+                                !$page.url.includes('transactions') &&
+                                !$page.url.includes('commissions')
                                     ? 'bg-surface-3 text-ink-900'
                                     : 'text-ink-500 hover:text-ink-900 hover:bg-surface-2'
                             "
@@ -161,6 +162,16 @@ function logout() {
                                     : 'text-ink-500 hover:text-ink-900 hover:bg-surface-2'
                             "
                             >Wallet</Link
+                        >
+                        <Link
+                            href="/retailer/commissions"
+                            class="px-3 py-2 rounded-lg text-sm font-medium transition"
+                            :class="
+                                $page.url.includes('/commissions')
+                                    ? 'bg-surface-3 text-ink-900'
+                                    : 'text-ink-500 hover:text-ink-900 hover:bg-surface-2'
+                            "
+                            >Commission</Link
                         >
                     </div>
 
@@ -300,6 +311,11 @@ function logout() {
                         href="/retailer/wallet"
                         class="block px-3 py-2 rounded-lg text-base font-medium text-ink-500 hover:text-ink-900 hover:bg-surface-2"
                         >Wallet</Link
+                    >
+                    <Link
+                        href="/retailer/commissions"
+                        class="block px-3 py-2 rounded-lg text-base font-medium text-ink-500 hover:text-ink-900 hover:bg-surface-2"
+                        >Commission</Link
                     >
                     <Link
                         href="/retailer/profile"
