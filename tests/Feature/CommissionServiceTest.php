@@ -13,6 +13,7 @@ use App\Models\RetailerLevelChange;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Wallet;
+use App\Models\WalletTopup;
 use App\Services\CommissionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -98,10 +99,23 @@ class CommissionServiceTest extends TestCase
         $this->sim($user, '447700900001');
         $service->assignLevel($user, $level->id);
 
-        foreach ([3.00, 1.00, 1.00, 0.00] as $expected) {
+        foreach ([3.00, 1.00, 1.00, 0.00] as $i => $expected) {
             $commission = $service->processSuccessfulRecharge($this->topup($user, '447700900001'));
             $this->assertSame($expected, (float) $commission->commission_amount);
+
+            if ($i === 0) {
+                // first top-up: two wallet top-up entries, one commission and one bonus
+                $entries = WalletTopup::where('user_id', $user->id)->orderBy('id')->get();
+                $this->assertSame(['commission', 'bonus'], $entries->pluck('payment_gateway')->all());
+                $this->assertSame([2.00, 1.00], $entries->map(fn ($e) => (float) $e->amount)->all());
+            }
         }
+
+        // ongoing top-ups add one commission entry each; the skipped 4th adds none
+        $entries = WalletTopup::where('user_id', $user->id)->orderBy('id')->get();
+        $this->assertCount(4, $entries);
+        $this->assertSame(['commission', 'bonus', 'commission', 'commission'], $entries->pluck('payment_gateway')->all());
+        $this->assertSame('completed', $entries->last()->status);
 
         $this->assertSame(5.00, $this->balance($user));
         $this->assertSame('no_ongoing_rate_for_sequence', RetailerCommission::orderByDesc('id')->first()->skip_reason);
@@ -154,6 +168,23 @@ class CommissionServiceTest extends TestCase
         $this->assertNull($service->processSuccessfulRecharge($transaction));
 
         $this->assertSame(1, RetailerCommission::count());
+        $this->assertSame(2.00, $this->balance($user));
+    }
+
+    public function test_a_first_top_up_without_bonus_creates_a_single_entry(): void
+    {
+        $service = app(CommissionService::class);
+        $user = $this->retailer();
+        $level = $this->level('Level A', 0);
+        $this->rate($level, 0, null, 2.00, 0, []);
+        $this->sim($user, '447700900008');
+        $service->assignLevel($user, $level->id);
+        $transaction = $this->topup($user, '447700900008');
+
+        $service->processSuccessfulRecharge($transaction);
+        $service->processSuccessfulRecharge($transaction);
+
+        $this->assertSame(['commission'], WalletTopup::where('user_id', $user->id)->pluck('payment_gateway')->all());
         $this->assertSame(2.00, $this->balance($user));
     }
 

@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WalletTopup extends Model
 {
+    /** payment_gateway values for entries created by the commission system */
+    public const GATEWAY_COMMISSION = 'commission';
+    public const GATEWAY_BONUS = 'bonus';
+
     protected $fillable = [
         'user_id',
         'amount',

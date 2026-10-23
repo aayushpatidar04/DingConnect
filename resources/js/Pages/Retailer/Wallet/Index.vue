@@ -59,6 +59,24 @@ const formatDate = (date) => {
         minute: "2-digit",
     });
 };
+
+const sourceLabel = (topup) => {
+    if (topup.payment_gateway === "commission") return "Commission";
+    if (topup.payment_gateway === "bonus") return "Bonus";
+    return topup.payment_method;
+};
+
+const sourceDetail = (topup) => {
+    const r = topup.payment_response;
+    if (!r || r.source !== "commission") return "";
+    return [
+        r.type === "first" ? "First top-up" : `Top-up #${r.sequence}`,
+        r.operator,
+        r.number,
+    ]
+        .filter(Boolean)
+        .join(" · ");
+};
 </script>
 
 <template>
@@ -169,8 +187,14 @@ const formatDate = (date) => {
                             £ {{ Number(topup.amount).toFixed(2) }}
                         </div>
                         <div class="text-sm text-ink-500">
-                            {{ topup.payment_method }} ·
+                            {{ sourceLabel(topup) }} ·
                             {{ formatDate(topup.created_at) }}
+                        </div>
+                        <div
+                            v-if="sourceDetail(topup)"
+                            class="text-xs text-ink-500 mt-0.5"
+                        >
+                            {{ sourceDetail(topup) }}
                         </div>
                     </div>
                     <span

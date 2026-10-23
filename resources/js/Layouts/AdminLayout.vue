@@ -31,8 +31,7 @@ onUnmounted(() => {
     <div class="min-h-screen bg-surface-0">
         <Head>
             <title>
-                {{ $page.component?.props?.pageTitle || "Admin Panel" }} - MK
-                Network
+                Admin Panel - MK ALL NETWORK COMMUNICATIONS
             </title>
         </Head>
 
@@ -324,7 +323,7 @@ onUnmounted(() => {
                     </button>
 
                     <h1 class="text-lg font-semibold text-ink-900">
-                        {{ $page.props.pageTitle || "Dashboard" }}
+                        MK ALL NETWORK COMMUNICATIONS
                     </h1>
 
                     <div class="flex items-center space-x-4">

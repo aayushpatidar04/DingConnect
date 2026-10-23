@@ -13,6 +13,7 @@ use App\Models\RetailerLevelChange;
 use App\Models\Setting;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Models\WalletTopup;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
@@ -122,21 +123,6 @@ class CommissionService
 
         $credited = $reason === null;
 
-        if ($credited) {
-            $this->wallets->credit(
-                (int) $transaction->user_id,
-                $total,
-                $transaction->id,
-                sprintf(
-                    'Cashback (%s top-up #%d) - %s %s',
-                    $type,
-                    $sequence,
-                    $transaction->operator?->name ?? 'operator',
-                    $transaction->mobile_number
-                )
-            );
-        }
-
         $connection->topups_count = $sequence;
         $connection->save();
 
@@ -151,7 +137,7 @@ class CommissionService
             $this->applyAutoUpgrade($profile);
         }
 
-        return RetailerCommission::create([
+        $commission = RetailerCommission::create([
             'transaction_id' => $transaction->id,
             'user_id' => $transaction->user_id,
             'retailer_connection_id' => $connection->id,
@@ -168,6 +154,73 @@ class CommissionService
             'skip_reason' => $reason,
             'credited_at' => $credited ? now() : null,
         ]);
+
+        if ($credited) {
+            $this->creditWallet($commission, $transaction, $level, $topup, $bonus, $type, $sequence);
+        }
+
+        return $commission;
+    }
+
+    /**
+     * Put the money in the wallet as entries in the retailer's wallet top-ups list.
+     * First top-up of a connection: one "Commission" entry and one "Bonus" entry (a part
+     * worth £0 gets no entry). Ongoing top-ups: one "Commission" entry.
+     * Each entry is its own completed top-up with its own ledger credit.
+     */
+    protected function creditWallet(
+        RetailerCommission $commission,
+        Transaction $transaction,
+        ?CommissionLevel $level,
+        float $topup,
+        float $bonus,
+        string $type,
+        int $sequence
+    ): void {
+        $parts = array_filter([
+            WalletTopup::GATEWAY_COMMISSION => round($topup, 2),
+            WalletTopup::GATEWAY_BONUS => round($bonus, 2),
+        ], fn ($amount) => $amount > 0);
+
+        foreach ($parts as $part => $amount) {
+            $entry = WalletTopup::create([
+                'user_id' => $transaction->user_id,
+                'amount' => $amount,
+                'currency' => config('platform.wallet.currency', 'GBP'),
+                'fee_amount' => 0,
+                'fee_percentage' => 0,
+                'total_charged' => $amount,
+                'payment_method' => 'wallet',
+                'payment_gateway' => $part,
+                'gateway_order_id' => "commission-{$transaction->id}-{$part}", // unique: one entry per part per recharge
+                'payment_response' => [
+                    'source' => 'commission',
+                    'part' => $part,
+                    'type' => $type,
+                    'sequence' => $sequence,
+                    'level' => $level?->name,
+                    'operator' => $transaction->operator?->name,
+                    'number' => $transaction->mobile_number,
+                    'recharge_transaction_id' => $transaction->id,
+                    'retailer_commission_id' => $commission->id,
+                ],
+                'status' => 'completed',
+            ]);
+
+            $this->wallets->credit(
+                (int) $transaction->user_id,
+                $amount,
+                $entry->id, // same convention as Stripe top-ups: the ledger points at the wallet top-up
+                sprintf(
+                    '%s (%s top-up #%d) - %s %s',
+                    $part === WalletTopup::GATEWAY_BONUS ? 'Bonus' : 'Commission',
+                    $type,
+                    $sequence,
+                    $transaction->operator?->name ?? 'operator',
+                    $transaction->mobile_number
+                )
+            );
+        }
     }
 
     protected function recordSkipped(Transaction $transaction, string $reason): ?RetailerCommission

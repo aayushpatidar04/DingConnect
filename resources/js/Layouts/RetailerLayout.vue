@@ -80,8 +80,7 @@ function logout() {
     <div class="min-h-screen bg-surface-0">
         <Head>
             <title>
-                {{ $page.component?.props?.pageTitle || "Dashboard" }} - MK
-                Network
+                MK ALL NETWORK COMMUNICATIONS
             </title>
         </Head>
 

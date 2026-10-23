@@ -9,7 +9,7 @@ import { useToast, toasts } from "@/composables/useToast.js";
     <div class="min-h-screen flex flex-col bg-surface-0">
         <Head>
             <title>
-                {{ $page.component?.props?.pageTitle || "MK All Network Communications" }}
+                MK ALL NETWORK COMMUNICATIONS
             </title>
         </Head>
 
