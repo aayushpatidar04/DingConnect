@@ -257,7 +257,7 @@ defineOptions({ layout: AppLayout });
                             Register & Verify
                         </h3>
                         <p class="text-ink-500">
-                            Sign up as a retailer and get your KYC verified in
+                            Sign up as a retailer and get your account verified in
                             24 hours.
                         </p>
                     </div>

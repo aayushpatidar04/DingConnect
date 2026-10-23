@@ -119,7 +119,7 @@ const showLabel = (index) =>
             </div>
             <div class="bg-surface-2 rounded-2xl p-4 border border-surface-3">
                 <div class="text-xs text-ink-500 uppercase tracking-wider">
-                    Pending KYC
+                    Pending Verification
                 </div>
                 <div class="text-xl font-bold text-ink-900 mt-1">
                     {{ stats.pending_kyc }}

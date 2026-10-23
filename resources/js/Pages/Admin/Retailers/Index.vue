@@ -13,7 +13,7 @@ const props = defineProps({
 
 const filters = reactive({
     search: props.filters.search ?? "",
-    status: props.filters.status ?? "",
+    status: props.filters.status ?? "active",
     kyc_status: props.filters.kyc_status ?? "",
 });
 
@@ -77,6 +77,32 @@ const inputClass =
             </div>
         </div>
 
+        <div class="flex gap-2 mb-4">
+            <button
+                @click="filters.status = 'active'"
+                class="px-4 py-2 rounded-lg text-sm font-medium transition"
+                :class="
+                    filters.status === 'active'
+                        ? 'bg-primary text-white'
+                        : 'bg-surface-2 text-ink-500'
+                "
+            >
+                Active Retailers
+            </button>
+
+            <button
+                @click="filters.status = 'inactive'"
+                class="px-4 py-2 rounded-lg text-sm font-medium transition"
+                :class="
+                    filters.status === 'inactive'
+                        ? 'bg-primary text-white'
+                        : 'bg-surface-2 text-ink-500'
+                "
+            >
+                Inactive Retailers
+            </button>
+        </div>
+
         <!-- Filters -->
         <div
             class="bg-surface-2 rounded-2xl p-4 border border-surface-3 flex flex-wrap gap-3 items-end"
@@ -91,15 +117,9 @@ const inputClass =
                 />
             </div>
             <div>
-                <label class="text-xs text-ink-500 block mb-1">Status</label>
-                <select v-model="filters.status" :class="inputClass">
-                    <option value="">All</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                </select>
-            </div>
-            <div>
-                <label class="text-xs text-ink-500 block mb-1">KYC</label>
+                <label class="text-xs text-ink-500 block mb-1"
+                    >Verification</label
+                >
                 <select v-model="filters.kyc_status" :class="inputClass">
                     <option value="">All</option>
                     <option value="pending">Pending</option>
@@ -152,12 +172,7 @@ const inputClass =
                             <th
                                 class="px-6 py-3 text-left text-xs font-medium text-ink-700 uppercase tracking-wider"
                             >
-                                KYC
-                            </th>
-                            <th
-                                class="px-6 py-3 text-left text-xs font-medium text-ink-700 uppercase tracking-wider"
-                            >
-                                Status
+                                Verification
                             </th>
                             <th
                                 class="px-6 py-3 text-right text-xs font-medium text-ink-700 uppercase tracking-wider"
@@ -216,46 +231,61 @@ const inputClass =
                                     >{{ retailer.kyc_status }}</span
                                 >
                             </td>
-                            <td class="px-6 py-4">
-                                <span
-                                    class="px-2 py-1 text-xs rounded-full font-medium"
-                                    :class="
-                                        retailer.is_active
-                                            ? 'bg-green-200 text-green-600'
-                                            : 'bg-red-500/20 text-red-600'
-                                    "
-                                >
-                                    {{
-                                        retailer.is_active
-                                            ? "Active"
-                                            : "Inactive"
-                                    }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-right text-sm">
-                                <Link
-                                    :href="`/admin/retailers/${retailer.id}`"
-                                    class="text-primary-light hover:text-primary transition mr-2"
-                                    >View</Link
-                                >
-                                <form
-                                    :action="`/admin/retailers/${retailer.id}/approve`"
-                                    method="POST"
-                                    class="inline"
-                                    v-if="retailer.kyc_status === 'pending'"
-                                >
-                                    <input
-                                        type="hidden"
-                                        name="_token"
-                                        :value="$page.props.csrf_token"
-                                    />
-                                    <button
-                                        type="submit"
-                                        class="text-accent-light hover:text-accent transition"
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex justify-end gap-2">
+                                    <Link
+                                        :href="`/admin/retailers/${retailer.id}`"
+                                        class="inline-flex items-center px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary-dark transition"
                                     >
-                                        Approve
-                                    </button>
-                                </form>
+                                        View
+                                    </Link>
+
+                                    <form
+                                        v-if="retailer.kyc_status === 'pending'"
+                                        :action="`/admin/retailers/${retailer.id}/approve`"
+                                        method="POST"
+                                    >
+                                        <input
+                                            type="hidden"
+                                            name="_token"
+                                            :value="$page.props.csrf_token"
+                                        />
+
+                                        <button
+                                            type="submit"
+                                            class="inline-flex items-center px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition"
+                                        >
+                                            Approve
+                                        </button>
+                                    </form>
+
+                                    <form
+                                        :action="`/admin/retailers/${retailer.id}/toggle-status`"
+                                        method="POST"
+                                    >
+                                        <input
+                                            type="hidden"
+                                            name="_token"
+                                            :value="$page.props.csrf_token"
+                                        />
+
+                                        <button
+                                            type="submit"
+                                            class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium text-white transition"
+                                            :class="
+                                                retailer.is_active
+                                                    ? 'bg-red-600 hover:bg-red-700'
+                                                    : 'bg-green-600 hover:bg-green-700'
+                                            "
+                                        >
+                                            {{
+                                                retailer.is_active
+                                                    ? "Make Inactive"
+                                                    : "Make Active"
+                                            }}
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     </tbody>
@@ -265,7 +295,11 @@ const inputClass =
                 v-if="!retailers.data?.length"
                 class="p-8 text-center text-ink-500"
             >
-                {{ hasFilters ? "No retailers match these filters" : "No retailers found" }}
+                {{
+                    hasFilters
+                        ? "No retailers match these filters"
+                        : "No retailers found"
+                }}
             </div>
             <div
                 v-if="retailers.links"

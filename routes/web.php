@@ -79,6 +79,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::post('/retailers/{retailer}/block', [AdminRetailerController::class, 'block'])->name('retailers.block');
     Route::post('/retailers/{retailer}/credit', [AdminRetailerController::class, 'creditWallet'])->name('retailers.credit');
     Route::post('/retailers/{retailer}/kyc', [AdminRetailerController::class, 'processKyc'])->name('retailers.kyc');
+    Route::post('/retailers/{retailer}/toggle-status', [AdminRetailerController::class, 'toggleStatus'])->name('retailers.toggle-status');
     Route::resource('retailers', AdminRetailerController::class)->except(['show', 'approve', 'block', 'credit', 'kyc']);
 
     Route::get('/transactions', [AdminTransactionController::class, 'index'])->name('transactions.index');

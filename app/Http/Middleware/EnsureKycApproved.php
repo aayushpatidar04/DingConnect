@@ -18,9 +18,9 @@ class EnsureKycApproved
         }
 
         $message = match (strtolower((string) $user?->kyc_status)) {
-            'rejected' => 'Your KYC was rejected. Please contact support.',
-            'pending' => 'Your KYC is still under review. You can log in once it is approved.',
-            default => 'Your KYC is not approved. Please contact support.',
+            'rejected' => 'Your Verification was rejected. Please contact support.',
+            'pending' => 'Your Verification is still under review. You can log in once it is approved.',
+            default => 'Your Verification is not approved. Please contact support.',
         };
 
         if ($request->is('api/*')) {

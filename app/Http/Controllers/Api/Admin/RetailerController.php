@@ -109,7 +109,7 @@ class RetailerController extends Controller
         $retailer = $this->retailer($retailer);
 
         if ($retailer->kyc_status !== 'pending') {
-            return response()->json(['success' => false, 'message' => 'KYC has already been processed.'], 409);
+            return response()->json(['success' => false, 'message' => 'Verification has already been processed.'], 409);
         }
 
         $retailer->update(['kyc_status' => 'approved', 'kyc_verified_at' => now(), 'is_active' => true]);

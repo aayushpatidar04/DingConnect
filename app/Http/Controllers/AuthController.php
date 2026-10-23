@@ -34,6 +34,16 @@ class AuthController extends Controller
         $request->authenticate();
 
         $user = Auth::user();
+
+        if (! $user->is_active) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => ['Your account is not active. Please contact the administrator.'],
+            ]);
+
+        }
+        
         $remember = $request->boolean('remember');
 
         // Do not leave the user authenticated before OTP verification.

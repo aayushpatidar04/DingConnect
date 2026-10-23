@@ -24,7 +24,8 @@ class RetailerController extends Controller
     public function index(Request $request)
     {
         $filters = $request->only('search', 'status', 'kyc_status');
-
+        $filters['status'] = $filters['status'] ?? 'active';
+        
         $retailers = User::where('role', 'retailer')
             ->with('wallet')              // 'transactions' removed, see notes
             ->filter($filters)
@@ -115,7 +116,7 @@ class RetailerController extends Controller
     public function approve(Request $request, User $retailer)
     {
         if ($retailer->kyc_status !== 'pending') {
-            return back()->with('error', 'KYC already processed.');
+            return back()->with('error', 'Verification already processed.');
         }
 
         $retailer->update([
@@ -127,7 +128,7 @@ class RetailerController extends Controller
         Role::firstOrCreate(['name' => 'retailer', 'guard_name' => 'web']);
         $retailer->assignRole('retailer');
 
-        return back()->with('success', 'Retailer KYC approved!');
+        return back()->with('success', 'Retailer verification approved!');
     }
 
     public function block(Request $request, User $retailer)
@@ -197,7 +198,21 @@ class RetailerController extends Controller
             ]);
         }
 
-        return back()->with('success', 'KYC ' . $validated['action'] . 'ed successfully!');
+        return back()->with('success', 'Verification ' . $validated['action'] . 'ed successfully!');
+    }
+
+    public function toggleStatus(User $retailer)
+    {
+        $retailer->update([
+            'is_active' => ! $retailer->is_active,
+        ]);
+
+        return back()->with(
+            'success',
+            $retailer->is_active
+                ? 'Retailer activated successfully.'
+                : 'Retailer deactivated successfully.'
+        );
     }
 
     public function destroy(User $retailer)

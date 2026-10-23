@@ -43,7 +43,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Registration successful. Your account is pending KYC approval.',
+            'message' => 'Registration successful. Your account is pending Verification approval.',
             'data' => [
                 'user' => $this->userData($user),
                 'access_token' => $token->plainTextToken,

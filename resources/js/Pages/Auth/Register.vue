@@ -319,7 +319,7 @@ function submit() {
                 class="bg-accent/10 border border-accent/30 rounded-xl p-4 text-sm text-ink-700"
             >
                 <p class="font-semibold text-ink-900 mb-1">
-                    KYC Verification Required
+                    Verification Required
                 </p>
                 <p>
                     After registration, your account will be in <strong>pending</strong> status.

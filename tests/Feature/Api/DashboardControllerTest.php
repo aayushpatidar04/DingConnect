@@ -46,7 +46,7 @@ class DashboardControllerTest extends TestCase
         $response = $this->withToken($token)->getJson('/api/retailer/dashboard');
 
         $response->assertForbidden()
-            ->assertJsonPath('message', 'Your KYC is still under review. You can log in once it is approved.');
+            ->assertJsonPath('message', 'Your account is still under review. You can log in once it is approved.');
     }
 
     public function test_retailer_cannot_access_the_admin_dashboard(): void

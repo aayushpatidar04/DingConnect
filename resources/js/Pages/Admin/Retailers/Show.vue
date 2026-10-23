@@ -213,7 +213,7 @@ const formatDate = (date) => {
                     class="bg-surface-2 rounded-2xl p-6 border border-surface-3"
                 >
                     <h3 class="text-lg font-semibold text-ink-900 mb-4">
-                        KYC Status
+                        Verification Status
                     </h3>
                     <span
                         :class="[
@@ -252,7 +252,7 @@ const formatDate = (date) => {
                                 type="submit"
                                 class="w-full py-2 bg-accent text-ink-100 rounded-lg hover:bg-accent-dark transition"
                             >
-                                Approve KYC
+                                Approve
                             </button>
                         </form>
                         <form
@@ -279,7 +279,7 @@ const formatDate = (date) => {
                                 type="submit"
                                 class="w-full py-2 bg-red-600 text-ink-100 rounded-lg hover:bg-red-700 transition text-sm"
                             >
-                                Reject KYC
+                                Reject
                             </button>
                         </form>
                     </div>
