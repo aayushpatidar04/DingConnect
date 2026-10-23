@@ -8,13 +8,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class RetailerCommissionProfile extends Model
 {
     protected $fillable = [
-        'user_id', 'commission_level_id', 'actual_connections', 'level_connections',
+        'user_id', 'commission_level_id', 'actual_connections', 'level_connections', 'commission_topups_count',
         'auto_level_enabled', 'level_assigned_at',
     ];
 
     protected $casts = [
         'actual_connections' => 'integer',
         'level_connections' => 'integer',
+        'commission_topups_count' => 'integer',
         'auto_level_enabled' => 'boolean',
         'level_assigned_at' => 'datetime',
     ];

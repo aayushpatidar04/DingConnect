@@ -74,44 +74,49 @@ class CommissionService
         $profile = RetailerCommissionProfile::lockForUpdate()->findOrFail($profileId);
         $connection = RetailerConnection::lockForUpdate()->findOrFail($connectionId);
 
-        // The first retailer whose top-up is settled owns the connection.
-        if ($connection->topups_count === 0) {
+        // Numbers are tracked only to count connections: the retailer who recharges a number
+        // for the very first time gets the connection. Later recharges of it add none.
+        $isNewConnection = $connection->topups_count === 0;
+
+        if ($isNewConnection) {
             $connection->user_id = $transaction->user_id;
             $connection->first_transaction_id = $transaction->id;
             $connection->connected_at = now();
         }
 
-        $sequence = $connection->topups_count + 1;
-        $type = $sequence === 1 ? 'first' : 'ongoing';
-        $isOwner = (int) $connection->user_id === (int) $transaction->user_id;
-        $amount = (float) $transaction->amount;
+        $connection->topups_count += 1;
+        $connection->save();
 
+        $amount = (float) $transaction->amount;
         $level = $profile->commission_level_id ? CommissionLevel::find($profile->commission_level_id) : null;
+
+        // First / ongoing is counted per retailer across all numbers. Only recharges that
+        // actually pay commission use up a position.
+        $position = $profile->commission_topups_count + 1;
+        $type = $position === 1 ? 'first' : 'ongoing';
 
         $reason = null;
         $rate = null;
         $topup = 0.0;
         $bonus = 0.0;
 
-        if (! $isOwner) {
-            $reason = 'connection_owned_by_other_retailer';
-        } elseif (! $level || ! $level->is_active) {
+        if (! $level || ! $level->is_active) {
             $reason = 'no_level';
         } else {
             $rate = $this->findRate($level, $transaction->operator_id ? (int) $transaction->operator_id : null, $amount);
 
             if (! $rate) {
                 $reason = 'no_rate_for_operator_or_amount';
-            } elseif ($sequence === 1) {
+            } elseif ($position === 1) {
                 $topup = (float) $rate->first_topup_amount;
                 $bonus = (float) $rate->first_bonus_amount;
             } else {
-                $step = $this->findStep($rate, $sequence);
+                $step = $this->findStep($rate, $position);
 
                 if ($step) {
                     $topup = (float) $step->amount;
                 } else {
-                    $reason = 'no_ongoing_rate_for_sequence';
+                    $reason = 'no_ongoing_rate_for_sequence'; // all ongoing bands of this level are used up
                 }
             }
         }
@@ -124,17 +129,21 @@ class CommissionService
 
         $credited = $reason === null;
 
-        $connection->topups_count = $sequence;
-        $connection->save();
+        if ($credited) {
+            $profile->commission_topups_count = $position;
+        }
 
-        if ($isOwner && $sequence === 1) {
+        if ($isNewConnection) {
             $profile->actual_connections += 1;
 
             if ($profile->commission_level_id) {
                 $profile->level_connections += 1;
             }
+        }
 
-            $profile->save();
+        $profile->save();
+
+        if ($isNewConnection) {
             $this->applyAutoUpgrade($profile);
         }
 
@@ -146,8 +155,8 @@ class CommissionService
                 'commission_level_id' => $level?->id,
                 'commission_rate_id' => $rate?->id,
                 'operator_id' => $transaction->operator_id,
-                'type' => $type,
-                'topup_sequence' => $sequence,
+                'type' => $credited ? $type : null,
+                'topup_sequence' => $credited ? $position : null,
                 'recharge_amount' => $amount,
                 'topup_amount' => $credited ? $topup : 0,
                 'bonus_amount' => $credited ? $bonus : 0,
@@ -156,8 +165,8 @@ class CommissionService
                 'skip_reason' => $reason,
                 'credited_at' => $credited ? now() : null,
             ]);
-            
-            $this->creditWallet($commission, $transaction, $level, $topup, $bonus, $type, $sequence);
+        
+            $this->creditWallet($commission, $transaction, $level, $topup, $bonus, $type, $position);
         }
 
         return $commission ?? null;
@@ -402,6 +411,7 @@ class CommissionService
         }
 
         $profile->commission_level_id = $target->id;
+        $profile->commission_topups_count = 0; // new level: the next paying recharge is a first top-up again
         $profile->level_assigned_at = now();
         $profile->save();
 
@@ -422,6 +432,7 @@ class CommissionService
      * - Picking a level resets "level connections" to that level's minimum (both for upgrades
      *   and downgrades). "Actual connections" is never touched unless an opening value is given.
      * - Picking no level clears the level and switches auto-upgrade off.
+     * - Any change of level restarts the retailer's first / ongoing position at 0.
      */
     public function assignLevel(
         User $retailer,
@@ -430,10 +441,11 @@ class CommissionService
         ?string $reason = null,
         bool $autoLevel = true,
         ?int $actualConnections = null,
+        ?int $topupsCount = null,
     ): RetailerCommissionProfile {
         $this->profileFor($retailer->id);
 
-        return DB::transaction(function () use ($retailer, $levelId, $adminId, $reason, $autoLevel, $actualConnections) {
+        return DB::transaction(function () use ($retailer, $levelId, $adminId, $reason, $autoLevel, $actualConnections, $topupsCount) {
             $profile = RetailerCommissionProfile::lockForUpdate()->where('user_id', $retailer->id)->firstOrFail();
 
             $from = $profile->commission_level_id ? CommissionLevel::find($profile->commission_level_id) : null;
@@ -464,6 +476,16 @@ class CommissionService
                 $profile->level_assigned_at = now();
             } elseif ($profile->auto_level_enabled !== $autoLevel) {
                 $profile->auto_level_enabled = $autoLevel;
+            }
+
+            // Any change of level restarts the first / ongoing position.
+            if (in_array($changeType, ['assigned', 'upgrade', 'downgrade', 'removed'], true)) {
+                $profile->commission_topups_count = 0;
+            }
+
+            // A value typed in by the admin wins over the restart.
+            if ($topupsCount !== null) {
+                $profile->commission_topups_count = max(0, $topupsCount);
             }
 
             if ($changeType === null && $profile->isDirty()) {

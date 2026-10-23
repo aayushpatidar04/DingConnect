@@ -45,10 +45,9 @@ export function lifetimeTotal(rate) {
 
 export const skipReasons = {
     number_not_in_allowed_list: "Number not in allowed list",
-    connection_owned_by_other_retailer: "SIM belongs to another retailer",
     no_level: "Retailer has no level",
     no_rate_for_operator_or_amount: "No rate for this operator / amount",
-    no_ongoing_rate_for_sequence: "No ongoing rate for this top-up number",
+    no_ongoing_rate_for_sequence: "All ongoing rates for this level used up",
     zero_commission: "Rate is £0",
 };
 

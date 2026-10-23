@@ -59,6 +59,7 @@ class RetailerLevelController extends Controller
                 'level_name' => $level?->name,
                 'actual_connections' => $profile?->actual_connections ?? 0,
                 'level_connections' => $profile?->level_connections ?? 0,
+                'commission_topups' => $profile?->commission_topups_count ?? 0,
                 'auto_level_enabled' => (bool) ($profile?->auto_level_enabled ?? false),
                 'next_level_name' => $next?->name,
                 'next_level_min' => $next?->min_connections,
@@ -80,6 +81,7 @@ class RetailerLevelController extends Controller
             'level_id' => ['nullable', 'integer', 'exists:commission_levels,id'],
             'auto_level_enabled' => ['boolean'],
             'actual_connections' => ['nullable', 'integer', 'min:0'],
+            'topups_count' => ['nullable', 'integer', 'min:0'],
             'reason' => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -90,6 +92,7 @@ class RetailerLevelController extends Controller
             $data['reason'] ?? null,
             (bool) ($data['auto_level_enabled'] ?? true),
             isset($data['actual_connections']) ? (int) $data['actual_connections'] : null,
+            isset($data['topups_count']) ? (int) $data['topups_count'] : null,
         );
 
         return back()->with('success', "Level updated for {$retailer->name}.");

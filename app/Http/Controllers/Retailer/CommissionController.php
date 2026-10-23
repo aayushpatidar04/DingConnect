@@ -57,6 +57,7 @@ class CommissionController extends Controller
             'connections' => [
                 'actual' => $profile?->actual_connections ?? 0,
                 'level' => $profile?->level_connections ?? 0,
+                'topups' => $profile?->commission_topups_count ?? 0,
                 'auto' => (bool) ($profile?->auto_level_enabled ?? false),
             ],
             'rates' => $rates,
