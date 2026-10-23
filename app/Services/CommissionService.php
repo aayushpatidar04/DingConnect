@@ -55,7 +55,8 @@ class CommissionService
         $allowed = $this->findAllowedNumber($transaction);
 
         if (! $allowed) {
-            return $this->recordSkipped($transaction, 'number_not_in_allowed_list');
+            return null;
+            // return $this->recordSkipped($transaction, 'number_not_in_allowed_list');
         }
 
         $profile = $this->profileFor((int) $transaction->user_id);
@@ -68,7 +69,7 @@ class CommissionService
         }
     }
 
-    protected function settle(Transaction $transaction, int $profileId, int $connectionId): RetailerCommission
+    protected function settle(Transaction $transaction, int $profileId, int $connectionId): ?RetailerCommission
     {
         $profile = RetailerCommissionProfile::lockForUpdate()->findOrFail($profileId);
         $connection = RetailerConnection::lockForUpdate()->findOrFail($connectionId);
@@ -137,29 +138,29 @@ class CommissionService
             $this->applyAutoUpgrade($profile);
         }
 
-        $commission = RetailerCommission::create([
-            'transaction_id' => $transaction->id,
-            'user_id' => $transaction->user_id,
-            'retailer_connection_id' => $connection->id,
-            'commission_level_id' => $level?->id,
-            'commission_rate_id' => $rate?->id,
-            'operator_id' => $transaction->operator_id,
-            'type' => $type,
-            'topup_sequence' => $sequence,
-            'recharge_amount' => $amount,
-            'topup_amount' => $credited ? $topup : 0,
-            'bonus_amount' => $credited ? $bonus : 0,
-            'commission_amount' => $credited ? $total : 0,
-            'status' => $credited ? 'credited' : 'skipped',
-            'skip_reason' => $reason,
-            'credited_at' => $credited ? now() : null,
-        ]);
-
         if ($credited) {
+            $commission = RetailerCommission::create([
+                'transaction_id' => $transaction->id,
+                'user_id' => $transaction->user_id,
+                'retailer_connection_id' => $connection->id,
+                'commission_level_id' => $level?->id,
+                'commission_rate_id' => $rate?->id,
+                'operator_id' => $transaction->operator_id,
+                'type' => $type,
+                'topup_sequence' => $sequence,
+                'recharge_amount' => $amount,
+                'topup_amount' => $credited ? $topup : 0,
+                'bonus_amount' => $credited ? $bonus : 0,
+                'commission_amount' => $credited ? $total : 0,
+                'status' => $credited ? 'credited' : 'skipped',
+                'skip_reason' => $reason,
+                'credited_at' => $credited ? now() : null,
+            ]);
+            
             $this->creditWallet($commission, $transaction, $level, $topup, $bonus, $type, $sequence);
         }
 
-        return $commission;
+        return $commission ?? null;
     }
 
     /**

@@ -2,16 +2,21 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Exports\RetailersExport;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Wallet;
+use App\Models\WalletLedger;
+use App\Models\Transaction;
+use App\Models\WalletTopup;
 use App\Services\WalletService;
+use App\Services\SmsService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
-use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\RetailersExport;
+use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
 
 class RetailerController extends Controller
@@ -34,20 +39,20 @@ class RetailerController extends Controller
     {
         return Excel::download(
             new RetailersExport($request->only('search', 'status', 'kyc_status')),
-            'retailers_'.now()->format('Y-m-d').'.xlsx'
+            'retailers_' . now()->format('Y-m-d') . '.xlsx'
         );
     }
 
     public function show(User $retailer)
     {
-        $retailer->load(['wallet', 'transactions' => fn ($q) => $q->with('operator')->latest()->limit(5)]);
+        $retailer->load(['wallet', 'transactions' => fn($q) => $q->with('operator')->latest()->limit(5)]);
 
         return Inertia::render('Admin/Retailers/Show', compact('retailer'));
     }
 
     public function create()
     {
-        return Inertia::render('Admin/Retailers/Create');
+        return Inertia::render("Admin/Retailers/Create");
     }
 
     public function store(Request $request)
@@ -82,7 +87,7 @@ class RetailerController extends Controller
 
     public function edit(User $retailer)
     {
-        return Inertia::render('Admin/Retailers/Edit', compact('retailer'));
+        return Inertia::render("Admin/Retailers/Edit", compact("retailer"));
     }
 
     public function update(Request $request, User $retailer)
@@ -127,7 +132,7 @@ class RetailerController extends Controller
 
     public function block(Request $request, User $retailer)
     {
-        $retailer->update(['is_active' => ! $retailer->is_active]);
+        $retailer->update(['is_active' => !$retailer->is_active]);
 
         return back()->with('success', $retailer->is_active ? 'Retailer activated!' : 'Retailer deactivated!');
     }
@@ -141,9 +146,33 @@ class RetailerController extends Controller
 
         $walletService = app(WalletService::class);
         $wallet = $walletService->getWallet($retailer);
-        $walletService->credit($retailer->id, $request->amount, null, $request->description ?? 'Manual credit by admin');
+        $amount = round((float) $request->amount, 2);
+        $description = $request->description ?: 'Manual credit by admin';
 
-        return back()->with('success', "£ {$request->amount} credited to {$retailer->name}'s wallet!");
+        // Record the credit in the retailer's wallet top-ups list, and point the ledger entry at it
+        // (same convention as Stripe top-ups).
+        DB::transaction(function () use ($walletService, $retailer, $request, $amount, $description) {
+            $entry = WalletTopup::create([
+                'user_id' => $retailer->id,
+                'amount' => $amount,
+                'currency' => config('platform.wallet.currency', 'GBP'),
+                'fee_amount' => 0,
+                'fee_percentage' => 0,
+                'total_charged' => $amount,
+                'payment_method' => 'wallet',
+                'payment_gateway' => WalletTopup::GATEWAY_ADMIN,
+                'payment_response' => [
+                    'source' => 'admin',
+                    'description' => $description,
+                    'credited_by' => $request->user()->id,
+                ],
+                'status' => 'completed',
+            ]);
+
+            $walletService->credit($retailer->id, $amount, $entry->id, $description);
+        });
+
+        return back()->with('success', "£ {$amount} credited to {$retailer->name}'s wallet!");
     }
 
     public function processKyc(Request $request, User $retailer)
@@ -168,7 +197,7 @@ class RetailerController extends Controller
             ]);
         }
 
-        return back()->with('success', 'KYC '.$validated['action'].'ed successfully!');
+        return back()->with('success', 'KYC ' . $validated['action'] . 'ed successfully!');
     }
 
     public function destroy(User $retailer)

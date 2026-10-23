@@ -11,6 +11,9 @@ class WalletTopup extends Model
     public const GATEWAY_COMMISSION = 'commission';
     public const GATEWAY_BONUS = 'bonus';
 
+    /** payment_gateway value for wallet credits added manually by an admin */
+    public const GATEWAY_ADMIN = 'admin';
+
     protected $fillable = [
         'user_id',
         'amount',
