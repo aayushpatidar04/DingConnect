@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Exception as SpreadsheetException;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Worksheet\Row;
 
 class AllowedNumberController extends Controller
 {
@@ -119,10 +123,11 @@ class AllowedNumberController extends Controller
 
     public function importFile(Request $request)
     {
-        $request->validate(['file' => ['required', 'file', 'mimes:csv,txt', 'max:2048']]);
+        $request->validate(['file' => ['required', 'file', 'mimes:csv,txt,xlsx', 'extensions:csv,txt,xlsx', 'max:2048']]);
 
         $upload = $request->file('file');
         $name = basename($upload->getClientOriginalName());
+        $isXlsx = strtolower($upload->getClientOriginalExtension()) === 'xlsx';
 
         // same file name can't be uploaded twice (case-insensitive under utf8mb4_unicode_ci)
         if (AllowedNumberFile::where('name', $name)->exists()) {
@@ -137,19 +142,42 @@ class AllowedNumberController extends Controller
             ]);
         }
 
-        $handle = fopen($upload->getRealPath(), 'r');
-        $header = fgetcsv($handle, 0, ',', '"', '\\');
+        $spreadsheet = null;
+        $worksheet = null;
+        $handle = null;
 
-        if (! $header || $header === [null]) {
-            fclose($handle);
-            if ($request->is('api/*')) {
-                throw ValidationException::withMessages(['file' => 'The uploaded file is empty.']);
+        if ($isXlsx) {
+            try {
+                $reader = IOFactory::createReader('Xlsx');
+                $reader->setReadDataOnly(true);
+                $spreadsheet = $reader->load($upload->getRealPath());
+            } catch (SpreadsheetException) {
+                throw ValidationException::withMessages(['file' => 'The uploaded XLSX file could not be read.']);
             }
 
-            return back()->withErrors(['file' => 'The uploaded file is empty.']);
+            $worksheet = $spreadsheet->getActiveSheet();
+            $lastColumn = Coordinate::columnIndexFromString($worksheet->getHighestDataColumn());
+            $header = [];
+
+            foreach ($worksheet->getRowIterator(1, 1) as $headerRow) {
+                $header = $this->spreadsheetRow($headerRow, $lastColumn);
+            }
+        } else {
+            $handle = fopen($upload->getRealPath(), 'r');
+            $header = fgetcsv($handle, 0, ',', '"', '\\');
         }
 
-        $header[0] = preg_replace('/^\xEF\xBB\xBF/', '', (string) $header[0]); // strip Excel BOM
+        if (! $header || $header === [null]) {
+            if ($spreadsheet !== null) {
+                $spreadsheet->disconnectWorksheets();
+            } elseif (is_resource($handle)) {
+                fclose($handle);
+            }
+
+            throw ValidationException::withMessages(['file' => 'The uploaded file is empty.']);
+        }
+
+        $header[0] = preg_replace('/^\xEF\xBB\xBF/', '', (string) $header[0]);
         $col = array_flip(array_map(fn ($h) => strtolower(trim((string) $h)), $header));
 
         $requiredColumns = ['mobile', 'serial', 'provider', 'country'];
@@ -161,18 +189,16 @@ class AllowedNumberController extends Controller
             }
         }
 
-        // 2. Reject the file immediately if any mandatory column is missing
         if (! empty($missingColumns)) {
-            fclose($handle);
-            $missingList = implode(', ', $missingColumns);
-            if ($request->is('api/*')) {
-                throw ValidationException::withMessages([
-                    'file' => "The CSV file is missing mandatory column headers: {$missingList}. Please ensure your file includes mobile, serial, provider and country columns.",
-                ]);
+            if ($spreadsheet !== null) {
+                $spreadsheet->disconnectWorksheets();
+            } elseif (is_resource($handle)) {
+                fclose($handle);
             }
 
-            return back()->withErrors([
-                'file' => "The CSV file is missing mandatory column headers: {$missingList}. Please ensure your file includes mobile, serial, provider and country columns.",
+            $missingList = implode(', ', $missingColumns);
+            throw ValidationException::withMessages([
+                'file' => "The CSV/XLSX file is missing mandatory column headers: {$missingList}. Please ensure your file includes mobile, serial, provider and country columns.",
             ]);
         }
 
@@ -182,13 +208,9 @@ class AllowedNumberController extends Controller
         $rows = [];
         $skipped = [];
         $seen = [];
-        $line = 1;
-
-        while (($cells = fgetcsv($handle, 0, ',', '"', '\\')) !== false) {
-            $line++;
-
+        $processRow = function (array $cells, int $line) use (&$rows, &$skipped, &$seen, $col, $pi, $ci): void {
             if (count(array_filter($cells, fn ($c) => trim((string) $c) !== '')) === 0) {
-                continue; // blank line
+                return;
             }
 
             $rawMobile = trim((string) ($cells[$col['mobile']] ?? ''));
@@ -200,14 +222,14 @@ class AllowedNumberController extends Controller
             if ($mobile === '0' && $serial === '0') {
                 $skipped[] = ['line' => $line, 'mobile' => $rawMobile, 'serial' => $rawSerial, 'reason' => 'invalid'];
 
-                continue;
+                return;
             }
 
             $key = $mobile.'|'.strtolower($serial);
             if (isset($seen[$key])) {
                 $skipped[] = ['line' => $line, 'mobile' => $mobile, 'serial' => $serial, 'reason' => 'duplicate_in_file'];
 
-                continue;
+                return;
             }
             $seen[$key] = true;
 
@@ -217,8 +239,29 @@ class AllowedNumberController extends Controller
                 'provider' => $pi !== null ? (mb_substr(trim((string) ($cells[$pi] ?? '')), 0, 100) ?: null) : null,
                 'country' => $ci !== null ? (substr(strtoupper(trim((string) ($cells[$ci] ?? ''))), 0, 10) ?: null) : null,
             ];
+        };
+
+        if ($worksheet !== null) {
+            $lastRow = $worksheet->getHighestDataRow();
+
+            if ($lastRow > 1) {
+                foreach ($worksheet->getRowIterator(2, $lastRow) as $row) {
+                    $processRow($this->spreadsheetRow($row, $lastColumn), $row->getRowIndex());
+                }
+            }
+
+            $spreadsheet->disconnectWorksheets();
+        } elseif (is_resource($handle)) {
+            $line = 1;
+
+            try {
+                while (($cells = fgetcsv($handle, 0, ',', '"', '\\')) !== false) {
+                    $processRow($cells, ++$line);
+                }
+            } finally {
+                fclose($handle);
+            }
         }
-        fclose($handle);
 
         // pairs that already exist in the table
         $existing = [];
@@ -368,6 +411,20 @@ class AllowedNumberController extends Controller
         $c = $this->cleanSerial($v);
 
         return strlen($c) >= 5 ? $c : '0';
+    }
+
+    private function spreadsheetRow(Row $row, int $lastColumn): array
+    {
+        $cells = $row->getCellIterator('A', Coordinate::stringFromColumnIndex($lastColumn));
+        $cells->setIterateOnlyExistingCells(false);
+
+        $values = [];
+
+        foreach ($cells as $cell) {
+            $values[] = $cell->getValueString();
+        }
+
+        return $values;
     }
 
     private function normalizeInput(Request $request): void

@@ -308,8 +308,8 @@ const labelClass = "block text-xs text-ink-500 uppercase tracking-wider mb-1";
                     v-if="!folders.length && !manualCount"
                     class="bg-surface-2 rounded-2xl border border-surface-3 p-10 text-center text-ink-500"
                 >
-                    No files yet. Click "Add Number" to upload a CSV or add a
-                    number manually.
+                    No files yet. Click "Add Number" to upload a CSV/XLSX file
+                    or add a number manually.
                 </div>
 
                 <div
@@ -602,13 +602,16 @@ const labelClass = "block text-xs text-ink-500 uppercase tracking-wider mb-1";
                     class="space-y-4 overflow-y-auto flex-1 pr-1"
                 >
                     <p class="text-xs text-ink-500">
-                        Upload a CSV with the columns
+                        Upload a CSV or Excel (.xlsx) file with the columns
                         <span class="font-mono text-ink-700"
                             >mobile, serial, provider, country</span
                         >
                         (mobile and serial are required). The file is saved on
                         the server and a file with the same name can't be
                         uploaded again.
+                        For serials longer than 15 digits, set the serial column
+                        to Text in Excel before entering values; Excel may round
+                        longer numeric values.
                     </p>
                     <a
                         href="/admin/allowed-numbers/sample"
@@ -617,11 +620,11 @@ const labelClass = "block text-xs text-ink-500 uppercase tracking-wider mb-1";
                         Download Sample CSV
                     </a>
                     <div>
-                        <label :class="labelClass">CSV File</label>
+                        <label :class="labelClass">CSV / XLSX File</label>
                         <input
                             ref="fileInput"
                             type="file"
-                            accept=".csv,.txt"
+                            accept=".csv,.txt,.xlsx"
                             @change="onFileChange"
                             class="block w-full text-sm text-ink-500 file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-0 file:bg-surface-3 file:text-ink-900"
                         />
