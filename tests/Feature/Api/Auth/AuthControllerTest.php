@@ -5,6 +5,7 @@ namespace Tests\Feature\Api\Auth;
 use App\Models\User;
 use App\Notifications\LoginOtpNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -81,6 +82,15 @@ class AuthControllerTest extends TestCase
         Notification::assertSentOnDemandOnce(LoginOtpNotification::class);
         $this->assertNotNull($user->fresh()->login_otp_hash);
         $this->assertDatabaseCount('personal_access_tokens', 0);
+    }
+
+    public function test_mobile_login_uses_api_middleware_without_web_csrf(): void
+    {
+        $route = app('router')->getRoutes()->match(Request::create('/api/auth/login', 'POST'));
+        $middleware = $route->gatherMiddleware();
+
+        $this->assertContains('api', $middleware);
+        $this->assertNotContains('web', $middleware);
     }
 
     public function test_invalid_login_credentials_return_401(): void

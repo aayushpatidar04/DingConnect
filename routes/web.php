@@ -13,9 +13,6 @@ use App\Http\Controllers\Admin\RetailerController as AdminRetailerController;
 use App\Http\Controllers\Admin\RetailerLevelController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Admin\TransactionController as AdminTransactionController;
-use App\Http\Controllers\Api\CountryController;
-use App\Http\Controllers\Api\OperatorController as ApiOperatorController;
-use App\Http\Controllers\Api\TransactionController as ApiTransactionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LandingController;
@@ -170,26 +167,6 @@ Route::prefix('retailer')->name('retailer.')->middleware(['auth', 'retailer', 'k
 
     Route::get('/profile', [RetailerProfileController::class, 'index'])->name('profile.index');
     Route::put('/profile', [RetailerProfileController::class, 'update'])->name('profile.update');
-});
-
-// ==========================================================================
-// REST API (auth:sanctum)
-// ==========================================================================
-
-Route::prefix('api')->name('api.')->group(function () {
-    Route::post('/auth/register', [App\Http\Controllers\Api\Auth\AuthController::class, 'register']);
-    Route::post('/auth/login', [App\Http\Controllers\Api\Auth\AuthController::class, 'login']);
-    Route::post('/auth/logout', [App\Http\Controllers\Api\Auth\AuthController::class, 'logout'])->middleware('auth:sanctum');
-    Route::get('/auth/me', [App\Http\Controllers\Api\Auth\AuthController::class, 'me'])->middleware('auth:sanctum');
-
-    Route::get('/countries', [CountryController::class, 'index']);
-    Route::get('/countries/{iso}/operators', [ApiOperatorController::class, 'byCountry']);
-    Route::get('/operators/search', [ApiOperatorController::class, 'search']);
-
-    Route::post('/transactions/topup', [ApiTransactionController::class, 'topUp'])->middleware('auth:sanctum');
-    Route::get('/transactions', [ApiTransactionController::class, 'history'])->middleware('auth:sanctum');
-    Route::get('/transactions/{id}', [ApiTransactionController::class, 'show'])->middleware('auth:sanctum');
-    Route::get('/transactions/{id}/status', [ApiTransactionController::class, 'status'])->middleware('auth:sanctum');
 });
 
 // ==========================================================================
