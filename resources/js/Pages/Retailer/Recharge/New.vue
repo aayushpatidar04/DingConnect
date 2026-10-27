@@ -1293,7 +1293,7 @@ watch([() => currentStep.value, () => form.send_value], fetchEligibleOffers);
                 </div>
 
                 <label class="text-sm text-ink-500 mb-2 block">
-                    Mobile Number ({{ selectedCountry?.name }})
+                    Mobile Number or Serial (ICCID) Number ({{ selectedCountry?.name }})
                 </label>
 
                 <div
