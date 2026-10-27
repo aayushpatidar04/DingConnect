@@ -111,6 +111,33 @@ onUnmounted(() => {
                     </Link>
 
                     <Link
+                        href="/admin/analytics"
+                        class="flex items-center px-3 py-3 rounded-xl transition-all duration-200"
+                        :class="
+                            $page.url.includes('/analytics')
+                                ? 'bg-primary text-ink-100 shadow-lg shadow-primary/20'
+                                : 'text-ink-500 hover:bg-surface-2 hover:text-ink-900'
+                        "
+                    >
+                        <svg
+                            class="w-5 h-5 flex-shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M3 3v18h18M18 17V9m-5 8V5m-5 12v-5"
+                            />
+                        </svg>
+                        <span v-if="showMobileMenu" class="ml-3 font-medium"
+                            >Analytics</span
+                        >
+                    </Link>
+
+                    <Link
                         href="/admin/transactions"
                         class="flex items-center px-3 py-3 rounded-xl transition-all duration-200"
                         :class="

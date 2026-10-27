@@ -74,6 +74,11 @@ class User extends Authenticatable
         return $this->hasMany(Transaction::class);
     }
 
+    public function retailerConnections(): HasMany
+    {
+        return $this->hasMany(RetailerConnection::class);
+    }
+
     public function walletTopups(): HasMany
     {
         return $this->hasMany(WalletTopup::class);

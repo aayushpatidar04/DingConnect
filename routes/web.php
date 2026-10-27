@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\{
     OfferController,
     CommissionRateController,
     CommissionReportController,
+    RetailerAnalyticsController,
     RetailerLevelController,
     DashboardController as AdminDashboardController,
     OperatorController as AdminOperatorController,
@@ -72,6 +73,7 @@ Route::post('/logout', [AuthController::class, 'logout'])
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/analytics', [RetailerAnalyticsController::class, 'index'])->name('analytics.index');
 
     Route::get('/retailers/export', [AdminRetailerController::class, 'export'])->name('retailers.export');
     Route::get('/retailers/create', [AdminRetailerController::class, 'create'])->name('retailers.create');
