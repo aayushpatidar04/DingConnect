@@ -19,9 +19,7 @@ use Illuminate\Support\Facades\DB;
 
 class CommissionService
 {
-    public function __construct(protected WalletService $wallets)
-    {
-    }
+    public function __construct(protected WalletService $wallets) {}
 
     public function isEnabled(): bool
     {
@@ -165,7 +163,7 @@ class CommissionService
                 'skip_reason' => $reason,
                 'credited_at' => $credited ? now() : null,
             ]);
-        
+
             $this->creditWallet($commission, $transaction, $level, $topup, $bonus, $type, $position);
         }
 
@@ -280,7 +278,7 @@ class CommissionService
         }
 
         $mobileVariants = $national !== null
-            ? ['44' . $national, '0' . $national, $national]
+            ? ['44'.$national, '0'.$national, $national]
             : (strlen($digits) >= 5 ? [$digits] : []);
 
         if (! $serialInputs && ! $mobileVariants) {
@@ -299,6 +297,11 @@ class CommissionService
             ->first();
     }
 
+    public function allowedNumberForConnection(Transaction $transaction): ?AllowedNumber
+    {
+        return $this->findAllowedNumber($transaction);
+    }
+
     /**
      * A stable identity for the SIM: its serial when known, otherwise its mobile number.
      * Re-uploading the same row later keeps the same key.
@@ -308,10 +311,15 @@ class CommissionService
         $serial = (string) $allowed->serial;
 
         if ($serial !== '' && $serial !== '0') {
-            return 's:' . strtolower($serial);
+            return 's:'.strtolower($serial);
         }
 
-        return 'm:' . $allowed->mobile;
+        return 'm:'.$allowed->mobile;
+    }
+
+    public function connectionAccountKey(AllowedNumber $allowed): string
+    {
+        return $this->accountKey($allowed);
     }
 
     protected function connectionFor(AllowedNumber $allowed, Transaction $transaction): RetailerConnection
@@ -422,7 +430,7 @@ class CommissionService
             'auto_upgrade',
             $profile->level_connections,
             null,
-            'Reached ' . $profile->level_connections . ' level connections'
+            'Reached '.$profile->level_connections.' level connections'
         );
     }
 
