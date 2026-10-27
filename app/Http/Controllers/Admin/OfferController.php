@@ -63,33 +63,45 @@ class OfferController extends Controller
             })
             ->values();
 
-        return Inertia::render('Admin/Offers/Index', [
+        $data = [
             'offers' => $offers,
             'operators' => Operator::with('country:id,iso_code')
                 ->orderBy('name')
                 ->get(['id', 'name', 'country_id'])
                 ->map(fn (Operator $o) => [
                     'id' => $o->id,
-                    'label' => $o->name . ($o->country ? " ({$o->country->iso_code})" : ''),
+                    'label' => $o->name.($o->country ? " ({$o->country->iso_code})" : ''),
                 ]),
             'retailers' => User::where('role', 'retailer')
                 ->orderBy('name')
                 ->get(['id', 'name', 'shop_name'])
                 ->map(fn (User $u) => [
                     'id' => $u->id,
-                    'label' => $u->name . ($u->shop_name ? " – {$u->shop_name}" : ''),
+                    'label' => $u->name.($u->shop_name ? " – {$u->shop_name}" : ''),
                 ]),
-        ]);
+        ];
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => $data]);
+        }
+
+        return Inertia::render('Admin/Offers/Index', $data);
     }
 
     public function store(Request $request)
     {
         $data = $this->validated($request);
 
-        DB::transaction(function () use ($data, $request) {
+        $offer = DB::transaction(function () use ($data, $request) {
             $offer = Offer::create($this->offerFields($data) + ['created_by' => $request->user()->id]);
             $this->syncAudience($offer, $data);
+
+            return $offer;
         });
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => $offer->load(['operators:id,name', 'retailers:id'])], 201);
+        }
 
         return back()->with('success', 'Offer created.');
     }
@@ -103,21 +115,33 @@ class OfferController extends Controller
             $this->syncAudience($offer, $data);
         });
 
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => $offer->fresh()->load(['operators:id,name', 'retailers:id'])]);
+        }
+
         return back()->with('success', 'Offer updated.');
     }
 
-    public function destroy(Offer $offer)
+    public function destroy(Request $request, Offer $offer)
     {
         if ($offer->redemptions()->exists()) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'This offer has been used. Pause it instead of deleting it, so the history is kept.'], 409);
+            }
+
             return back()->with('error', 'This offer has been used. Pause it instead of deleting it, so the history is kept.');
         }
 
         $offer->delete();
 
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Offer deleted.']);
+        }
+
         return back()->with('success', 'Offer deleted.');
     }
 
-    public function redemptions(Offer $offer)
+    public function redemptions(Request $request, Offer $offer)
     {
         $rows = OfferRedemption::with(['user:id,name,shop_name', 'transaction:id,receipt_number,mobile_number,operator_id', 'transaction.operator:id,name'])
             ->where('offer_id', $offer->id)
@@ -135,6 +159,10 @@ class OfferController extends Controller
                 'status' => $r->status,
                 'at' => $r->created_at?->toIso8601String(),
             ]);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => ['redemptions' => $rows]]);
+        }
 
         return response()->json(['redemptions' => $rows]);
     }

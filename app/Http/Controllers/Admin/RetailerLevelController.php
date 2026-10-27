@@ -13,9 +13,7 @@ use Inertia\Inertia;
 
 class RetailerLevelController extends Controller
 {
-    public function __construct(protected CommissionService $commissions)
-    {
-    }
+    public function __construct(protected CommissionService $commissions) {}
 
     public function index(Request $request)
     {
@@ -66,11 +64,17 @@ class RetailerLevelController extends Controller
             ];
         });
 
-        return Inertia::render('Admin/Commission/Retailers', [
+        $data = [
             'retailers' => $retailers,
             'levels' => $levelList,
             'filters' => $filters,
-        ]);
+        ];
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => $data]);
+        }
+
+        return Inertia::render('Admin/Commission/Retailers', $data);
     }
 
     public function update(Request $request, User $retailer)
@@ -94,6 +98,10 @@ class RetailerLevelController extends Controller
             isset($data['actual_connections']) ? (int) $data['actual_connections'] : null,
             isset($data['topups_count']) ? (int) $data['topups_count'] : null,
         );
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => "Level updated for {$retailer->name}."]);
+        }
 
         return back()->with('success', "Level updated for {$retailer->name}.");
     }
@@ -120,10 +128,14 @@ class RetailerLevelController extends Controller
             );
         }
 
-        return back()->with('success', $retailers->count() . ' retailer(s) updated.');
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => ['updated' => $retailers->count()]]);
+        }
+
+        return back()->with('success', $retailers->count().' retailer(s) updated.');
     }
 
-    public function history(User $retailer)
+    public function history(Request $request, User $retailer)
     {
         abort_unless($retailer->role === 'retailer', 404);
 
@@ -144,6 +156,10 @@ class RetailerLevelController extends Controller
                 'reason' => $c->reason,
                 'at' => $c->created_at?->toIso8601String(),
             ]);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => ['history' => $history]]);
+        }
 
         return response()->json(['history' => $history]);
     }

@@ -21,6 +21,10 @@ class CommissionRateController extends Controller
             return $rate;
         });
 
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => $rate->load('steps', 'operator:id,name')], 201);
+        }
+
         return redirect()->route('admin.commission-levels.index', ['level' => $rate->commission_level_id])
             ->with('success', 'Rate added.');
     }
@@ -34,12 +38,20 @@ class CommissionRateController extends Controller
             $this->syncSteps($rate, $data['steps'] ?? []);
         });
 
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => $rate->fresh()->load('steps', 'operator:id,name')]);
+        }
+
         return back()->with('success', 'Rate updated.');
     }
 
-    public function destroy(CommissionRate $rate)
+    public function destroy(Request $request, CommissionRate $rate)
     {
         $rate->delete();
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Rate deleted.']);
+        }
 
         return back()->with('success', 'Rate deleted.');
     }

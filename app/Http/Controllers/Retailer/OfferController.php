@@ -22,6 +22,7 @@ class OfferController extends Controller
         $amount = (float) $data['amount'];
 
         return response()->json([
+            'success' => true,
             'offers' => $offers->eligibleFor($user, $data['operator_id'] ?? null, $amount)
                 ->map(fn ($offer) => $offers->present($offer, $user, $amount))
                 ->values(),

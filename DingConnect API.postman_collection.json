@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "e331be21-4ef8-49f9-bdf6-23574dacda41",
     "name": "DingConnect API",
-    "description": "DingConnect mobile application API. Set base_url to the application origin and token to a Sanctum bearer token. See API_DOCUMENTATION.md for request details, validation, and response behavior.",
+    "description": "DingConnect mobile application API. Set base_url to the application origin and token to a Sanctum bearer token. Requests marked NEW cover features added since API baseline e16d8f6efa17fca87d88a334455c2814b717ae89. See API_DOCUMENTATION.md for request details, validation, and response behavior.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -53,6 +53,22 @@
     },
     {
       "key": "allowed_file_id",
+      "value": "1",
+      "type": "string"
+    }
+  ,
+    {
+      "key": "level_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "rate_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "offer_id",
       "value": "1",
       "type": "string"
     }
@@ -699,6 +715,468 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": { "mode": "raw", "raw": "{\n  \"example\": \"replace-with-provider-event-payload\"\n}", "options": { "raw": { "language": "json" } } },
             "url": "{{base_url}}/api/webhooks/stripe"
+          }
+        }
+      ]
+    }
+  ,
+    {
+      "name": "NEW - Retailer commissions & offers",
+      "description": "New retailer APIs added after the API baseline. The dashboard now includes visible active offers; eligible offers are filtered for amount and operator.",
+      "item": [
+        {
+          "name": "NEW - Commission summary and history",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/commissions?type=first&from=2026-01-01&to=2026-12-31"
+          }
+        },
+        {
+          "name": "NEW - Find eligible offers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/offers/eligible?operator_id={{operator_id}}&amount=10"
+          }
+        },
+        {
+          "name": "NEW - Dashboard (includes active offers)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/dashboard"
+          }
+        }
+      ]
+    },
+    {
+      "name": "NEW - Admin analytics, commissions & offers",
+      "description": "New admin APIs added after the API baseline. Requires an admin bearer token.",
+      "item": [
+        {
+          "name": "NEW - Retailer analytics (all filters)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/analytics?network_id={{operator_id}}&connections=5&status=active&kyc_status=approved&registered_from=2026-01-01&registered_to=2026-12-31"
+          }
+        },
+        {
+          "name": "NEW - List commission levels and rates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/commission-levels"
+          }
+        },
+        {
+          "name": "NEW - Create commission level",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example level\",\n  \"min_connections\": 5,\n  \"sort_order\": 1,\n  \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/admin/commission-levels"
+          }
+        },
+        {
+          "name": "NEW - Update commission level",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example level\",\n  \"min_connections\": 5,\n  \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/admin/commission-levels/{{level_id}}"
+          }
+        },
+        {
+          "name": "NEW - Delete commission level",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/commission-levels/{{level_id}}"
+          }
+        },
+        {
+          "name": "NEW - Copy commission rates to a level",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source_level_id\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/admin/commission-levels/{{level_id}}/copy-rates"
+          }
+        },
+        {
+          "name": "NEW - Create commission rate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"commission_level_id\": 1,\n  \"operator_id\": null,\n  \"min_amount\": 1,\n  \"max_amount\": 20,\n  \"first_topup_amount\": 0.5,\n  \"first_bonus_amount\": 0,\n  \"is_active\": true,\n  \"steps\": [\n    {\n      \"from_sequence\": 2,\n      \"to_sequence\": null,\n      \"amount\": 0.25\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/admin/commission-rates"
+          }
+        },
+        {
+          "name": "NEW - Update commission rate",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"commission_level_id\": 1,\n  \"operator_id\": null,\n  \"min_amount\": 1,\n  \"max_amount\": 20,\n  \"first_topup_amount\": 0.5,\n  \"first_bonus_amount\": 0,\n  \"is_active\": true,\n  \"steps\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/admin/commission-rates/{{rate_id}}"
+          }
+        },
+        {
+          "name": "NEW - Delete commission rate",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/commission-rates/{{rate_id}}"
+          }
+        },
+        {
+          "name": "NEW - List retailer commission levels",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/retailer-levels?level=none&page=1"
+          }
+        },
+        {
+          "name": "NEW - Assign retailer commission level",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"level_id\": 1,\n  \"auto_level_enabled\": true,\n  \"actual_connections\": 5,\n  \"topups_count\": 0,\n  \"reason\": \"Initial assignment\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/admin/retailer-levels/{{retailer_id}}"
+          }
+        },
+        {
+          "name": "NEW - Bulk assign retailer commission level",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"retailer_ids\": [\n    1\n  ],\n  \"level_id\": 1,\n  \"auto_level_enabled\": true,\n  \"reason\": \"Bulk assignment\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/admin/retailer-levels/bulk"
+          }
+        },
+        {
+          "name": "NEW - Retailer commission level history",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/retailer-levels/{{retailer_id}}/history"
+          }
+        },
+        {
+          "name": "NEW - Commission report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/commissions?status=credited&type=first&from=2026-01-01&to=2026-12-31&page=1"
+          }
+        },
+        {
+          "name": "NEW - Export commissions XLSX",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/commissions/export?status=credited&from=2026-01-01&to=2026-12-31"
+          }
+        },
+        {
+          "name": "NEW - List offers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/offers"
+          }
+        },
+        {
+          "name": "NEW - Create offer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Example offer\",\n  \"description\": \"Example discount\",\n  \"type\": \"percent\",\n  \"value\": 5,\n  \"max_cashback\": 10,\n  \"min_amount\": 5,\n  \"expires_at\": \"2027-12-31T23:59:59Z\",\n  \"audience\": \"all\",\n  \"is_active\": true,\n  \"operator_ids\": [],\n  \"retailer_ids\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/admin/offers"
+          }
+        },
+        {
+          "name": "NEW - Update offer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Example offer\",\n  \"type\": \"fixed\",\n  \"value\": 1,\n  \"min_amount\": 5,\n  \"expires_at\": \"2027-12-31T23:59:59Z\",\n  \"audience\": \"all\",\n  \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/admin/offers/{{offer_id}}"
+          }
+        },
+        {
+          "name": "NEW - Delete offer",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/offers/{{offer_id}}"
+          }
+        },
+        {
+          "name": "NEW - Offer redemption history",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/offers/{{offer_id}}/redemptions"
+          }
+        }
+      ]
+    },
+    {
+      "name": "NEW - Offer-backed recharge example",
+      "description": "Optional offer_id example for POST /api/retailer/recharge. Select an eligible offer ID from the retailer offers endpoints.",
+      "item": [
+        {
+          "name": "NEW - Submit recharge with an offer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku_code\": \"SKU-CODE\",\n  \"send_value\": 10,\n  \"send_currency\": \"GBP\",\n  \"receive_value\": 10,\n  \"receive_currency\": \"GBP\",\n  \"redemption_type\": \"Immediate\",\n  \"mobile_number\": \"447700900123\",\n  \"country_id\": 1,\n  \"operator_id\": 1,\n  \"gateway\": \"ding\",\n  \"provider_code\": \"provider-code\",\n  \"offer_id\": \"{{offer_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/retailer/recharge",
+            "description": "Optional offer_id reserves a currently eligible retailer offer. Replace the collection variable with an ID returned by NEW - Find eligible offers; cashback is only paid after a successful recharge."
           }
         }
       ]

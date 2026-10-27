@@ -1,7 +1,13 @@
 <?php
 
 use App\Http\Controllers\Admin\AllowedNumberController as AdminAllowedNumberController;
+use App\Http\Controllers\Admin\CommissionLevelController as WebCommissionLevelController;
+use App\Http\Controllers\Admin\CommissionRateController as WebCommissionRateController;
+use App\Http\Controllers\Admin\CommissionReportController as WebCommissionReportController;
+use App\Http\Controllers\Admin\OfferController as WebOfferController;
+use App\Http\Controllers\Admin\RetailerAnalyticsController as WebRetailerAnalyticsController;
 use App\Http\Controllers\Admin\RetailerController as WebRetailerController;
+use App\Http\Controllers\Admin\RetailerLevelController as WebRetailerLevelController;
 use App\Http\Controllers\Admin\TransactionController as WebTransactionController;
 use App\Http\Controllers\Api\Admin\OperatorController as AdminOperatorController;
 use App\Http\Controllers\Api\Admin\RetailerController as AdminRetailerController;
@@ -16,6 +22,8 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\Retailer\WalletController as RetailerWalletController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\WebhookController;
+use App\Http\Controllers\Retailer\CommissionController as WebRetailerCommissionController;
+use App\Http\Controllers\Retailer\OfferController as WebRetailerOfferController;
 use App\Http\Controllers\Retailer\RechargeController;
 use App\Http\Controllers\Retailer\TransactionController as RetailerTransactionController;
 use App\Http\Controllers\Retailer\WalletController as RetailerWebWalletController;
@@ -47,6 +55,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
 
     Route::middleware('admin')->prefix('admin')->name('api.admin.')->group(function (): void {
         Route::get('/dashboard', [DashboardController::class, 'admin']);
+        Route::get('/analytics', [WebRetailerAnalyticsController::class, 'index']);
 
         Route::get('/retailers/export', [WebRetailerController::class, 'export']);
         Route::apiResource('retailers', AdminRetailerController::class);
@@ -66,6 +75,27 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         Route::get('/settings', [AdminSettingController::class, 'index']);
         Route::put('/settings', [AdminSettingController::class, 'update']);
 
+        Route::get('/commission-levels', [WebCommissionLevelController::class, 'index']);
+        Route::post('/commission-levels', [WebCommissionLevelController::class, 'store']);
+        Route::put('/commission-levels/{level}', [WebCommissionLevelController::class, 'update'])->whereNumber('level');
+        Route::delete('/commission-levels/{level}', [WebCommissionLevelController::class, 'destroy'])->whereNumber('level');
+        Route::post('/commission-levels/{level}/copy-rates', [WebCommissionLevelController::class, 'copyRates'])->whereNumber('level');
+        Route::post('/commission-rates', [WebCommissionRateController::class, 'store']);
+        Route::put('/commission-rates/{rate}', [WebCommissionRateController::class, 'update'])->whereNumber('rate');
+        Route::delete('/commission-rates/{rate}', [WebCommissionRateController::class, 'destroy'])->whereNumber('rate');
+        Route::get('/retailer-levels', [WebRetailerLevelController::class, 'index']);
+        Route::post('/retailer-levels/bulk', [WebRetailerLevelController::class, 'bulk']);
+        Route::get('/retailer-levels/{retailer}/history', [WebRetailerLevelController::class, 'history'])->whereNumber('retailer');
+        Route::put('/retailer-levels/{retailer}', [WebRetailerLevelController::class, 'update'])->whereNumber('retailer');
+        Route::get('/commissions', [WebCommissionReportController::class, 'index']);
+        Route::get('/commissions/export', [WebCommissionReportController::class, 'export']);
+
+        Route::get('/offers', [WebOfferController::class, 'index']);
+        Route::post('/offers', [WebOfferController::class, 'store']);
+        Route::get('/offers/{offer}/redemptions', [WebOfferController::class, 'redemptions'])->whereNumber('offer');
+        Route::put('/offers/{offer}', [WebOfferController::class, 'update'])->whereNumber('offer');
+        Route::delete('/offers/{offer}', [WebOfferController::class, 'destroy'])->whereNumber('offer');
+
         Route::get('/allowed-numbers/sample', [AdminAllowedNumberController::class, 'downloadSample']);
         Route::post('/allowed-numbers/import-file', [AdminAllowedNumberController::class, 'importFile']);
         Route::get('/allowed-numbers/files/{allowedNumberFile}/download', [AdminAllowedNumberController::class, 'downloadFile']);
@@ -75,6 +105,8 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
 
     Route::middleware(['retailer', 'kyc.approved'])->prefix('retailer')->name('api.retailer.')->group(function (): void {
         Route::get('/dashboard', [DashboardController::class, 'retailer']);
+        Route::get('/commissions', [WebRetailerCommissionController::class, 'index']);
+        Route::get('/offers/eligible', [WebRetailerOfferController::class, 'eligible']);
         Route::get('/profile', [ProfileController::class, 'show']);
         Route::put('/profile', [ProfileController::class, 'update']);
 

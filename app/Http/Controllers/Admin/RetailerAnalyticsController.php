@@ -8,6 +8,7 @@ use App\Models\RetailerConnection;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -28,7 +29,7 @@ class RetailerAnalyticsController extends Controller
         'activity_to',
     ];
 
-    public function index(Request $request): Response
+    public function index(Request $request): Response|JsonResponse
     {
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
@@ -56,7 +57,7 @@ class RetailerAnalyticsController extends Controller
         $totalTransactions = (int) $transactionStats->total_transactions;
         $successfulTransactions = (int) $transactionStats->successful_transactions;
 
-        return Inertia::render('Admin/RetailerAnalytics/Index', [
+        $data = [
             'filters' => $filters,
             'operators' => Operator::query()
                 ->with('country:id,name')
@@ -113,7 +114,13 @@ class RetailerAnalyticsController extends Controller
                 ]),
             'highestRetailers' => $this->connectionReport(clone $retailers, $filters, true),
             'lowestRetailers' => $this->connectionReport(clone $retailers, $filters, false),
-        ]);
+        ];
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => $data]);
+        }
+
+        return Inertia::render('Admin/RetailerAnalytics/Index', $data);
     }
 
     /**

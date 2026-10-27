@@ -8,12 +8,14 @@ use App\Models\CommissionRate;
 use App\Models\RetailerCommission;
 use App\Models\RetailerCommissionProfile;
 use App\Services\CommissionService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class CommissionController extends Controller
 {
-    public function index(Request $request, CommissionService $commissions)
+    public function index(Request $request, CommissionService $commissions): Response|JsonResponse
     {
         $user = $request->user();
 
@@ -31,7 +33,11 @@ class CommissionController extends Controller
                 ->values()
             : [];
 
-        $filters = $request->only('type', 'from', 'to');
+        $filters = $request->validate([
+            'type' => ['nullable', 'in:first,ongoing'],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+        ]);
 
         $history = RetailerCommission::query()
             ->with(['operator:id,name', 'transaction:id,receipt_number,mobile_number'])
@@ -51,7 +57,7 @@ class CommissionController extends Controller
             'all' => $earned($base()),
         ];
 
-        return Inertia::render('Retailer/Commissions/Index', [
+        $data = [
             'level' => $level ? ['id' => $level->id, 'name' => $level->name, 'min_connections' => $level->min_connections] : null,
             'next' => $next ? ['name' => $next->name, 'min_connections' => $next->min_connections] : null,
             'connections' => [
@@ -64,6 +70,12 @@ class CommissionController extends Controller
             'commissions' => $history,
             'totals' => $totals,
             'filters' => $filters,
-        ]);
+        ];
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => $data]);
+        }
+
+        return Inertia::render('Retailer/Commissions/Index', $data);
     }
 }

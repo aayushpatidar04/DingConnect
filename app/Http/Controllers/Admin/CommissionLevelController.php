@@ -7,14 +7,16 @@ use App\Models\CommissionLevel;
 use App\Models\CommissionRate;
 use App\Models\Operator;
 use App\Models\RetailerCommissionProfile;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class CommissionLevelController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): Response|JsonResponse
     {
         $profileCounts = RetailerCommissionProfile::whereNotNull('commission_level_id')
             ->selectRaw('commission_level_id, COUNT(*) as total')
@@ -51,20 +53,30 @@ class CommissionLevelController extends Controller
             ->get(['id', 'name', 'country_id'])
             ->map(fn (Operator $o) => [
                 'id' => $o->id,
-                'label' => $o->name . ($o->country ? " ({$o->country->iso_code})" : ''),
+                'label' => $o->name.($o->country ? " ({$o->country->iso_code})" : ''),
             ]);
 
-        return Inertia::render('Admin/Commission/Levels', [
+        $data = [
             'levels' => $levels,
             'selectedLevelId' => $selected['id'] ?? null,
             'rates' => $rates,
             'operators' => $operators,
-        ]);
+        ];
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => $data]);
+        }
+
+        return Inertia::render('Admin/Commission/Levels', $data);
     }
 
     public function store(Request $request)
     {
         $level = CommissionLevel::create($this->validated($request));
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => $level], 201);
+        }
 
         return redirect()->route('admin.commission-levels.index', ['level' => $level->id])
             ->with('success', 'Level created.');
@@ -74,16 +86,28 @@ class CommissionLevelController extends Controller
     {
         $level->update($this->validated($request, $level));
 
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => $level->fresh()]);
+        }
+
         return back()->with('success', 'Level updated.');
     }
 
-    public function destroy(CommissionLevel $level)
+    public function destroy(Request $request, CommissionLevel $level)
     {
         if (RetailerCommissionProfile::where('commission_level_id', $level->id)->exists()) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Retailers are still on this level. Move them to another level first.'], 409);
+            }
+
             return back()->with('error', 'Retailers are still on this level. Move them to another level first.');
         }
 
         $level->delete();
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Level deleted.']);
+        }
 
         return redirect()->route('admin.commission-levels.index')->with('success', 'Level deleted.');
     }
@@ -98,6 +122,10 @@ class CommissionLevelController extends Controller
         ]);
 
         if ($level->rates()->exists()) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'This level already has rates. Delete them first to copy from another level.'], 409);
+            }
+
             return back()->with('error', 'This level already has rates. Delete them first to copy from another level.');
         }
 
@@ -115,6 +143,10 @@ class CommissionLevelController extends Controller
                     }
                 });
         });
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Rates copied.']);
+        }
 
         return back()->with('success', 'Rates copied.');
     }

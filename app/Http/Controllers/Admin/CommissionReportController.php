@@ -9,16 +9,15 @@ use App\Models\Operator;
 use App\Models\RetailerCommission;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 
 class CommissionReportController extends Controller
 {
-    private const FILTER_KEYS = ['search', 'status', 'type', 'retailer_id', 'operator_id', 'level_id', 'from', 'to'];
-
     public function index(Request $request)
     {
-        $filters = $request->only(self::FILTER_KEYS);
+        $filters = $this->validatedFilters($request);
 
         $commissions = RetailerCommission::query()
             ->with([
@@ -47,21 +46,44 @@ class CommissionReportController extends Controller
             'skipped' => (int) $row->skipped,
         ];
 
-        return Inertia::render('Admin/Commission/Report', [
+        $data = [
             'commissions' => $commissions,
             'stats' => $stats,
             'filters' => $filters,
             'retailers' => User::where('role', 'retailer')->orderBy('name')->get(['id', 'name', 'shop_name']),
             'operators' => Operator::orderBy('name')->get(['id', 'name']),
             'levels' => CommissionLevel::orderBy('min_connections')->get(['id', 'name']),
-        ]);
+        ];
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => $data]);
+        }
+
+        return Inertia::render('Admin/Commission/Report', $data);
     }
 
     public function export(Request $request)
     {
         return Excel::download(
-            new CommissionsExport($request->only(self::FILTER_KEYS)),
-            'commissions_' . now()->format('Y-m-d') . '.xlsx'
+            new CommissionsExport($this->validatedFilters($request)),
+            'commissions_'.now()->format('Y-m-d').'.xlsx'
         );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function validatedFilters(Request $request): array
+    {
+        return $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', Rule::in(['credited', 'skipped'])],
+            'type' => ['nullable', Rule::in(['first', 'ongoing'])],
+            'retailer_id' => ['nullable', 'integer', 'exists:users,id'],
+            'operator_id' => ['nullable', 'integer', 'exists:operators,id'],
+            'level_id' => ['nullable', 'integer', 'exists:commission_levels,id'],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+        ]);
     }
 }

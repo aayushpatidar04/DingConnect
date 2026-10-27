@@ -7,6 +7,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Models\WalletTopup;
 use App\Services\DingConnectService;
+use App\Services\OfferService;
 use App\Services\ValuetopupService;
 use App\Services\WalletService;
 use Illuminate\Http\JsonResponse;
@@ -80,7 +81,7 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function retailer(Request $request, WalletService $walletService): JsonResponse
+    public function retailer(Request $request, WalletService $walletService, OfferService $offerService): JsonResponse
     {
         $user = $request->user();
         $wallet = $walletService->getWallet($user);
@@ -133,9 +134,11 @@ class DashboardController extends Controller
             return ['date' => $date, 'count' => (int) ($row->count ?? 0), 'amount' => (float) ($row->amount ?? 0)];
         });
 
+        $offers = $offerService->activeFor($user);
+
         return response()->json([
             'success' => true,
-            'data' => compact('stats', 'recentTransactions', 'chartData'),
+            'data' => compact('stats', 'recentTransactions', 'chartData', 'offers'),
         ]);
     }
 

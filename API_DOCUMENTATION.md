@@ -2,6 +2,10 @@
 
 This reference describes the application API under `/api`. It is intended for mobile clients and uses Laravel Sanctum personal access tokens.
 
+> **NEW API coverage — added since baseline `e16d8f6efa17fca87d88a334455c2814b717ae89`:** retailer commission summaries/history and offer eligibility; active offers in the retailer dashboard and offer selection on recharge; admin retailer analytics, commission-level/rate configuration, retailer level assignment/history, commission reports, and offer/redemption management. These routes are also grouped under **NEW** folders in the Postman collection.
+>
+> Historical retailer-connection backfill is intentionally an internal Artisan command, not a public API endpoint.
+
 ## Getting started
 
 Set the Postman `base_url` variable to the application origin, without a trailing slash (for example `https://example.com`). The API prefix `/api` is included in every request URL.
@@ -269,6 +273,95 @@ Example:
 | `DELETE /api/admin/allowed-numbers/files/{allowedNumberFile}` | File ID | Deletes an imported file and associated records |
 
 Manual number payload fields follow the web form: `mobile`, `serial`, `provider`, `country`; update also requires `active`. CSV headers must include `mobile`, `serial`, `provider`, and `country` (case-insensitive). File names must be unique. Use multipart form-data for upload; do not manually set its boundary header.
+
+## NEW — retailer commissions and offers
+
+These endpoints require a bearer token, active retailer account, retailer role, and approved KYC. Send `Accept: application/json`.
+
+### `GET /api/retailer/commissions`
+
+Returns the retailer's current commission level and connection counts, next level threshold, active commission rates, credited commission history, date/type filters, and totals for today, this month, and all time. History is paginated at 25 rows per page.
+
+| Query parameter | Allowed values / behavior |
+|---|---|
+| `type` | Optional `first` or `ongoing` |
+| `from`, `to` | Optional dates; `to` must be on or after `from` |
+| `page` | Optional paginator page |
+
+History is always scoped to the authenticated retailer and only includes credited commissions.
+
+### `GET /api/retailer/offers/eligible`
+
+Finds offers usable for the specified recharge amount and operator. Query parameters: required numeric `amount` (minimum `0`), optional integer `operator_id`. Response contains `success: true` and `offers`; each offer includes its benefit for the amount, matching providers, and remaining uses.
+
+### Retailer dashboard and recharge changes
+
+`GET /api/retailer/dashboard` now includes an `offers` array containing visible live offers for the authenticated retailer. When submitting `POST /api/retailer/recharge`, an optional integer `offer_id` reserves that offer for the recharge. The offer is validated again during reservation; a no-longer-eligible offer returns `422`. Cashback is settled only after a successful recharge.
+
+## NEW — admin retailer analytics
+
+`GET /api/admin/analytics` requires an active admin account. All filters are optional:
+
+| Query parameter | Allowed values / behavior |
+|---|---|
+| `search` | Up to 100 characters; searches retailer name, shop, email, phone, and postcode |
+| `network_id` | Existing operator ID |
+| `connections` | `5`, `10`, or `20`; minimum connections, counted within the selected network when `network_id` is set |
+| `status` | `active` or `inactive` |
+| `kyc_status` | `pending`, `approved`, or `rejected` |
+| `city` | Exact city name |
+| `registered_from`, `registered_to` | Registration date range |
+| `activity_from`, `activity_to` | Transaction activity date range |
+
+The response `data` contains the applied filters, network and city options, retailer/transaction summary stats, connection distribution, network breakdown, and highest- and lowest-connection retailer reports. Retailer, network, status, KYC, city, registration-date, and connection-threshold filters narrow both connection reports and summary counts. Activity dates filter transaction metrics in the summary and retailer report rows.
+
+## NEW — admin commissions
+
+All routes in this section require an active admin account and `Accept: application/json`.
+
+### Commission levels and rates
+
+| Method and path | Request / result |
+|---|---|
+| `GET /api/admin/commission-levels` | Returns commission levels, selected level, that level's rates/steps, and operator options. Optional query `level` selects a level. |
+| `POST /api/admin/commission-levels` | JSON: required `name`, `min_connections`; optional `sort_order`, `is_active`. Returns `201`. |
+| `PUT /api/admin/commission-levels/{level}` | Same fields as create; updates the level. |
+| `DELETE /api/admin/commission-levels/{level}` | Deletes an unused level; returns `409` while retailers are assigned to it. |
+| `POST /api/admin/commission-levels/{level}/copy-rates` | JSON `source_level_id`; copies rates and ongoing bands into an empty level. |
+| `POST /api/admin/commission-rates` | JSON rate fields below; returns `201`. |
+| `PUT /api/admin/commission-rates/{rate}` | Same JSON fields as create. |
+| `DELETE /api/admin/commission-rates/{rate}` | Deletes a rate. |
+
+Commission-rate JSON fields: required `commission_level_id`, `min_amount`, and `first_topup_amount`, `first_bonus_amount`; optional `operator_id`, `max_amount`, `is_active`, and `steps`. Each `steps` item has `from_sequence` (minimum 2), optional `to_sequence`, and `amount`. Amount ranges for a level/operator and sequence bands cannot overlap; invalid values return `422`.
+
+### Retailer level assignment and history
+
+| Method and path | Request / result |
+|---|---|
+| `GET /api/admin/retailer-levels` | Paginated retailers, level options, and assignment data. Optional `search`, `level` (level ID or `none`), and `page`. |
+| `PUT /api/admin/retailer-levels/{retailer}` | JSON: optional `level_id` (nullable), `auto_level_enabled`, `actual_connections`, `topups_count`, and `reason`. |
+| `POST /api/admin/retailer-levels/bulk` | JSON: required non-empty `retailer_ids` array; optional `level_id`, `auto_level_enabled`, and `reason`. |
+| `GET /api/admin/retailer-levels/{retailer}/history` | Returns up to 50 level changes, newest first. |
+
+### Commission report
+
+`GET /api/admin/commissions` returns paginated commission entries (50 per page), totals, and retailer/operator/level options. Optional filters: `search`, `status` (`credited` or `skipped`), `type` (`first` or `ongoing`), `retailer_id`, `operator_id`, `level_id`, `from`, `to`, and `page`. Dates must be valid and `to` must not precede `from`.
+
+`GET /api/admin/commissions/export` accepts the same filters and downloads an XLSX file.
+
+## NEW — admin offers and redemptions
+
+These routes require an active admin account.
+
+| Method and path | Request / result |
+|---|---|
+| `GET /api/admin/offers` | Returns offers, redemption totals, operator options, and retailer options. |
+| `POST /api/admin/offers` | Creates an offer from the JSON fields below; returns `201`. |
+| `PUT /api/admin/offers/{offer}` | Updates an offer using the same JSON fields. |
+| `DELETE /api/admin/offers/{offer}` | Deletes an unused offer; returns `409` if it has redemption history. |
+| `GET /api/admin/offers/{offer}/redemptions` | Returns up to 100 most recent redemption rows for the offer. |
+
+Offer JSON fields: required `title`, `type` (`percent` or `fixed`), `value`, `expires_at`, and `audience` (`all` or `selected`); optional `description`, `max_cashback`, `min_amount`, `max_amount`, `starts_at`, `per_retailer_limit`, `total_limit`, `is_active`, `operator_ids`, and `retailer_ids`. Percentage values cannot exceed 100. A selected audience requires at least one retailer ID. The API reuses the same eligibility, reservation, and settlement rules as web recharge.
 
 ## Provider webhooks
 
