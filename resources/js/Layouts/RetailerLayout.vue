@@ -126,7 +126,8 @@ function logout() {
                                 !$page.url.includes('recharge') &&
                                 !$page.url.includes('wallet') &&
                                 !$page.url.includes('transactions') &&
-                                !$page.url.includes('commissions')
+                                !$page.url.includes('commissions') &&
+                                !$page.url.includes('network-offers')
                                     ? 'bg-surface-3 text-ink-900'
                                     : 'text-ink-500 hover:text-ink-900 hover:bg-surface-2'
                             "
@@ -171,6 +172,16 @@ function logout() {
                                     : 'text-ink-500 hover:text-ink-900 hover:bg-surface-2'
                             "
                             >Commission</Link
+                        >
+                        <Link
+                            href="/retailer/network-offers"
+                            class="px-3 py-2 rounded-lg text-sm font-medium transition"
+                            :class="
+                                $page.url.includes('/network-offers')
+                                    ? 'bg-surface-3 text-ink-900'
+                                    : 'text-ink-500 hover:text-ink-900 hover:bg-surface-2'
+                            "
+                            >Network Offers</Link
                         >
                     </div>
 
@@ -315,6 +326,11 @@ function logout() {
                         href="/retailer/commissions"
                         class="block px-3 py-2 rounded-lg text-base font-medium text-ink-500 hover:text-ink-900 hover:bg-surface-2"
                         >Commission</Link
+                    >
+                    <Link
+                        href="/retailer/network-offers"
+                        class="block px-3 py-2 rounded-lg text-base font-medium text-ink-500 hover:text-ink-900 hover:bg-surface-2"
+                        >Network Offers</Link
                     >
                     <Link
                         href="/retailer/profile"

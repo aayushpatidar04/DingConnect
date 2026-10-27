@@ -2,6 +2,7 @@
 import { Head, useForm } from "@inertiajs/vue3";
 import RetailerLayout from "@/Layouts/RetailerLayout.vue";
 import ProductCategories from "@/Components/ProductCategories.vue";
+import PlanBenefits from "@/Components/PlanBenefits.vue";
 import { ref, computed, onMounted, watch } from "vue";
 import FlashMessage from "@/Components/FlashMessage.vue";
 import { benefitLabel, formatOfferDate } from "@/Composables/useOffers";
@@ -26,6 +27,10 @@ const loadingProviders = ref(false);
 const loadingProducts = ref(false);
 const selectedProduct = ref(null);
 const selectedSkuCode = ref("");
+const selectedPlanBenefits = ref([]);
+const planBenefitsConfigured = ref(false);
+const planBenefitsLoading = ref(false);
+const planBenefitsError = ref("");
 const isFreeRangeFlow = ref(false);
 const freeRangeAmount = ref(0);
 const freeRangePricing = ref(null);
@@ -396,11 +401,15 @@ async function selectProduct(product) {
     // Reset description
     productDescription.value = "";
     productReadmore.value = "";
+    selectedPlanBenefits.value = [];
+    planBenefitsConfigured.value = false;
+    planBenefitsError.value = "";
 
     // Fetch product description from API (DingConnect descriptions only)
     if (form.gateway === "ding") {
         await fetchProductDescription(product.sku_code);
     }
+    await fetchPlanBenefits(product);
 
     // Populate form
     form.sku_code = product.sku_code;
@@ -429,6 +438,41 @@ async function selectProduct(product) {
         currentStep.value = 5; // go straight to confirm
     } else {
         currentStep.value = 4; // ask for number
+    }
+}
+
+async function fetchPlanBenefits(product) {
+    selectedPlanBenefits.value = [];
+    planBenefitsConfigured.value = false;
+    planBenefitsError.value = "";
+
+    if (!product.is_denomination || !selectedProvider.value?.provider_id) {
+        return;
+    }
+
+    planBenefitsLoading.value = true;
+    try {
+        const params = new URLSearchParams({
+            operator_id: selectedProvider.value.provider_id,
+            price: product.send_value,
+            currency: product.send_currency || "GBP",
+        });
+        const response = await fetch(
+            `/retailer/recharge/plan-benefits?${params.toString()}`,
+        );
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || "Could not load plan benefits.");
+        }
+
+        planBenefitsConfigured.value = Boolean(data.plan);
+        selectedPlanBenefits.value = data.plan?.benefits || [];
+    } catch (error) {
+        console.error("Failed to fetch plan benefits", error);
+        planBenefitsError.value = "Unable to load plan benefits. Please try again.";
+    } finally {
+        planBenefitsLoading.value = false;
     }
 }
 
@@ -1214,6 +1258,14 @@ watch([() => currentStep.value, () => form.send_value], fetchEligibleOffers);
                 </div>
             </div>
 
+            <PlanBenefits
+                class="mb-5"
+                :benefits="selectedPlanBenefits"
+                :configured="planBenefitsConfigured"
+                :loading="planBenefitsLoading"
+                :error="planBenefitsError"
+            />
+
             <!-- How to redeem (from description API) -->
             <div
                 v-if="productReadmore || productDescription"
@@ -1403,6 +1455,14 @@ watch([() => currentStep.value, () => form.send_value], fetchEligibleOffers);
                         </div>
                     </div>
                 </div>
+
+                <PlanBenefits
+                    class="mb-5"
+                    :benefits="selectedPlanBenefits"
+                    :configured="planBenefitsConfigured"
+                    :loading="planBenefitsLoading"
+                    :error="planBenefitsError"
+                />
 
                 <!-- Details -->
                 <div class="space-y-2 mb-5 text-sm">

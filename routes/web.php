@@ -1,38 +1,33 @@
 <?php
 
-use App\Http\Controllers\Admin\{
-    CommissionLevelController,
-    OfferController,
-    CommissionRateController,
-    CommissionReportController,
-    RetailerAnalyticsController,
-    RetailerLevelController,
-    DashboardController as AdminDashboardController,
-    OperatorController as AdminOperatorController,
-    RetailerController as AdminRetailerController,
-    SettingController as AdminSettingController,
-    TransactionController as AdminTransactionController,
-    AllowedNumberController
-};
-use App\Http\Controllers\Api\{
-    CountryController,
-    OperatorController as ApiOperatorController,
-    TransactionController as ApiTransactionController,
-    WalletController as ApiWalletController,
-    WebhookController
-};
+use App\Http\Controllers\Admin\AllowedNumberController;
+use App\Http\Controllers\Admin\CommissionLevelController;
+use App\Http\Controllers\Admin\CommissionRateController;
+use App\Http\Controllers\Admin\CommissionReportController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\OfferController;
+use App\Http\Controllers\Admin\OperatorController as AdminOperatorController;
+use App\Http\Controllers\Admin\OperatorPlanController as AdminOperatorPlanController;
+use App\Http\Controllers\Admin\RetailerAnalyticsController;
+use App\Http\Controllers\Admin\RetailerController as AdminRetailerController;
+use App\Http\Controllers\Admin\RetailerLevelController;
+use App\Http\Controllers\Admin\SettingController as AdminSettingController;
+use App\Http\Controllers\Admin\TransactionController as AdminTransactionController;
+use App\Http\Controllers\Api\CountryController;
+use App\Http\Controllers\Api\OperatorController as ApiOperatorController;
+use App\Http\Controllers\Api\TransactionController as ApiTransactionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LandingController;
-use App\Http\Controllers\Retailer\{
-    CommissionController as RetailerCommissionController,
-    OfferController as RetailerOfferController,
-    DashboardController as RetailerDashboardController,
-    ProfileController as RetailerProfileController,
-    RechargeController,
-    TransactionController as RetailerTransactionController,
-    WalletController as RetailerWalletController
-};
+use App\Http\Controllers\NetworkOfferController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Retailer\CommissionController as RetailerCommissionController;
+use App\Http\Controllers\Retailer\DashboardController as RetailerDashboardController;
+use App\Http\Controllers\Retailer\OfferController as RetailerOfferController;
+use App\Http\Controllers\Retailer\ProfileController as RetailerProfileController;
+use App\Http\Controllers\Retailer\RechargeController;
+use App\Http\Controllers\Retailer\TransactionController as RetailerTransactionController;
+use App\Http\Controllers\Retailer\WalletController as RetailerWalletController;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -41,6 +36,7 @@ use Inertia\Inertia;
 // PUBLIC
 // ==========================================================================
 Route::get('/', [LandingController::class, 'index'])->name('home');
+Route::get('/network-offers', [NetworkOfferController::class, 'index'])->name('network-offers.index');
 
 Route::get('/contact', fn () => Inertia::render('Landing/Contact/Index'))->name('contact');
 Route::post('/contact', [LandingController::class, 'store'])->name('contact.submit');
@@ -130,6 +126,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('offers/{offer}/redemptions', [OfferController::class, 'redemptions'])->name('offers.redemptions');
     Route::put('offers/{offer}', [OfferController::class, 'update'])->name('offers.update');
     Route::delete('offers/{offer}', [OfferController::class, 'destroy'])->name('offers.destroy');
+
+    Route::resource('network-plans', AdminOperatorPlanController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
+        ->parameters(['network-plans' => 'operator_plan']);
 });
 
 // ==========================================================================
@@ -154,6 +154,7 @@ Route::prefix('retailer')->name('retailer.')->middleware(['auth', 'retailer', 'k
     Route::get('/recharge/pricing', [RechargeController::class, 'estimatePricing'])->name('recharge.pricing');
     Route::get('/recharge/validate-number', [RechargeController::class, 'validateNumber'])->name('recharge.validate-number');
     Route::get('/recharge/product-description', [RechargeController::class, 'productDescription'])->name('recharge.productDescription');
+    Route::get('/recharge/plan-benefits', [RechargeController::class, 'planBenefits'])->name('recharge.plan-benefits');
     Route::get('/transactions', [RetailerTransactionController::class, 'index'])->name('transactions.index');
     Route::get('/transactions/{transaction}', [RetailerTransactionController::class, 'show'])->name('transactions.show');
     Route::get('/transactions/{transaction}/poll', [RetailerTransactionController::class, 'poll'])->name('transactions.poll');
@@ -165,6 +166,7 @@ Route::prefix('retailer')->name('retailer.')->middleware(['auth', 'retailer', 'k
 
     Route::get('/commissions', [RetailerCommissionController::class, 'index'])->name('commissions.index');
     Route::get('/offers/eligible', [RetailerOfferController::class, 'eligible'])->name('offers.eligible');
+    Route::get('/network-offers', [NetworkOfferController::class, 'index'])->name('network-offers');
 
     Route::get('/profile', [RetailerProfileController::class, 'index'])->name('profile.index');
     Route::put('/profile', [RetailerProfileController::class, 'update'])->name('profile.update');
@@ -175,10 +177,10 @@ Route::prefix('retailer')->name('retailer.')->middleware(['auth', 'retailer', 'k
 // ==========================================================================
 
 Route::prefix('api')->name('api.')->group(function () {
-    Route::post('/auth/register', [\App\Http\Controllers\Api\Auth\AuthController::class, 'register']);
-    Route::post('/auth/login', [\App\Http\Controllers\Api\Auth\AuthController::class, 'login']);
-    Route::post('/auth/logout', [\App\Http\Controllers\Api\Auth\AuthController::class, 'logout'])->middleware('auth:sanctum');
-    Route::get('/auth/me', [\App\Http\Controllers\Api\Auth\AuthController::class, 'me'])->middleware('auth:sanctum');
+    Route::post('/auth/register', [App\Http\Controllers\Api\Auth\AuthController::class, 'register']);
+    Route::post('/auth/login', [App\Http\Controllers\Api\Auth\AuthController::class, 'login']);
+    Route::post('/auth/logout', [App\Http\Controllers\Api\Auth\AuthController::class, 'logout'])->middleware('auth:sanctum');
+    Route::get('/auth/me', [App\Http\Controllers\Api\Auth\AuthController::class, 'me'])->middleware('auth:sanctum');
 
     Route::get('/countries', [CountryController::class, 'index']);
     Route::get('/countries/{iso}/operators', [ApiOperatorController::class, 'byCountry']);
@@ -209,7 +211,7 @@ Route::get('/retailer', fn () => redirect('/retailer/dashboard'))->middleware(['
 // ==========================================================================
 
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [\App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });

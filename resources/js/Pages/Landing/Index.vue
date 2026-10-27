@@ -55,6 +55,12 @@ defineOptions({ layout: AppLayout });
                         >
                             Retailer Login
                         </Link>
+                        <Link
+                            href="/network-offers"
+                            class="px-8 py-4 border border-surface-3 bg-surface-0 text-ink-900 rounded-xl font-semibold text-lg text-center hover:bg-surface-2 transition"
+                        >
+                            Browse Network Offers
+                        </Link>
                     </div>
                 </div>
             </div>
