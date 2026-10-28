@@ -572,6 +572,13 @@ async function performBackendValidation() {
             return false;
         }
 
+        if (typeof data.mobile_number !== "string" || !data.mobile_number) {
+            errorMessage.value =
+                "Number validation returned an incomplete response. Please try again.";
+            isNumberVerified.value = false;
+            return false;
+        }
+
         // Save states locally
         isNumberVerified.value = true;
         allowedOperator.value = data.provider;

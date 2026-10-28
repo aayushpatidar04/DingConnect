@@ -701,6 +701,8 @@ class RechargeController extends Controller
                 return response()->json([
                     'success' => true,
                     'account_number' => $digits,
+                    'mobile_number' => $targetMobile,
+                    'serial_number' => $allowed->serial !== '0' ? $allowed->serial : null,
                     'gateway' => 'valuetopup',
                     'provider' => $allowed->provider,
                 ]);
