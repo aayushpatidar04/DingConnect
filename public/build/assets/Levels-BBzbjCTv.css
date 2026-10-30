@@ -1,0 +1,1 @@
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#fff}body>:not(.pdf-export-container){display:none!important}.pdf-export-container{display:block!important}table{page-break-inside:auto}tr{page-break-inside:avoid}}

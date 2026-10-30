@@ -80,6 +80,176 @@ function deleteLevel(level) {
     router.delete(`/admin/commission-levels/${level.id}`);
 }
 
+const escapeHtml = (text) =>
+    String(text ?? "").replace(
+        /[&<>"']/g,
+        (c) =>
+            ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#039;",
+            })[c],
+    );
+
+function exportLevelPdf() {
+    if (!selected.value) return;
+
+    const date = new Date().toLocaleString("en-GB", {
+        timeZone: "Europe/London",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+
+    const activeCount = props.rates.filter((r) => r.is_active).length;
+    const inactiveCount = props.rates.length - activeCount;
+
+    const rows =
+        props.rates
+            .map(
+                (rate) => `
+        <tr>
+            <td class="operator">${escapeHtml(rate.operator?.name ?? "All operators")}</td>
+            <td class="range">${escapeHtml(amountRange(rate))}</td>
+            <td class="money">${escapeHtml(money(rate.first_topup_amount))}</td>
+            <td class="money">${escapeHtml(money(rate.first_bonus_amount))}</td>
+            <td class="money total">${escapeHtml(money(firstTotal(rate)))}</td>
+            <td class="steps">${escapeHtml(stepsText(rate))}</td>
+        </tr>
+    `,
+            )
+            .join("") ||
+        `<tr><td colspan="8" class="empty">No rates on this level yet.</td></tr>`;
+
+    const printHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Commission Level – ${escapeHtml(selected.value.name)}</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 14mm 12mm;
+            @bottom-center {
+                content: "MK All Network Communications · Commission Level Export · Page " counter(page) " of " counter(pages);
+                font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+                font-size: 8pt;
+                color: #6b7280;
+            }
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 9pt;
+            color: #1f2937;
+            line-height: 1.4;
+            margin: 0;
+            background: #fff;
+        }
+        .header {
+            border-bottom: 3px solid #111827;
+            padding-bottom: 10px;
+            margin-bottom: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .brand { font-weight: 800; font-size: 11pt; letter-spacing: 0.5px; color: #111827; text-transform: uppercase; }
+        .title { font-size: 17pt; font-weight: 700; color: #111827; margin: 0 0 2px 0; }
+        .subtitle { font-size: 9pt; color: #6b7280; margin: 0; }
+        .meta { font-size: 8pt; color: #6b7280; margin-top: 6px; }
+        .meta b { color: #111827; }
+        .meta-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 16px; margin: 14px 0 2px 0; font-size: 8pt; color: #6b7280; }
+        .meta-item b { display: block; font-size: 10pt; color: #111827; font-weight: 700; margin-bottom: 1px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th {
+            background: #111827;
+            color: #fff;
+            font-size: 7.5pt;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            font-weight: 700;
+            padding: 6px 8px;
+            text-align: left;
+            border: 1px solid #111827;
+        }
+        td {
+            padding: 5px 8px;
+            border: 1px solid #d1d5db;
+            font-size: 8pt;
+            vertical-align: middle;
+        }
+        tr:nth-child(even) td { background: #f9fafb; }
+        tr { page-break-inside: avoid; }
+        .money { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+        .total { font-weight: 700; color: #111827; }
+        .steps { white-space: pre-wrap; }
+        .badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 999px;
+            font-size: 7pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .badge-active { background: #dcfce7; color: #166534; }
+        .badge-off { background: #e5e7eb; color: #6b7280; }
+        .empty { text-align: center; color: #9ca3af; padding: 20px; }
+        .footer { margin-top: 18px; font-size: 7pt; color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 6px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <div class="brand">MK All Network Communications</div>
+            <div class="title">Commission Level — ${escapeHtml(selected.value.name)}</div>
+            <p class="subtitle">
+                ${escapeHtml(rangeLabel(selected.value))}
+            </p>
+        </div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Operator</th>
+                <th>Top-up amount range</th>
+                <th>First top-up (£)</th>
+                <th>Bonus (£)</th>
+                <th>First total (£)</th>
+                <th>Ongoing top-ups</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${rows}
+        </tbody>
+    </table>
+    <div class="footer">
+        MK All Network Communications. All amounts in GBP.
+    </div>
+</body>
+</html>`;
+
+    const container = document.createElement("div");
+    container.className = "pdf-export-container";
+    container.innerHTML = printHtml;
+    document.body.appendChild(container);
+
+    window.print();
+
+    setTimeout(() => {
+        if (document.body.contains(container)) {
+            document.body.removeChild(container);
+        }
+    }, 1000);
+}
+
 /* ---------- copy rates ---------- */
 const showCopyModal = ref(false);
 const copySource = ref("");
@@ -284,6 +454,13 @@ const labelClass = "block text-xs font-medium text-ink-500 mb-1";
                     </button>
                     <button
                         type="button"
+                        @click="exportLevelPdf"
+                        class="px-3 py-2 border border-surface-3 rounded-lg text-sm text-ink-700 hover:bg-surface-3 transition"
+                    >
+                        Export PDF
+                    </button>
+                    <button
+                        type="button"
                         @click="deleteLevel(selected)"
                         class="px-3 py-2 border border-red-500/40 rounded-lg text-sm text-red-600 hover:bg-red-500/10 transition"
                     >
@@ -350,6 +527,7 @@ const labelClass = "block text-xs font-medium text-ink-500 mb-1";
                                 <template v-if="lifetimeTotal(rate) !== null">
                                     {{ money(lifetimeTotal(rate)) }}
                                 </template>
+
                                 <span v-else class="text-ink-500"
                                     >No limit</span
                                 >
@@ -405,13 +583,15 @@ const labelClass = "block text-xs font-medium text-ink-500 mb-1";
         <form @submit.prevent="submitLevel" class="space-y-4">
             <div>
                 <label :class="labelClass">Name</label>
-                <input v-model="levelForm.name" type="text" :class="inputClass" />
+                <input
+                    v-model="levelForm.name"
+                    type="text"
+                    :class="inputClass"
+                />
                 <InputError :message="levelForm.errors.name" />
             </div>
             <div>
-                <label :class="labelClass"
-                    >Starts at (connections)</label
-                >
+                <label :class="labelClass">Starts at (connections)</label>
                 <input
                     v-model="levelForm.min_connections"
                     type="number"
@@ -522,9 +702,7 @@ const labelClass = "block text-xs font-medium text-ink-500 mb-1";
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label :class="labelClass"
-                        >Top-up amount from (£)</label
-                    >
+                    <label :class="labelClass">Top-up amount from (£)</label>
                     <input
                         v-model="rateForm.min_amount"
                         type="number"
@@ -587,12 +765,10 @@ const labelClass = "block text-xs font-medium text-ink-500 mb-1";
                         + Add band
                     </button>
                 </div>
-                <div
-                    v-for="(step, i) in rateForm.steps"
-                    :key="i"
-                    class="mb-2"
-                >
-                    <div class="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end">
+                <div v-for="(step, i) in rateForm.steps" :key="i" class="mb-2">
+                    <div
+                        class="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end"
+                    >
                         <div>
                             <span class="text-[11px] text-ink-500">From #</span>
                             <input
@@ -642,10 +818,7 @@ const labelClass = "block text-xs font-medium text-ink-500 mb-1";
                         "
                     />
                 </div>
-                <p
-                    v-if="!rateForm.steps.length"
-                    class="text-xs text-ink-500"
-                >
+                <p v-if="!rateForm.steps.length" class="text-xs text-ink-500">
                     No ongoing bands: only the first top-up of a connection
                     pays.
                 </p>
@@ -698,3 +871,24 @@ const labelClass = "block text-xs font-medium text-ink-500 mb-1";
         </form>
     </CommissionModal>
 </template>
+<style>
+@media print {
+    body {
+        background: #fff;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    body > *:not(.pdf-export-container) {
+        display: none !important;
+    }
+    .pdf-export-container {
+        display: block !important;
+    }
+    table {
+        page-break-inside: auto;
+    }
+    tr {
+        page-break-inside: avoid;
+    }
+}
+</style>
