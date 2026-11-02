@@ -352,7 +352,7 @@
                         <td style="width:100%;">
                             <div class="cell">
                                 <div class="lbl">Mobile Number</div>
-                                <div class="note">+{{ $transaction->mobile_number }}</div>
+                                <div class="note">+{{ $transaction->mobile_number }}<br>{{ $transaction->serial_number }}</div>
                             </div>
                         </td>
                     </tr>

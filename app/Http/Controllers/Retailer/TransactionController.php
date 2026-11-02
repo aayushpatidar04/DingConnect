@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Retailer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Operator;
+use App\Models\AllowedNumber;
 use App\Models\Transaction;
 use App\Services\DingConnectService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -63,6 +64,9 @@ class TransactionController extends Controller
     {
         $this->authorize('view', $transaction);
 
+        $serial_number = AllowedNumber::where('mobile', $transaction->mobile_number)
+            ->value('serial');
+        $transaction->serial_number = $serial_number;
         // Backfill description for old transactions that predate the job backfill
         if (
             $transaction->status === 'success' &&
@@ -80,7 +84,7 @@ class TransactionController extends Controller
                     ]);
                 }
             } catch (\Throwable $e) {
-                Log::warning('Description backfill failed for transaction ' . $transaction->id . ': ' . $e->getMessage());
+                \Log::warning('Description backfill failed for transaction ' . $transaction->id . ': ' . $e->getMessage());
             }
         }
 
@@ -92,6 +96,10 @@ class TransactionController extends Controller
     public function receipt(Transaction $transaction)
     {
         $this->authorize('view', $transaction);
+
+        $serial_number = AllowedNumber::where('mobile', $transaction->mobile_number)
+            ->value('serial');
+        $transaction->serial_number = $serial_number;
 
         $pdf = Pdf::loadView('pdf.receipt', compact('transaction'));
 

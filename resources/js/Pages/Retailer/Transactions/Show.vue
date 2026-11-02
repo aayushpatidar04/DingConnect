@@ -289,7 +289,7 @@ onMounted(async () => {
                     Recharged Number
                 </div>
                 <div class="text-ink-900 font-medium text-lg">
-                    +{{ transaction.mobile_number }}
+                    +{{ transaction.mobile_number }}<br>{{ transaction.serial_number }}
                 </div>
             </div>
 
