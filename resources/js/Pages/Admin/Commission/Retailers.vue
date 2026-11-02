@@ -122,17 +122,29 @@ const showHistory = ref(false);
 const historyRetailer = ref(null);
 const history = ref([]);
 const historyLoading = ref(false);
+const historyError = ref("");
 
 async function openHistory(retailer) {
     historyRetailer.value = retailer;
     history.value = [];
+    historyError.value = "";
     historyLoading.value = true;
     showHistory.value = true;
     try {
         const res = await window.axios.get(
             `/admin/retailer-levels/${retailer.id}/history`,
         );
-        history.value = res.data.history;
+        const responseHistory =
+            res.data?.data?.history ?? res.data?.history;
+
+        if (!Array.isArray(responseHistory)) {
+            throw new Error("Unexpected retailer level history response.");
+        }
+
+        history.value = responseHistory;
+    } catch (error) {
+        console.error("Failed to load retailer level history", error);
+        historyError.value = "Could not load history. Please try again.";
     } finally {
         historyLoading.value = false;
     }
@@ -432,6 +444,9 @@ const thClass =
         @close="showHistory = false"
     >
         <div v-if="historyLoading" class="text-ink-500 text-sm">Loading…</div>
+        <div v-else-if="historyError" class="text-red-600 text-sm">
+            {{ historyError }}
+        </div>
         <div v-else-if="!history.length" class="text-ink-500 text-sm">
             No level changes yet.
         </div>
