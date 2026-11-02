@@ -241,6 +241,11 @@ const formatDate = (date) => {
                             >
                                 Receipt
                             </th>
+                            <th
+                                class="px-4 py-3 text-right text-xs font-medium text-ink-700 uppercase"
+                            >
+                                Actions
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-dark-600">
@@ -287,10 +292,18 @@ const formatDate = (date) => {
                             <td class="px-4 py-3 text-sm text-ink-700">
                                 {{ txn.receipt_number || "-" }}
                             </td>
+                            <td class="px-4 py-3 text-right">
+                                <Link
+                                    :href="`/admin/transactions/${txn.id}`"
+                                    class="inline-flex items-center px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary-dark transition"
+                                >
+                                    View
+                                </Link>
+                            </td>
                         </tr>
                         <tr v-if="!transactions.data?.length">
                             <td
-                                colspan="9"
+                                colspan="10"
                                 class="px-4 py-8 text-center text-ink-500"
                             >
                                 No transactions found

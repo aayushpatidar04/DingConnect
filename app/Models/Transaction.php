@@ -39,6 +39,11 @@ class Transaction extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function admin(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'admin_id');
+    }
+
     public function operator(): BelongsTo
     {
         return $this->belongsTo(Operator::class);
@@ -52,6 +57,11 @@ class Transaction extends Model
     public function commissions(): HasMany
     {
         return $this->hasMany(TransactionCommission::class);
+    }
+
+    public function callbacks(): HasMany
+    {
+        return $this->hasMany(DingCallback::class);
     }
 
     public function scopeFilter(Builder $query, array $f): Builder
