@@ -330,7 +330,7 @@
                         <div class="cell">
                             <div class="lbl">You Paid</div>
                             <div class="val">{{ $transaction->send_currency ?? 'GBP' }}
-                                {{ number_format($transaction->send_value ?? $transaction->amount, 2) }}</div>
+                                {{ number_format($transaction->amount ?? $transaction->send_value, 2) }}</div>
                         </div>
                     </td>
                     <td style="width:33%;">

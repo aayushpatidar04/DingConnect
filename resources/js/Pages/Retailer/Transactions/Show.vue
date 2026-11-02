@@ -350,7 +350,7 @@ onMounted(async () => {
                         {{ transaction.send_currency || "GBP" }}
                         {{
                             transaction.send_value
-                                ? Number(transaction.send_value).toFixed(2)
+                                ? Number(transaction.amount).toFixed(2)
                                 : "-"
                         }}
                     </div>
