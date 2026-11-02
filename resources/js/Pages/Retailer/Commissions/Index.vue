@@ -127,7 +127,7 @@ const thClass =
                         }}</strong>
                     </div>
                     <div v-if="level">
-                        Recharges counted on this level:
+                        Commission-paid recharges on this level:
                         <strong class="text-ink-900">{{
                             connections.topups
                         }}</strong>

@@ -62,10 +62,8 @@ const form = useForm({
     level_id: "",
     auto_level_enabled: true,
     actual_connections: "",
-    topups_count: "",
     reason: "",
 });
-const originalTopups = ref("");
 
 const chosenLevel = computed(
     () => props.levels.find((l) => l.id === Number(form.level_id)) ?? null,
@@ -79,8 +77,6 @@ function openSingle(retailer) {
         ? retailer.auto_level_enabled
         : true;
     form.actual_connections = retailer.actual_connections;
-    form.topups_count = retailer.commission_topups;
-    originalTopups.value = retailer.commission_topups;
     form.reason = "";
     showModal.value = true;
 }
@@ -91,7 +87,6 @@ function openBulk() {
     form.level_id = "";
     form.auto_level_enabled = true;
     form.actual_connections = "";
-    form.topups_count = "";
     form.reason = "";
     showModal.value = true;
 }
@@ -111,12 +106,6 @@ function submit() {
             level_id: d.level_id || null,
             actual_connections:
                 d.actual_connections === "" ? null : d.actual_connections,
-            // only send the recharge count when it was edited, so a level change can restart it
-            topups_count:
-                d.topups_count === "" ||
-                String(d.topups_count) === String(originalTopups.value)
-                    ? null
-                    : d.topups_count,
         })).put(`/admin/retailer-levels/${target.value.id}`, done);
     } else {
         form.transform((d) => ({
@@ -229,7 +218,7 @@ const thClass =
                             <th :class="thClass">Level</th>
                             <th :class="thClass">Actual connections</th>
                             <th :class="thClass">Level connections</th>
-                            <th :class="thClass">Recharges counted</th>
+                            <th :class="thClass">Paid top-ups</th>
                             <th :class="thClass">Next level</th>
                             <th :class="thClass"></th>
                         </tr>
@@ -409,24 +398,6 @@ const thClass =
                     :class="inputClass"
                 />
                 <InputError :message="form.errors.actual_connections" />
-            </div>
-
-            <div v-if="target">
-                <label :class="labelClass"
-                    >Recharges counted (first / ongoing position)</label
-                >
-                <input
-                    v-model="form.topups_count"
-                    type="number"
-                    min="0"
-                    :class="inputClass"
-                />
-                <InputError :message="form.errors.topups_count" />
-                <p class="text-xs text-ink-500 mt-1">
-                    0 means the next paying recharge earns the first top-up
-                    rate; 1 means it earns ongoing #2, and so on. Changing the
-                    level restarts this at 0 unless you type a value here.
-                </p>
             </div>
 
             <div>

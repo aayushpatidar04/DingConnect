@@ -88,9 +88,15 @@ class CommissionService
         $amount = (float) $transaction->amount;
         $level = $profile->commission_level_id ? CommissionLevel::find($profile->commission_level_id) : null;
 
-        // First / ongoing is counted per retailer across all numbers. Only recharges that
-        // actually pay commission use up a position.
-        $position = $profile->commission_topups_count + 1;
+        // The schedule restarts for each connection, provider, and level. Only credited
+        // commissions consume a position, so skipped recharges do not advance the sequence.
+        $position = RetailerCommission::query()
+            ->where('user_id', $transaction->user_id)
+            ->where('retailer_connection_id', $connection->id)
+            ->where('commission_level_id', $level?->id)
+            ->where('operator_id', $transaction->operator_id)
+            ->where('status', 'credited')
+            ->count() + 1;
         $type = $position === 1 ? 'first' : 'ongoing';
 
         $reason = null;
@@ -128,7 +134,7 @@ class CommissionService
         $credited = $reason === null;
 
         if ($credited) {
-            $profile->commission_topups_count = $position;
+            $profile->commission_topups_count += 1;
         }
 
         if ($isNewConnection) {
@@ -419,7 +425,7 @@ class CommissionService
         }
 
         $profile->commission_level_id = $target->id;
-        $profile->commission_topups_count = 0; // new level: the next paying recharge is a first top-up again
+        $profile->commission_topups_count = 0;
         $profile->level_assigned_at = now();
         $profile->save();
 
@@ -440,7 +446,7 @@ class CommissionService
      * - Picking a level resets "level connections" to that level's minimum (both for upgrades
      *   and downgrades). "Actual connections" is never touched unless an opening value is given.
      * - Picking no level clears the level and switches auto-upgrade off.
-     * - Any change of level restarts the retailer's first / ongoing position at 0.
+     * - Changing the level resets the paid-recharge summary for that level.
      */
     public function assignLevel(
         User $retailer,
@@ -449,11 +455,10 @@ class CommissionService
         ?string $reason = null,
         bool $autoLevel = true,
         ?int $actualConnections = null,
-        ?int $topupsCount = null,
     ): RetailerCommissionProfile {
         $this->profileFor($retailer->id);
 
-        return DB::transaction(function () use ($retailer, $levelId, $adminId, $reason, $autoLevel, $actualConnections, $topupsCount) {
+        return DB::transaction(function () use ($retailer, $levelId, $adminId, $reason, $autoLevel, $actualConnections) {
             $profile = RetailerCommissionProfile::lockForUpdate()->where('user_id', $retailer->id)->firstOrFail();
 
             $from = $profile->commission_level_id ? CommissionLevel::find($profile->commission_level_id) : null;
@@ -486,14 +491,9 @@ class CommissionService
                 $profile->auto_level_enabled = $autoLevel;
             }
 
-            // Any change of level restarts the first / ongoing position.
+            // Track paid recharges for the currently assigned level.
             if (in_array($changeType, ['assigned', 'upgrade', 'downgrade', 'removed'], true)) {
                 $profile->commission_topups_count = 0;
-            }
-
-            // A value typed in by the admin wins over the restart.
-            if ($topupsCount !== null) {
-                $profile->commission_topups_count = max(0, $topupsCount);
             }
 
             if ($changeType === null && $profile->isDirty()) {

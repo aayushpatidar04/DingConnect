@@ -85,7 +85,6 @@ class RetailerLevelController extends Controller
             'level_id' => ['nullable', 'integer', 'exists:commission_levels,id'],
             'auto_level_enabled' => ['boolean'],
             'actual_connections' => ['nullable', 'integer', 'min:0'],
-            'topups_count' => ['nullable', 'integer', 'min:0'],
             'reason' => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -96,7 +95,6 @@ class RetailerLevelController extends Controller
             $data['reason'] ?? null,
             (bool) ($data['auto_level_enabled'] ?? true),
             isset($data['actual_connections']) ? (int) $data['actual_connections'] : null,
-            isset($data['topups_count']) ? (int) $data['topups_count'] : null,
         );
 
         if ($request->expectsJson()) {

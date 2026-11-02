@@ -23,6 +23,7 @@ class CommissionServiceTest extends TestCase
     use RefreshDatabase;
 
     private Country $country;
+
     private Operator $operator;
 
     protected function setUp(): void
@@ -51,11 +52,18 @@ class CommissionServiceTest extends TestCase
         return CommissionLevel::create(['name' => $name, 'min_connections' => $min, 'sort_order' => $min, 'is_active' => true]);
     }
 
-    private function rate(CommissionLevel $level, float $min, ?float $max, float $first, float $bonus, array $steps): CommissionRate
-    {
+    private function rate(
+        CommissionLevel $level,
+        float $min,
+        ?float $max,
+        float $first,
+        float $bonus,
+        array $steps,
+        ?Operator $operator = null,
+    ): CommissionRate {
         $rate = CommissionRate::create([
             'commission_level_id' => $level->id,
-            'operator_id' => $this->operator->id,
+            'operator_id' => ($operator ?? $this->operator)->id,
             'min_amount' => $min,
             'max_amount' => $max,
             'first_topup_amount' => $first,
@@ -70,12 +78,16 @@ class CommissionServiceTest extends TestCase
         return $rate;
     }
 
-    private function topup(User $user, string $mobile, float $amount = 20.0): Transaction
-    {
+    private function topup(
+        User $user,
+        string $mobile,
+        float $amount = 20.0,
+        ?Operator $operator = null,
+    ): Transaction {
         return Transaction::create([
             'user_id' => $user->id,
             'mobile_number' => $mobile,
-            'operator_id' => $this->operator->id,
+            'operator_id' => ($operator ?? $this->operator)->id,
             'country_id' => $this->country->id,
             'amount' => $amount,
             'currency' => 'GBP',
@@ -99,7 +111,7 @@ class CommissionServiceTest extends TestCase
         $this->sim($user, '447700900001');
         $service->assignLevel($user, $level->id);
 
-        foreach ([3.00, 1.00, 1.00, 0.00] as $i => $expected) {
+        foreach ([3.00, 1.00, 1.00] as $i => $expected) {
             $commission = $service->processSuccessfulRecharge($this->topup($user, '447700900001'));
             $this->assertSame($expected, (float) $commission->commission_amount);
 
@@ -111,6 +123,8 @@ class CommissionServiceTest extends TestCase
             }
         }
 
+        $this->assertNull($service->processSuccessfulRecharge($this->topup($user, '447700900001')));
+
         // ongoing top-ups add one commission entry each; the skipped 4th adds none
         $entries = WalletTopup::where('user_id', $user->id)->orderBy('id')->get();
         $this->assertCount(4, $entries);
@@ -118,7 +132,7 @@ class CommissionServiceTest extends TestCase
         $this->assertSame('completed', $entries->last()->status);
 
         $this->assertSame(5.00, $this->balance($user));
-        $this->assertSame('no_ongoing_rate_for_sequence', RetailerCommission::orderByDesc('id')->first()->skip_reason);
+        $this->assertSame(3, RetailerCommission::count());
 
         $profile = RetailerCommissionProfile::where('user_id', $user->id)->first();
         $this->assertSame(1, $profile->actual_connections);
@@ -136,19 +150,26 @@ class CommissionServiceTest extends TestCase
         $this->sim($user, '447700900004');
         $service->assignLevel($user, $level->id);
 
-        // 1st paying recharge uses the first amounts of the £20+ band
-        $this->assertSame(3.00, (float) $service->processSuccessfulRecharge($this->topup($user, '447700900002', 25))->commission_amount);
-        // 2nd uses the ongoing amount of the band that matches this amount (£10 band)
-        $this->assertSame(0.50, (float) $service->processSuccessfulRecharge($this->topup($user, '447700900003', 10))->commission_amount);
-        // below £10 there is no band, so nothing is paid and it does not use up a position
-        $this->assertSame('no_rate_for_operator_or_amount', $service->processSuccessfulRecharge($this->topup($user, '447700900004', 5))->skip_reason);
+        $firstConnectionTopup = $service->processSuccessfulRecharge($this->topup($user, '447700900002', 25));
+        $this->assertSame(3.00, (float) $firstConnectionTopup->commission_amount);
+
+        $this->assertNull($service->processSuccessfulRecharge($this->topup($user, '447700900002', 5)));
+
+        $secondConnectionTopup = $service->processSuccessfulRecharge($this->topup($user, '447700900003', 10));
+        $this->assertSame(2.00, (float) $secondConnectionTopup->commission_amount);
+
+        $this->assertNull($service->processSuccessfulRecharge($this->topup($user, '447700900004', 5)));
+
+        $ongoingTopup = $service->processSuccessfulRecharge($this->topup($user, '447700900002', 25));
+        $this->assertSame(1.00, (float) $ongoingTopup->commission_amount);
+        $this->assertSame(2, $ongoingTopup->topup_sequence);
 
         $profile = RetailerCommissionProfile::where('user_id', $user->id)->first();
-        $this->assertSame(2, $profile->commission_topups_count);
+        $this->assertSame(3, $profile->commission_topups_count);
         $this->assertSame(3, $profile->actual_connections); // every new number is a connection
     }
 
-    public function test_first_and_ongoing_are_counted_per_retailer_not_per_number(): void
+    public function test_each_new_connection_starts_with_its_own_first_commission(): void
     {
         $service = app(CommissionService::class);
         $user = $this->retailer();
@@ -162,16 +183,88 @@ class CommissionServiceTest extends TestCase
         $one = $service->processSuccessfulRecharge($this->topup($user, '447700900021'));
         // 2nd recharge, same number X: ongoing #2
         $two = $service->processSuccessfulRecharge($this->topup($user, '447700900021'));
-        // 3rd recharge, new number Y: ongoing #3
+        // 3rd recharge, new number Y: its own first top-up
         $three = $service->processSuccessfulRecharge($this->topup($user, '447700900022'));
 
-        $this->assertSame(['first', 'ongoing', 'ongoing'], [$one->type, $two->type, $three->type]);
-        $this->assertSame([1, 2, 3], [$one->topup_sequence, $two->topup_sequence, $three->topup_sequence]);
-        $this->assertSame([3.00, 1.00, 0.50], [(float) $one->commission_amount, (float) $two->commission_amount, (float) $three->commission_amount]);
+        $this->assertSame(['first', 'ongoing', 'first'], [$one->type, $two->type, $three->type]);
+        $this->assertSame([1, 2, 1], [$one->topup_sequence, $two->topup_sequence, $three->topup_sequence]);
+        $this->assertSame([3.00, 1.00, 3.00], [(float) $one->commission_amount, (float) $two->commission_amount, (float) $three->commission_amount]);
 
         $profile = RetailerCommissionProfile::where('user_id', $user->id)->first();
         $this->assertSame(2, $profile->actual_connections); // X and Y, not three
         $this->assertSame(3, $profile->commission_topups_count);
+    }
+
+    public function test_sequences_are_independent_for_each_provider_and_level(): void
+    {
+        $service = app(CommissionService::class);
+        $user = $this->retailer();
+        $levelA = $this->level('Level A', 0);
+        $levelB = $this->level('Level B', 50);
+        $otherProvider = Operator::create([
+            'name' => 'Other Mobile',
+            'slug' => 'other-mobile',
+            'provider_code' => 'OM',
+            'country_id' => $this->country->id,
+            'is_active' => true,
+        ]);
+        $this->rate($levelA, 0, null, 2.00, 1.00, [[2, null, 1.00]]);
+        $this->rate($levelA, 0, null, 5.00, 2.00, [[2, null, 4.00]], $otherProvider);
+        $this->rate($levelB, 0, null, 10.00, 0, [[2, null, 3.00]]);
+        $this->sim($user, '447700900023');
+        $this->sim($user, '447700900024');
+        $service->assignLevel($user, $levelA->id);
+
+        $sameProviderFirst = $service->processSuccessfulRecharge($this->topup($user, '447700900023'));
+        $sameProviderOngoing = $service->processSuccessfulRecharge($this->topup($user, '447700900023'));
+        $newConnectionFirst = $service->processSuccessfulRecharge($this->topup($user, '447700900024'));
+        $otherProviderFirst = $service->processSuccessfulRecharge(
+            $this->topup($user, '447700900023', 20, $otherProvider)
+        );
+        $otherProviderOngoing = $service->processSuccessfulRecharge(
+            $this->topup($user, '447700900023', 20, $otherProvider)
+        );
+
+        $service->assignLevel($user, $levelB->id);
+        $newLevelFirst = $service->processSuccessfulRecharge($this->topup($user, '447700900023'));
+        $newLevelOngoing = $service->processSuccessfulRecharge($this->topup($user, '447700900023'));
+
+        $this->assertSame(
+            ['first', 'ongoing', 'first', 'first', 'ongoing', 'first', 'ongoing'],
+            [
+                $sameProviderFirst->type,
+                $sameProviderOngoing->type,
+                $newConnectionFirst->type,
+                $otherProviderFirst->type,
+                $otherProviderOngoing->type,
+                $newLevelFirst->type,
+                $newLevelOngoing->type,
+            ]
+        );
+        $this->assertSame(
+            [1, 2, 1, 1, 2, 1, 2],
+            [
+                $sameProviderFirst->topup_sequence,
+                $sameProviderOngoing->topup_sequence,
+                $newConnectionFirst->topup_sequence,
+                $otherProviderFirst->topup_sequence,
+                $otherProviderOngoing->topup_sequence,
+                $newLevelFirst->topup_sequence,
+                $newLevelOngoing->topup_sequence,
+            ]
+        );
+        $this->assertSame(
+            [3.00, 1.00, 3.00, 7.00, 4.00, 10.00, 3.00],
+            [
+                (float) $sameProviderFirst->commission_amount,
+                (float) $sameProviderOngoing->commission_amount,
+                (float) $newConnectionFirst->commission_amount,
+                (float) $otherProviderFirst->commission_amount,
+                (float) $otherProviderOngoing->commission_amount,
+                (float) $newLevelFirst->commission_amount,
+                (float) $newLevelOngoing->commission_amount,
+            ]
+        );
     }
 
     public function test_a_level_change_restarts_the_first_top_up_position(): void
@@ -194,10 +287,8 @@ class CommissionServiceTest extends TestCase
         // first top-up again, now at Level B rates
         $this->assertSame(4.00, (float) $service->processSuccessfulRecharge($this->topup($user, '447700900031'))->commission_amount);
 
-        // an admin can also set the position by hand
-        $profile = $service->assignLevel($user, $b->id, null, null, true, null, 7);
-        $this->assertSame(7, $profile->commission_topups_count);
         $this->assertSame(2.00, (float) $service->processSuccessfulRecharge($this->topup($user, '447700900031'))->commission_amount);
+        $this->assertSame(2, RetailerCommissionProfile::where('user_id', $user->id)->value('commission_topups_count'));
     }
 
     public function test_retailer_without_a_level_earns_nothing_but_connections_are_counted(): void
@@ -208,7 +299,7 @@ class CommissionServiceTest extends TestCase
 
         $commission = $service->processSuccessfulRecharge($this->topup($user, '447700900005'));
 
-        $this->assertSame('no_level', $commission->skip_reason);
+        $this->assertNull($commission);
         $this->assertSame(0.00, $this->balance($user));
         $profile = RetailerCommissionProfile::where('user_id', $user->id)->first();
         $this->assertSame(1, $profile->actual_connections);
@@ -325,8 +416,8 @@ class CommissionServiceTest extends TestCase
         $this->assertSame($a->id, RetailerCommissionProfile::where('user_id', $locked->id)->value('commission_level_id'));
         $this->assertTrue(RetailerLevelChange::where('user_id', $auto->id)->where('change_type', 'auto_upgrade')->exists());
 
-        // the upgrade restarts the position; the locked retailer keeps theirs
+        // The summary is reset after upgrading; the locked retailer has two paid connections.
         $this->assertSame(0, RetailerCommissionProfile::where('user_id', $auto->id)->value('commission_topups_count'));
-        $this->assertSame(1, RetailerCommissionProfile::where('user_id', $locked->id)->value('commission_topups_count'));
+        $this->assertSame(2, RetailerCommissionProfile::where('user_id', $locked->id)->value('commission_topups_count'));
     }
 }
