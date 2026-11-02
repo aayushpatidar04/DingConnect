@@ -186,7 +186,12 @@ const thClass =
                                 {{ c.user?.shop_name || c.user?.name }}
                             </td>
                             <td class="px-4 py-3 text-sm text-ink-700">
-                                {{ c.transaction?.receipt_number ?? "-" }}
+                                <Link
+                                    :href="`/admin/transactions/${c.transaction?.id}`"
+                                    class="inline-flex items-center px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary-dark transition"
+                                >
+                                    {{ c.transaction?.receipt_number ?? "-" }}
+                                </Link>
                             </td>
                             <td class="px-4 py-3 text-sm text-ink-700">
                                 {{ c.transaction?.mobile_number ?? "-" }}
