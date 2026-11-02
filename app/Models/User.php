@@ -79,6 +79,11 @@ class User extends Authenticatable
         return $this->hasMany(RetailerConnection::class);
     }
 
+    public function retailerCommissionProfile(): HasOne
+    {
+        return $this->hasOne(RetailerCommissionProfile::class);
+    }
+
     public function walletTopups(): HasMany
     {
         return $this->hasMany(WalletTopup::class);

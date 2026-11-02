@@ -162,6 +162,11 @@ const inputClass =
                             <th
                                 class="px-6 py-3 text-left text-xs font-medium text-ink-700 uppercase tracking-wider"
                             >
+                                Level
+                            </th>
+                            <th
+                                class="px-6 py-3 text-left text-xs font-medium text-ink-700 uppercase tracking-wider"
+                            >
                                 Postcode
                             </th>
                             <th
@@ -203,6 +208,12 @@ const inputClass =
                             </td>
                             <td class="px-6 py-4 text-sm text-ink-700">
                                 {{ retailer.shop_name || "-" }}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-ink-700">
+                                {{
+                                    retailer.retailer_commission_profile?.level
+                                        ?.name || "-"
+                                }}
                             </td>
                             <td class="px-6 py-4 text-sm text-ink-700">
                                 {{ retailer.postcode || "-" }}

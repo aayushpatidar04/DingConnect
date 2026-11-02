@@ -25,9 +25,9 @@ class RetailerController extends Controller
     {
         $filters = $request->only('search', 'status', 'kyc_status');
         $filters['status'] = $filters['status'] ?? 'active';
-        
+
         $retailers = User::where('role', 'retailer')
-            ->with('wallet')              // 'transactions' removed, see notes
+            ->with(['wallet', 'retailerCommissionProfile.level'])
             ->filter($filters)
             ->orderByDesc('created_at')
             ->paginate(25)
