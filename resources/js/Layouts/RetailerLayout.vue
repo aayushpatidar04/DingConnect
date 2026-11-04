@@ -171,7 +171,19 @@ function logout() {
                                     ? 'bg-surface-3 text-ink-900'
                                     : 'text-ink-500 hover:text-ink-900 hover:bg-surface-2'
                             "
-                            >Commission</Link
+                        >
+                            Commission</Link
+                        >
+                        <Link
+                            href="/retailer/posters"
+                            class="px-3 py-2 rounded-lg text-sm font-medium transition"
+                            :class="
+                                $page.url.includes('/posters')
+                                    ? 'bg-surface-3 text-ink-900'
+                                    : 'text-ink-500 hover:text-ink-900 hover:bg-surface-2'
+                            "
+                        >
+                            Feeds</Link
                         >
                         <Link
                             href="/retailer/network-offers"
@@ -326,6 +338,11 @@ function logout() {
                         href="/retailer/commissions"
                         class="block px-3 py-2 rounded-lg text-base font-medium text-ink-500 hover:text-ink-900 hover:bg-surface-2"
                         >Commission</Link
+                    >
+                    <Link
+                        href="/retailer/posters"
+                        class="block px-3 py-2 rounded-lg text-base font-medium text-ink-500 hover:text-ink-900 hover:bg-surface-2"
+                        >Feeds</Link
                     >
                     <Link
                         href="/retailer/network-offers"

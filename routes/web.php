@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\OfferController;
 use App\Http\Controllers\Admin\OperatorController as AdminOperatorController;
 use App\Http\Controllers\Admin\OperatorPlanController as AdminOperatorPlanController;
+use App\Http\Controllers\Admin\PosterController as AdminPosterController;
 use App\Http\Controllers\Admin\RetailerAnalyticsController;
 use App\Http\Controllers\Admin\RetailerController as AdminRetailerController;
 use App\Http\Controllers\Admin\RetailerLevelController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Retailer\CommissionController as RetailerCommissionController;
 use App\Http\Controllers\Retailer\DashboardController as RetailerDashboardController;
 use App\Http\Controllers\Retailer\OfferController as RetailerOfferController;
+use App\Http\Controllers\Retailer\PosterController as RetailerPosterController;
 use App\Http\Controllers\Retailer\ProfileController as RetailerProfileController;
 use App\Http\Controllers\Retailer\RechargeController;
 use App\Http\Controllers\Retailer\TransactionController as RetailerTransactionController;
@@ -124,6 +126,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::put('offers/{offer}', [OfferController::class, 'update'])->name('offers.update');
     Route::delete('offers/{offer}', [OfferController::class, 'destroy'])->name('offers.destroy');
 
+    // Posters (advertisement feed)
+    Route::get('posters', [AdminPosterController::class, 'index'])->name('posters.index');
+    Route::post('posters', [AdminPosterController::class, 'store'])->name('posters.store');
+    Route::put('posters/{poster}', [AdminPosterController::class, 'update'])->name('posters.update');
+    Route::delete('posters/{poster}', [AdminPosterController::class, 'destroy'])->name('posters.destroy');
+
     Route::resource('network-plans', AdminOperatorPlanController::class)
         ->only(['index', 'store', 'update', 'destroy'])
         ->parameters(['network-plans' => 'operator_plan']);
@@ -163,6 +171,7 @@ Route::prefix('retailer')->name('retailer.')->middleware(['auth', 'retailer', 'k
 
     Route::get('/commissions', [RetailerCommissionController::class, 'index'])->name('commissions.index');
     Route::get('/offers/eligible', [RetailerOfferController::class, 'eligible'])->name('offers.eligible');
+    Route::get('/posters', [RetailerPosterController::class, 'index'])->name('posters.index');
     Route::get('/network-offers', [NetworkOfferController::class, 'index'])->name('network-offers');
 
     Route::get('/profile', [RetailerProfileController::class, 'index'])->name('profile.index');
