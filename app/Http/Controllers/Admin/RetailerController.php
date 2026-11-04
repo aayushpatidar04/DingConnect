@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Operator;
 use App\Models\User;
 use App\Models\Wallet;
+use App\Models\WalletLedger;
 use App\Models\WalletTopup;
 use App\Services\WalletService;
 use Illuminate\Http\Request;
@@ -44,11 +45,24 @@ class RetailerController extends Controller
 
     public function show(Request $request, User $retailer)
     {
-        $filters = $request->only(['search', 'status', 'operator_id', 'from', 'to']);
+        $txnFilters = $request->only(['search', 'status', 'operator_id', 'from', 'to']);
 
         $transactions = $retailer->transactions()
             ->with(['operator:id,name', 'country:id,name'])
-            ->filter($filters)
+            ->filter($txnFilters)
+            ->orderByDesc('created_at')
+            ->paginate(10)
+            ->withQueryString();
+
+        $ledgerFilters = $request->only(['type', 'description', 'from', 'to']);
+
+        $ledgers = WalletLedger::whereHas('wallet', fn ($q) => $q->where('user_id', $retailer->id))
+            ->when($ledgerFilters['type'] ?? null, fn ($q, $v) => $q->where('type', $v))
+            ->when($ledgerFilters['description'] ?? null, function ($q, $v) {
+                $q->where('description', 'like', "%{$v}%");
+            })
+            ->when($ledgerFilters['from'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '>=', $v))
+            ->when($ledgerFilters['to'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '<=', $v))
             ->orderByDesc('created_at')
             ->paginate(10)
             ->withQueryString();
@@ -58,8 +72,9 @@ class RetailerController extends Controller
             ->get(['id', 'name', 'country_id']);
 
         $retailer->load(['wallet']);
+
         return Inertia::render('Admin/Retailers/Show', compact(
-            'retailer', 'transactions', 'operators', 'filters'
+            'retailer', 'transactions', 'operators', 'txnFilters', 'ledgers', 'ledgerFilters'
         ));
     }
 
