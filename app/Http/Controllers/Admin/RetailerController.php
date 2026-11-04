@@ -2,21 +2,19 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\RetailersExport;
 use App\Http\Controllers\Controller;
+use App\Models\Operator;
 use App\Models\User;
 use App\Models\Wallet;
-use App\Models\WalletLedger;
-use App\Models\Transaction;
 use App\Models\WalletTopup;
 use App\Services\WalletService;
-use App\Services\SmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\RetailersExport;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Permission\Models\Role;
 
 class RetailerController extends Controller
@@ -40,20 +38,34 @@ class RetailerController extends Controller
     {
         return Excel::download(
             new RetailersExport($request->only('search', 'status', 'kyc_status')),
-            'retailers_' . now()->format('Y-m-d') . '.xlsx'
+            'retailers_'.now()->format('Y-m-d').'.xlsx'
         );
     }
 
-    public function show(User $retailer)
+    public function show(Request $request, User $retailer)
     {
-        $retailer->load(['wallet', 'transactions' => fn($q) => $q->with('operator')->latest()->limit(5)]);
+        $filters = $request->only(['search', 'status', 'operator_id', 'from', 'to']);
 
-        return Inertia::render('Admin/Retailers/Show', compact('retailer'));
+        $transactions = $retailer->transactions()
+            ->with(['operator:id,name', 'country:id,name'])
+            ->filter($filters)
+            ->orderByDesc('created_at')
+            ->paginate(10)
+            ->withQueryString();
+
+        $operators = Operator::with('country:id,iso_code')
+            ->orderBy('name')
+            ->get(['id', 'name', 'country_id']);
+
+        $retailer->load(['wallet']);
+        return Inertia::render('Admin/Retailers/Show', compact(
+            'retailer', 'transactions', 'operators', 'filters'
+        ));
     }
 
     public function create()
     {
-        return Inertia::render("Admin/Retailers/Create");
+        return Inertia::render('Admin/Retailers/Create');
     }
 
     public function store(Request $request)
@@ -88,7 +100,7 @@ class RetailerController extends Controller
 
     public function edit(User $retailer)
     {
-        return Inertia::render("Admin/Retailers/Edit", compact("retailer"));
+        return Inertia::render('Admin/Retailers/Edit', compact('retailer'));
     }
 
     public function update(Request $request, User $retailer)
@@ -133,7 +145,7 @@ class RetailerController extends Controller
 
     public function block(Request $request, User $retailer)
     {
-        $retailer->update(['is_active' => !$retailer->is_active]);
+        $retailer->update(['is_active' => ! $retailer->is_active]);
 
         return back()->with('success', $retailer->is_active ? 'Retailer activated!' : 'Retailer deactivated!');
     }
@@ -198,7 +210,7 @@ class RetailerController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Verification ' . $validated['action'] . 'ed successfully!');
+        return back()->with('success', 'Verification '.$validated['action'].'ed successfully!');
     }
 
     public function toggleStatus(User $retailer)

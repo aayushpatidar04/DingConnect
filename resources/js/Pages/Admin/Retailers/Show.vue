@@ -1,14 +1,62 @@
 <script setup>
-import { Head, Link, useForm } from "@inertiajs/vue3";
+import { Head, Link, router, useForm } from "@inertiajs/vue3";
+import { computed, reactive, watch } from "vue";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
 import InputError from "@/Components/InputError.vue";
 import FlashMessage from "@/Components/FlashMessage.vue";
+import SearchableSelect from "@/Components/SearchableSelect.vue";
 
 defineOptions({ layout: AdminLayout });
 
-const props = defineProps({ retailer: Object });
+const props = defineProps({
+    retailer: Object,
+    transactions: Object,
+    operators: { type: Array, default: () => [] },
+    filters: { type: Object, default: () => ({}) },
+});
 
 const creditForm = useForm({ amount: "", description: "" });
+
+const filters = reactive({
+    search: props.filters.search ?? "",
+    status: props.filters.status ?? "",
+    operator_id: props.filters.operator_id ?? "",
+    from: props.filters.from ?? "",
+    to: props.filters.to ?? "",
+});
+
+const operatorOptions = computed(() =>
+    props.operators.map((o) => ({
+        id: o.id,
+        label: o.name,
+        hint: o.country?.iso_code,
+    })),
+);
+
+const hasFilters = computed(() => Object.values(filters).some((v) => v !== ""));
+
+const activeParams = () =>
+    Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== ""));
+
+let timer = null;
+watch(
+    filters,
+    () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            router.get(
+                `/admin/retailers/${props.retailer.id}`,
+                activeParams(),
+                { preserveState: true, preserveScroll: true, replace: true },
+            );
+        }, 400);
+    },
+    { deep: true },
+);
+
+function reset() {
+    Object.keys(filters).forEach((k) => (filters[k] = ""));
+}
 
 const formatDate = (date) => {
     if (!date) return "-";
@@ -21,6 +69,9 @@ const formatDate = (date) => {
         minute: "2-digit",
     });
 };
+
+const inputClass =
+    "border border-surface-3 rounded-lg px-3 py-2 text-sm bg-surface-3 text-ink-900 input-dark";
 </script>
 
 <template>
@@ -40,7 +91,6 @@ const formatDate = (date) => {
                     class="ml-4 px-4 py-2 bg-primary text-ink-100 rounded-lg font-semibold hover:bg-primary-dark transition text-sm"
                     >Edit</Link
                 >
-
                 <div>
                     <h1 class="text-3xl font-bold text-ink-900">
                         {{ retailer.name }}
@@ -54,9 +104,7 @@ const formatDate = (date) => {
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2 space-y-6">
-                <div
-                    class="bg-surface-2 rounded-2xl p-6 border border-surface-3"
-                >
+                <div class="bg-surface-2 rounded-2xl p-6 border border-surface-3">
                     <h3 class="text-lg font-semibold text-ink-900 mb-4">
                         Retailer Information
                     </h3>
@@ -114,57 +162,166 @@ const formatDate = (date) => {
                     </div>
                 </div>
 
-                <div
-                    class="bg-surface-2 rounded-2xl p-6 border border-surface-3"
-                >
-                    <h3 class="text-lg font-semibold text-ink-900 mb-4">
-                        Recent Transactions
-                    </h3>
-                    <div
-                        v-if="retailer.transactions?.length"
-                        class="divide-y divide-dark-600"
-                    >
-                        <div
-                            v-for="txn in retailer.transactions.slice(0, 10)"
-                            :key="txn.id"
-                            class="py-3 flex items-center justify-between"
-                        >
-                            <div>
-                                <div class="font-medium text-ink-900">
-                                    {{ txn.mobile_number }}
-                                </div>
-                                <div class="text-sm text-ink-500">
-                                    {{ txn.operator?.name || "Unknown" }} ·
-                                    {{ formatDate(txn.created_at) }}
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <div class="font-medium text-ink-900">
-                                    £ {{ Number(txn.amount).toFixed(2) }}
-                                </div>
-                                <span
-                                    :class="[
-                                        'px-2 py-0.5 text-xs rounded-full',
-                                        txn.status === 'success'
-                                            ? 'bg-accent/20 text-accent-light'
-                                            : txn.status === 'failed'
-                                              ? 'bg-red-500/20 text-red-600'
-                                              : 'bg-yellow-500/20 text-yellow-600',
-                                    ]"
-                                >
-                                    {{ txn.status }}
-                                </span>
-                            </div>
-                        </div>
+                <div class="bg-surface-2 rounded-2xl p-4 border border-surface-3 flex flex-wrap gap-3 items-end">
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="text-xs text-ink-500 block mb-1">Search</label>
+                        <input
+                            v-model="filters.search"
+                            type="search"
+                            placeholder="Mobile or receipt number"
+                            :class="[inputClass, 'w-full']"
+                        />
                     </div>
-                    <p v-else class="text-ink-500">No transactions yet</p>
+                    <div>
+                        <label class="text-xs text-ink-500 block mb-1">Operator</label>
+                        <SearchableSelect
+                            v-model="filters.operator_id"
+                            :options="operatorOptions"
+                            all-label="All Operators"
+                            search-placeholder="Search operators..."
+                        />
+                    </div>
+                    <div>
+                        <label class="text-xs text-ink-500 block mb-1">Status</label>
+                        <select v-model="filters.status" :class="inputClass">
+                            <option value="">All</option>
+                            <option value="success">Success</option>
+                            <option value="failed">Failed</option>
+                            <option value="pending">Pending</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-ink-500 block mb-1">From</label>
+                        <input v-model="filters.from" type="date" :class="inputClass" />
+                    </div>
+                    <div>
+                        <label class="text-xs text-ink-500 block mb-1">To</label>
+                        <input v-model="filters.to" type="date" :class="inputClass" />
+                    </div>
+                    <button
+                        v-if="hasFilters"
+                        type="button"
+                        @click="reset"
+                        class="px-4 py-2 border border-surface-3 rounded-lg text-sm text-ink-500 hover:bg-surface-3 transition"
+                    >
+                        Reset
+                    </button>
+                </div>
+
+                <div class="bg-surface-2 rounded-2xl border border-surface-3 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-dark-600">
+                            <thead class="bg-surface-3">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase">
+                                        ID
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase">
+                                        Date
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase">
+                                        Mobile
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase">
+                                        Operator
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase">
+                                        Amount
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase">
+                                        Status
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase">
+                                        Receipt
+                                    </th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-700 uppercase">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-dark-600">
+                                <tr
+                                    v-for="txn in transactions.data"
+                                    :key="txn.id"
+                                    class="hover:bg-surface-2 transition"
+                                >
+                                    <td class="px-4 py-3 text-sm text-ink-700">
+                                        {{ txn.id }}
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-ink-700">
+                                        {{ formatDate(txn.created_at) }}
+                                    </td>
+                                    <td class="px-4 py-3 text-sm font-mono text-ink-700">
+                                        {{ txn.mobile_number }}
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-ink-700">
+                                        {{ txn.operator?.name || "-" }}
+                                    </td>
+                                    <td class="px-4 py-3 text-sm font-medium text-ink-900">
+                                        £ {{ Number(txn.amount).toFixed(2) }}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span
+                                            :class="[
+                                                'px-2 py-1 text-xs rounded-full',
+                                                txn.status === 'success'
+                                                    ? 'bg-green-200 text-green-600'
+                                                    : txn.status === 'failed'
+                                                      ? 'bg-red-500/20 text-red-600'
+                                                      : 'bg-yellow-500/20 text-yellow-600',
+                                            ]"
+                                        >
+                                            {{ txn.status }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-ink-700">
+                                        {{ txn.receipt_number || "-" }}
+                                    </td>
+                                    <td class="px-4 py-3 text-right">
+                                        <Link
+                                            :href="`/admin/transactions/${txn.id}`"
+                                            class="inline-flex items-center px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary-dark transition"
+                                        >
+                                            View
+                                        </Link>
+                                    </td>
+                                </tr>
+                                <tr v-if="!transactions.data?.length">
+                                    <td
+                                        colspan="8"
+                                        class="px-4 py-8 text-center text-ink-500"
+                                    >
+                                        No transactions found
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div v-if="transactions.links" class="mt-4 flex justify-center gap-2 p-4">
+                        <template v-for="link in transactions.links" :key="link.label">
+                            <Link
+                                v-if="link.url"
+                                :href="link.url"
+                                v-html="link.label"
+                                class="px-3 py-1 rounded-lg text-sm border border-surface-3 transition"
+                                :class="
+                                    link.active
+                                        ? 'bg-primary text-ink-100 border-primary'
+                                        : 'bg-surface-2 text-ink-500 hover:bg-surface-2'
+                                "
+                            />
+                            <span
+                                v-else
+                                v-html="link.label"
+                                class="px-3 py-1 rounded-lg text-sm bg-surface-2 text-ink-500"
+                            />
+                        </template>
+                    </div>
                 </div>
             </div>
 
             <div class="space-y-6">
-                <div
-                    class="bg-surface-2 rounded-2xl p-6 border border-surface-3"
-                >
+                <div class="bg-surface-2 rounded-2xl p-6 border border-surface-3">
                     <h3 class="text-lg font-semibold text-ink-900 mb-4">
                         Wallet
                     </h3>
@@ -209,9 +366,7 @@ const formatDate = (date) => {
                     </form>
                 </div>
 
-                <div
-                    class="bg-surface-2 rounded-2xl p-6 border border-surface-3"
-                >
+                <div class="bg-surface-2 rounded-2xl p-6 border border-surface-3">
                     <h3 class="text-lg font-semibold text-ink-900 mb-4">
                         Verification Status
                     </h3>
@@ -227,43 +382,19 @@ const formatDate = (date) => {
                     >
                         {{ retailer.kyc_status }}
                     </span>
-                    <p
-                        v-if="retailer.kyc_rejection_reason"
-                        class="text-sm text-red-600 mt-2"
-                    >
+                    <p v-if="retailer.kyc_rejection_reason" class="text-sm text-red-600 mt-2">
                         {{ retailer.kyc_rejection_reason }}
                     </p>
                     <div class="mt-4 space-y-2">
-                        <form
-                            :action="`/admin/retailers/${retailer.id}/kyc`"
-                            method="POST"
-                        >
-                            <input
-                                type="hidden"
-                                name="_token"
-                                :value="$page.props.csrf_token"
-                            />
-                            <input
-                                type="hidden"
-                                name="action"
-                                value="approve"
-                            />
-                            <button
-                                type="submit"
-                                class="w-full py-2 bg-accent text-ink-100 rounded-lg hover:bg-accent-dark transition"
-                            >
+                        <form :action="`/admin/retailers/${retailer.id}/kyc`" method="POST">
+                            <input type="hidden" name="_token" :value="$page.props.csrf_token" />
+                            <input type="hidden" name="action" value="approve" />
+                            <button type="submit" class="w-full py-2 bg-accent text-ink-100 rounded-lg hover:bg-accent-dark transition">
                                 Approve
                             </button>
                         </form>
-                        <form
-                            :action="`/admin/retailers/${retailer.id}/kyc`"
-                            method="POST"
-                        >
-                            <input
-                                type="hidden"
-                                name="_token"
-                                :value="$page.props.csrf_token"
-                            />
+                        <form :action="`/admin/retailers/${retailer.id}/kyc`" method="POST">
+                            <input type="hidden" name="_token" :value="$page.props.csrf_token" />
                             <input type="hidden" name="action" value="reject" />
                             <input
                                 type="text"
@@ -271,14 +402,8 @@ const formatDate = (date) => {
                                 placeholder="Rejection reason"
                                 class="w-full px-3 py-2 border border-surface-3 rounded-lg mb-2 text-sm bg-surface-3 text-ink-900 input-dark"
                             />
-                            <InputError
-                                class="mt-2"
-                                :message="$page.props.errors?.rejection_reason"
-                            />
-                            <button
-                                type="submit"
-                                class="w-full py-2 bg-red-600 text-ink-100 rounded-lg hover:bg-red-700 transition text-sm"
-                            >
+                            <InputError class="mt-2" :message="$page.props.errors?.rejection_reason" />
+                            <button type="submit" class="w-full py-2 bg-red-600 text-ink-100 rounded-lg hover:bg-red-700 transition text-sm">
                                 Reject
                             </button>
                         </form>
