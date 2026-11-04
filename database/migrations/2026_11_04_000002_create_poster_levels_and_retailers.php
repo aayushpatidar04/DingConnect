@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('posters', function (Blueprint $table) {
-            $table->dropIndex(['commission_level_id']);
             $table->dropForeign(['commission_level_id']);
+            $table->dropIndex(['commission_level_id']);
             $table->dropColumn('commission_level_id');
         });
 
