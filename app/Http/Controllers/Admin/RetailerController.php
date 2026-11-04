@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Exports\RetailersExport;
 use App\Http\Controllers\Controller;
 use App\Models\Operator;
+use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletLedger;
 use App\Models\WalletTopup;
 use App\Services\WalletService;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -45,27 +47,88 @@ class RetailerController extends Controller
 
     public function show(Request $request, User $retailer)
     {
-        $txnFilters = $request->only(['search', 'status', 'operator_id', 'from', 'to']);
+        $filters = $request->only(['search', 'type', 'from', 'to']);
 
-        $transactions = $retailer->transactions()
-            ->with(['operator:id,name', 'country:id,name'])
-            ->filter($txnFilters)
-            ->orderByDesc('created_at')
-            ->paginate(10)
-            ->withQueryString();
+        $showTransactions = ! isset($filters['type']) || $filters['type'] === 'debit';
 
-        $ledgerFilters = $request->only(['type', 'description', 'from', 'to']);
+        $transactions = collect();
+        if ($showTransactions) {
+            $transactions = Transaction::query()
+                ->where('user_id', $retailer->id)
+                ->with(['operator:id,name'])
+                ->when($filters['search'] ?? null, function ($q, $s) {
+                    $q->where(function ($q) use ($s) {
+                        $q->where('mobile_number', 'like', "%{$s}%")
+                            ->orWhere('receipt_number', 'like', "%{$s}%");
+                    });
+                })
+                ->when($filters['from'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '>=', $v))
+                ->when($filters['to'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '<=', $v))
+                ->orderByDesc('created_at')
+                ->get();
+        }
 
-        $ledgers = WalletLedger::whereHas('wallet', fn ($q) => $q->where('user_id', $retailer->id))
-            ->when($ledgerFilters['type'] ?? null, fn ($q, $v) => $q->where('type', $v))
-            ->when($ledgerFilters['description'] ?? null, function ($q, $v) {
-                $q->where('description', 'like', "%{$v}%");
+        $ledgers = WalletLedger::query()
+            ->whereHas('wallet', fn ($q) => $q->where('user_id', $retailer->id))
+            ->when($filters['search'] ?? null, function ($q, $s) {
+                $q->where('description', 'like', "%{$s}%");
             })
-            ->when($ledgerFilters['from'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '>=', $v))
-            ->when($ledgerFilters['to'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '<=', $v))
+            ->when($filters['type'] ?? null, fn ($q, $v) => $q->where('type', $v))
+            ->when($filters['from'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '>=', $v))
+            ->when($filters['to'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '<=', $v))
             ->orderByDesc('created_at')
-            ->paginate(10)
-            ->withQueryString();
+            ->get();
+
+        $items = collect();
+
+        // foreach ($transactions as $txn) {
+        //     $items->push([
+        //         'id' => 'txn_'.$txn->id,
+        //         'source' => 'transaction',
+        //         'type' => 'debit',
+        //         'created_at' => $txn->created_at,
+        //         'amount' => (float) $txn->amount,
+        //         'balance_before' => null,
+        //         'balance_after' => null,
+        //         'reference' => $txn->receipt_number ?? '-',
+        //         'mobile_number' => $txn->mobile_number,
+        //         'operator' => $txn->operator?->name ?? '-',
+        //         'status' => $txn->status,
+        //         'has_view' => true,
+        //         'view_url' => '/admin/transactions/'.$txn->id,
+        //     ]);
+        // }
+
+        foreach ($ledgers as $ledger) {
+            $items->push([
+                'id' => 'ledger_'.$ledger->id,
+                'source' => 'ledger',
+                'type' => $ledger->type,
+                'created_at' => $ledger->created_at,
+                'amount' => (float) $ledger->amount,
+                'balance_before' => $ledger->balance_before ? (float) $ledger->balance_before : null,
+                'balance_after' => $ledger->balance_after ? (float) $ledger->balance_after : null,
+                'reference' => $ledger->description ?? '-',
+                'mobile_number' => null,
+                'operator' => null,
+                'status' => null,
+                'has_view' => (bool) $ledger->transaction_id,
+                'view_url' => $ledger->transaction_id ? '/admin/transactions/'.$ledger->transaction_id : null,
+            ]);
+        }
+
+        $items = $items->sortByDesc('created_at')->values();
+
+        $page = $request->input('page', 1);
+        $perPage = 15;
+
+        $activities = new LengthAwarePaginator(
+            $items->forPage($page, $perPage),
+            $items->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         $operators = Operator::with('country:id,iso_code')
             ->orderBy('name')
@@ -74,7 +137,7 @@ class RetailerController extends Controller
         $retailer->load(['wallet']);
 
         return Inertia::render('Admin/Retailers/Show', compact(
-            'retailer', 'transactions', 'operators', 'txnFilters', 'ledgers', 'ledgerFilters'
+            'retailer', 'activities', 'operators', 'filters'
         ));
     }
 
@@ -197,7 +260,7 @@ class RetailerController extends Controller
                 'status' => 'completed',
             ]);
 
-            $walletService->credit($retailer->id, $amount, $entry->id, $description);
+            $walletService->credit($retailer->id, $amount, null, $description);
         });
 
         return back()->with('success', "£ {$amount} credited to {$retailer->name}'s wallet!");

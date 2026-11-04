@@ -10,28 +10,18 @@ defineOptions({ layout: AdminLayout });
 
 const props = defineProps({
     retailer: Object,
-    transactions: Object,
+    activities: Object,
     operators: { type: Array, default: () => [] },
-    txnFilters: { type: Object, default: () => ({}) },
-    ledgers: Object,
-    ledgerFilters: { type: Object, default: () => ({}) },
+    filters: { type: Object, default: () => ({}) },
 });
 
 const creditForm = useForm({ amount: "", description: "" });
 
-const txnFilters = reactive({
-    search: props.txnFilters.search ?? "",
-    status: props.txnFilters.status ?? "",
-    operator_id: props.txnFilters.operator_id ?? "",
-    from: props.txnFilters.from ?? "",
-    to: props.txnFilters.to ?? "",
-});
-
-const ledgerFilters = reactive({
-    type: props.ledgerFilters.type ?? "",
-    description: props.ledgerFilters.description ?? "",
-    from: props.ledgerFilters.from ?? "",
-    to: props.ledgerFilters.to ?? "",
+const filters = reactive({
+    search: props.filters.search ?? "",
+    type: props.filters.type ?? "",
+    from: props.filters.from ?? "",
+    to: props.filters.to ?? "",
 });
 
 const operatorOptions = computed(() =>
@@ -42,24 +32,20 @@ const operatorOptions = computed(() =>
     })),
 );
 
-const hasTxnFilters = computed(() => Object.values(txnFilters).some((v) => v !== ""));
-const hasLedgerFilters = computed(() => Object.values(ledgerFilters).some((v) => v !== ""));
+const hasFilters = computed(() => Object.values(filters).some((v) => v !== ""));
 
-const activeTxnParams = () =>
-    Object.fromEntries(Object.entries(txnFilters).filter(([, v]) => v !== ""));
-const activeLedgerParams = () =>
-    Object.fromEntries(Object.entries(ledgerFilters).filter(([, v]) => v !== ""));
-const allParams = () => ({ ...activeTxnParams(), ...activeLedgerParams() });
+const activeParams = () =>
+    Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== ""));
 
 let timer = null;
 watch(
-    [txnFilters, ledgerFilters],
+    filters,
     () => {
         clearTimeout(timer);
         timer = setTimeout(() => {
             router.get(
                 `/admin/retailers/${props.retailer.id}`,
-                allParams(),
+                activeParams(),
                 { preserveState: true, preserveScroll: true, replace: true },
             );
         }, 400);
@@ -67,12 +53,8 @@ watch(
     { deep: true },
 );
 
-function resetTxn() {
-    Object.keys(txnFilters).forEach((k) => (txnFilters[k] = ""));
-}
-
-function resetLedger() {
-    Object.keys(ledgerFilters).forEach((k) => (ledgerFilters[k] = ""));
+function reset() {
+    Object.keys(filters).forEach((k) => (filters[k] = ""));
 }
 
 const formatDate = (date) => {
@@ -87,16 +69,17 @@ const formatDate = (date) => {
     });
 };
 
-const ledgerTypeBadge = (type) => {
+const activityTypeBadge = (type) => {
     switch (type) {
+        case 'debit':
+            return 'bg-red-500/20 text-red-600';
         case 'topup':
         case 'credit':
             return 'bg-green-200 text-green-600';
-        case 'debit':
         case 'refund':
-            return 'bg-red-500/20 text-red-600';
-        default:
             return 'bg-yellow-500/20 text-yellow-600';
+        default:
+            return 'bg-surface-3 text-ink-500';
     }
 };
 
@@ -192,204 +175,46 @@ const inputClass =
                     </div>
                 </div>
 
-                <!-- Transaction Filters -->
+                <!-- Unified Activity Filters -->
                 <div class="bg-surface-2 rounded-2xl p-4 border border-surface-3 flex flex-wrap gap-3 items-end">
                     <div class="flex-1 min-w-[200px]">
                         <label class="text-xs text-ink-500 block mb-1">Search</label>
                         <input
-                            v-model="txnFilters.search"
+                            v-model="filters.search"
                             type="search"
-                            placeholder="Mobile or receipt number"
+                            placeholder="Mobile, receipt or description"
                             :class="[inputClass, 'w-full']"
                         />
                     </div>
                     <div>
-                        <label class="text-xs text-ink-500 block mb-1">Operator</label>
-                        <SearchableSelect
-                            v-model="txnFilters.operator_id"
-                            :options="operatorOptions"
-                            all-label="All Operators"
-                            search-placeholder="Search operators..."
-                        />
-                    </div>
-                    <div>
-                        <label class="text-xs text-ink-500 block mb-1">Status</label>
-                        <select v-model="txnFilters.status" :class="inputClass">
+                        <label class="text-xs text-ink-500 block mb-1">Type</label>
+                        <select v-model="filters.type" :class="inputClass">
                             <option value="">All</option>
-                            <option value="success">Success</option>
-                            <option value="failed">Failed</option>
-                            <option value="pending">Pending</option>
+                            <option value="debit">Debit</option>
+                            <option value="credit">Credit</option>
+                            <option value="hold">Hold</option>
+                            <option value="release">Release</option>
                         </select>
                     </div>
                     <div>
                         <label class="text-xs text-ink-500 block mb-1">From</label>
-                        <input v-model="txnFilters.from" type="date" :class="inputClass" />
+                        <input v-model="filters.from" type="date" :class="inputClass" />
                     </div>
                     <div>
                         <label class="text-xs text-ink-500 block mb-1">To</label>
-                        <input v-model="txnFilters.to" type="date" :class="inputClass" />
+                        <input v-model="filters.to" type="date" :class="inputClass" />
                     </div>
                     <button
-                        v-if="hasTxnFilters"
+                        v-if="hasFilters"
                         type="button"
-                        @click="resetTxn"
+                        @click="reset"
                         class="px-4 py-2 border border-surface-3 rounded-lg text-sm text-ink-500 hover:bg-surface-3 transition"
                     >
                         Reset
                     </button>
                 </div>
 
-                <!-- Transactions Table -->
-                <div class="bg-surface-2 rounded-2xl border border-surface-3 overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-dark-600">
-                            <thead class="bg-surface-3">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase">
-                                        ID
-                                    </th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase">
-                                        Date
-                                    </th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase">
-                                        Mobile
-                                    </th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase">
-                                        Operator
-                                    </th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase">
-                                        Amount
-                                    </th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase">
-                                        Status
-                                    </th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase">
-                                        Receipt
-                                    </th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-700 uppercase">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-dark-600">
-                                <tr
-                                    v-for="txn in transactions.data"
-                                    :key="txn.id"
-                                    class="hover:bg-surface-2 transition"
-                                >
-                                    <td class="px-4 py-3 text-sm text-ink-700">
-                                        {{ txn.id }}
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-ink-700">
-                                        {{ formatDate(txn.created_at) }}
-                                    </td>
-                                    <td class="px-4 py-3 text-sm font-mono text-ink-700">
-                                        {{ txn.mobile_number }}
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-ink-700">
-                                        {{ txn.operator?.name || "-" }}
-                                    </td>
-                                    <td class="px-4 py-3 text-sm font-medium text-ink-900">
-                                        £ {{ Number(txn.amount).toFixed(2) }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <span
-                                            :class="[
-                                                'px-2 py-1 text-xs rounded-full',
-                                                txn.status === 'success'
-                                                    ? 'bg-green-200 text-green-600'
-                                                    : txn.status === 'failed'
-                                                      ? 'bg-red-500/20 text-red-600'
-                                                      : 'bg-yellow-500/20 text-yellow-600',
-                                            ]"
-                                        >
-                                            {{ txn.status }}
-                                        </span>
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-ink-700">
-                                        {{ txn.receipt_number || "-" }}
-                                    </td>
-                                    <td class="px-4 py-3 text-right">
-                                        <Link
-                                            :href="`/admin/transactions/${txn.id}`"
-                                            class="inline-flex items-center px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary-dark transition"
-                                        >
-                                            View
-                                        </Link>
-                                    </td>
-                                </tr>
-                                <tr v-if="!transactions.data?.length">
-                                    <td
-                                        colspan="8"
-                                        class="px-4 py-8 text-center text-ink-500"
-                                    >
-                                        No transactions found
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div v-if="transactions.links" class="mt-4 flex justify-center gap-2 p-4">
-                        <template v-for="link in transactions.links" :key="link.label">
-                            <Link
-                                v-if="link.url"
-                                :href="link.url"
-                                v-html="link.label"
-                                class="px-3 py-1 rounded-lg text-sm border border-surface-3 transition"
-                                :class="
-                                    link.active
-                                        ? 'bg-primary text-ink-100 border-primary'
-                                        : 'bg-surface-2 text-ink-500 hover:bg-surface-2'
-                                "
-                            />
-                            <span
-                                v-else
-                                v-html="link.label"
-                                class="px-3 py-1 rounded-lg text-sm bg-surface-2 text-ink-500"
-                            />
-                        </template>
-                    </div>
-                </div>
-
-                <!-- Ledger Filters -->
-                <div class="bg-surface-2 rounded-2xl p-4 border border-surface-3 flex flex-wrap gap-3 items-end">
-                    <div class="flex-1 min-w-[200px]">
-                        <label class="text-xs text-ink-500 block mb-1">Type</label>
-                        <input
-                            v-model="ledgerFilters.type"
-                            type="search"
-                            placeholder="e.g. topup, debit, refund"
-                            :class="[inputClass, 'w-full']"
-                        />
-                    </div>
-                    <div class="flex-1 min-w-[200px]">
-                        <label class="text-xs text-ink-500 block mb-1">Description</label>
-                        <input
-                            v-model="ledgerFilters.description"
-                            type="search"
-                            placeholder="Search description..."
-                            :class="[inputClass, 'w-full']"
-                        />
-                    </div>
-                    <div>
-                        <label class="text-xs text-ink-500 block mb-1">From</label>
-                        <input v-model="ledgerFilters.from" type="date" :class="inputClass" />
-                    </div>
-                    <div>
-                        <label class="text-xs text-ink-500 block mb-1">To</label>
-                        <input v-model="ledgerFilters.to" type="date" :class="inputClass" />
-                    </div>
-                    <button
-                        v-if="hasLedgerFilters"
-                        type="button"
-                        @click="resetLedger"
-                        class="px-4 py-2 border border-surface-3 rounded-lg text-sm text-ink-500 hover:bg-surface-3 transition"
-                    >
-                        Reset
-                    </button>
-                </div>
-
-                <!-- Wallet Ledgers Table -->
+                <!-- Unified Activity Table -->
                 <div class="bg-surface-2 rounded-2xl border border-surface-3 overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-dark-600">
@@ -414,58 +239,92 @@ const inputClass =
                                         Balance After
                                     </th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase">
-                                        Description
+                                        Reference
+                                    </th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-ink-700 uppercase">
+                                        Actions
                                     </th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-dark-600">
                                 <tr
-                                    v-for="ledger in ledgers.data"
-                                    :key="ledger.id"
+                                    v-for="activity in activities.data"
+                                    :key="activity.id"
                                     class="hover:bg-surface-2 transition"
                                 >
                                     <td class="px-4 py-3 text-sm text-ink-700">
-                                        {{ ledger.id }}
+                                        {{ activity.id }}
                                     </td>
                                     <td class="px-4 py-3 text-sm text-ink-700">
-                                        {{ formatDate(ledger.created_at) }}
+                                        {{ formatDate(activity.created_at) }}
                                     </td>
                                     <td class="px-4 py-3 text-sm font-medium text-ink-700">
                                         <span
                                             :class="[
-                                                'px-2 py-1 text-xs rounded-full',
-                                                ledgerTypeBadge(ledger.type),
+                                                'px-2 py-1 text-xs rounded-full capitalize',
+                                                activityTypeBadge(activity.type),
                                             ]"
                                         >
-                                            {{ ledger.type }}
+                                            {{ activity.type }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3 text-sm font-medium text-ink-900">
-                                        £ {{ Number(ledger.amount).toFixed(2) }}
+                                    <td class="px-4 py-3 text-sm font-medium">
+                                        <span
+                                            :class="[
+                                                activity.type === 'debit'
+                                                    ? 'text-red-600'
+                                                    : 'text-green-600',
+                                            ]"
+                                        >
+                                            {{ activity.type === 'debit' ? '-' : '+' }}
+                                            £ {{ Number(activity.amount).toFixed(2) }}
+                                        </span>
                                     </td>
                                     <td class="px-4 py-3 text-sm text-ink-700">
-                                        £ {{ Number(ledger.balance_before).toFixed(2) }}
+                                        {{ activity.balance_before !== null
+                                            ? '£ ' + Number(activity.balance_before).toFixed(2)
+                                            : '-' }}
                                     </td>
                                     <td class="px-4 py-3 text-sm text-ink-700">
-                                        £ {{ Number(ledger.balance_after).toFixed(2) }}
+                                        {{ activity.balance_after !== null
+                                            ? '£ ' + Number(activity.balance_after).toFixed(2)
+                                            : '-' }}
                                     </td>
                                     <td class="px-4 py-3 text-sm text-ink-700">
-                                        {{ ledger.description || "-" }}
+                                        {{ activity.reference }}
+                                        {{ activity.source === 'transaction' && activity.mobile_number
+                                            ? ' (' + activity.mobile_number + ')'
+                                            : '' }}
+                                    </td>
+                                    <td class="px-4 py-3 text-right">
+                                        <Link
+                                            v-if="activity.has_view && activity.view_url"
+                                            :href="activity.view_url"
+                                            class="inline-flex items-center px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary-dark transition"
+                                        >
+                                            View
+                                        </Link>
+                                        <span
+                                            v-else
+                                            class="px-3 py-1 rounded-lg text-xs text-ink-400"
+                                        >
+                                            –
+                                        </span>
                                     </td>
                                 </tr>
-                                <tr v-if="!ledgers.data?.length">
+                                <tr v-if="!activities.data?.length">
                                     <td
-                                        colspan="7"
+                                        colspan="8"
                                         class="px-4 py-8 text-center text-ink-500"
                                     >
-                                        No wallet ledger entries found
+                                        No wallet activity found
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
-                    <div v-if="ledgers.links" class="mt-4 flex justify-center gap-2 p-4">
-                        <template v-for="link in ledgers.links" :key="link.label">
+                    <div v-if="activities.links" class="mt-4 flex justify-center gap-2 p-4">
+                        <template v-for="link in activities.links" :key="link.label">
                             <Link
                                 v-if="link.url"
                                 :href="link.url"
