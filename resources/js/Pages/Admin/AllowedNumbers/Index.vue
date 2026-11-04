@@ -192,6 +192,7 @@ const labelClass = "block text-xs text-ink-500 uppercase tracking-wider mb-1";
                         Mobile and serial pairs authorized for ReadReceipt PIN
                         recharges
                     </p>
+                    <p>Total uploaded files: {{ folders.length }}</p>
                 </div>
                 <button
                     @click="openAdd"
@@ -262,8 +263,8 @@ const labelClass = "block text-xs text-ink-500 uppercase tracking-wider mb-1";
                 <input
                     v-model="search"
                     type="search"
-                    placeholder="Search mobile, serial or provider"
-                    class="border border-surface-3 rounded-lg px-3 py-2 text-sm bg-surface-3 text-ink-900 min-w-[240px]"
+                    placeholder="Search mobile, serial, provider or folder name"
+                    class="border border-surface-3 rounded-lg px-3 py-2 text-sm bg-surface-3 text-ink-900 min-w-[360px]"
                 />
                 <label
                     v-if="numbers"
