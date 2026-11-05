@@ -35,6 +35,7 @@ class PosterController extends Controller
                     'expires_at' => $p->expires_at?->format('Y-m-d\TH:i'),
                     'is_active' => $p->is_active,
                     'status' => $p->status(),
+                    'file_size' => Storage::disk('public')->size($p->image_path),
                 ];
             });
 

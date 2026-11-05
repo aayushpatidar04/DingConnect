@@ -242,6 +242,7 @@ function retailerCount(poster) {
                             <th
                                 v-for="heading in [
                                     'Poster',
+                                    'File Size',
                                     'Type',
                                     'Audience',
                                     'Levels / Retailers',
@@ -284,6 +285,13 @@ function retailerCount(poster) {
                                         </div>
                                     </div>
                                 </div>
+                            </td>
+                            <td class="whitespace-nowrap px-4 py-3 text-sm text-ink-700">
+                                <span
+                                    v-if="poster.file_size !== undefined"
+                                    >{{ (poster.file_size / (1024 * 1024)).toFixed(2) }} MB
+                                </span>
+                                <span v-else>-</span>
                             </td>
                             <td
                                 class="whitespace-nowrap px-4 py-3 text-sm capitalize text-ink-700"
