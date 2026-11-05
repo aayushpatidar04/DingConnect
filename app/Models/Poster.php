@@ -39,7 +39,9 @@ class Poster extends Model
     public function scopeLive(Builder $query): Builder
     {
         return $query->where('is_active', true)
-            ->where('expires_at', '>', now())
+            ->where(function ($q) {
+                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })
             ->where(function ($q) {
                 $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
             });
