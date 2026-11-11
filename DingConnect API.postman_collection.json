@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "e331be21-4ef8-49f9-bdf6-23574dacda41",
     "name": "DingConnect API",
-    "description": "DingConnect mobile application API. Set base_url to the application origin and token to a Sanctum bearer token. Requests marked NEW cover features added since API baseline e16d8f6efa17fca87d88a334455c2814b717ae89. See API_DOCUMENTATION.md for request details, validation, and response behavior.",
+    "description": "DingConnect mobile application API. Set base_url to the application origin and token to a Sanctum bearer token. Requests marked NEW cover features added since API baseline e16d8f6efa17fca87d88a334455c2814b717ae89. See API_DOCUMENTATION.md for request details, validation, and response behavior. Every request includes a saved Postman response example showing its success response format; examples use illustrative values, not live data.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -55,8 +55,7 @@
       "key": "allowed_file_id",
       "value": "1",
       "type": "string"
-    }
-  ,
+    },
     {
       "key": "level_id",
       "value": "1",
@@ -99,32 +98,96 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Example Retailer\",\n  \"email\": \"retailer@example.com\",\n  \"phone\": \"447700900123\",\n  \"password\": \"ChangeMe123!\",\n  \"password_confirmation\": \"ChangeMe123!\",\n  \"shop_name\": \"Example Shop\",\n  \"address\": \"1 Example Street\",\n  \"city\": \"London\",\n  \"postcode\": \"SW1A 1AA\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": "{{base_url}}/api/auth/register"
-          }
+            "url": "{{base_url}}/api/auth/register",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": "{{base_url}}/api/auth/register"
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Registration successful. Your account is pending KYC approval.\",\n  \"data\": {\n    \"user\": {\n      \"id\": 42,\n      \"name\": \"Example Retailer\",\n      \"email\": \"retailer@example.com\",\n      \"role\": \"retailer\",\n      \"kyc_status\": \"approved\",\n      \"is_active\": true\n    },\n    \"access_token\": \"<sanctum-token>\",\n    \"token_type\": \"Bearer\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Login - request OTP",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"retailer@example.com\",\n  \"password\": \"ChangeMe123!\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": "{{base_url}}/api/auth/login"
-          }
+            "url": "{{base_url}}/api/auth/login",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": "{{base_url}}/api/auth/login"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"A verification code has been sent to your registered email.\",\n  \"data\": {\n    \"requires_otp\": true,\n    \"email\": \"retailer@example.com\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Verify OTP - save token",
@@ -145,64 +208,192 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"retailer@example.com\",\n  \"otp\": \"123456\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": "{{base_url}}/api/auth/verify-otp"
-          }
+            "url": "{{base_url}}/api/auth/verify-otp",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": "{{base_url}}/api/auth/verify-otp"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Login successful.\",\n  \"data\": {\n    \"user\": {\n      \"id\": 42,\n      \"name\": \"Example Retailer\",\n      \"email\": \"retailer@example.com\",\n      \"role\": \"retailer\",\n      \"kyc_status\": \"approved\",\n      \"is_active\": true\n    },\n    \"access_token\": \"<sanctum-token>\",\n    \"token_type\": \"Bearer\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Resend OTP",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"retailer@example.com\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": "{{base_url}}/api/auth/resend-otp"
-          }
+            "url": "{{base_url}}/api/auth/resend-otp",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": "{{base_url}}/api/auth/resend-otp"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"A new verification code has been sent.\"\n}"
+            }
+          ]
         },
         {
           "name": "Forgot password",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"retailer@example.com\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": "{{base_url}}/api/auth/forgot-password"
-          }
+            "url": "{{base_url}}/api/auth/forgot-password",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": "{{base_url}}/api/auth/forgot-password"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"If the email address exists, a password reset link has been sent.\"\n}"
+            }
+          ]
         },
         {
           "name": "Reset password",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"token\": \"<reset-token-from-email>\",\n  \"email\": \"retailer@example.com\",\n  \"password\": \"NewSecret123!\",\n  \"password_confirmation\": \"NewSecret123!\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": "{{base_url}}/api/auth/reset-password"
-          }
+            "url": "{{base_url}}/api/auth/reset-password",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": "{{base_url}}/api/auth/reset-password"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Your password has been reset.\"\n}"
+            }
+          ]
         },
         {
           "name": "Logout",
@@ -210,29 +401,157 @@
             "method": "POST",
             "auth": {
               "type": "bearer",
-              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
             },
-            "header": [{ "key": "Accept", "value": "application/json" }],
-            "url": "{{base_url}}/api/auth/logout"
-          }
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/auth/logout",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": "{{base_url}}/api/auth/logout"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Logged out successfully.\"\n}"
+            }
+          ]
         }
       ]
     },
     {
       "name": "Public lookups",
-      "auth": { "type": "noauth" },
+      "auth": {
+        "type": "noauth"
+      },
       "item": [
         {
           "name": "List countries",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/countries" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/countries",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/countries"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"United Kingdom\",\n      \"iso_code\": \"GB\",\n      \"calling_code\": \"+44\",\n      \"currency\": \"GBP\",\n      \"flag_emoji\": \"????\"\n    }\n  ]\n}"
+            }
+          ]
         },
         {
           "name": "Operators by country",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/countries/{{country_iso}}/operators" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/countries/{{country_iso}}/operators",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/countries/{{country_iso}}/operators"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Example Operator\",\n      \"provider_code\": \"example-provider\"\n    }\n  ]\n}"
+            }
+          ]
         },
         {
           "name": "Search operators",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/operators/search?q=vodafone&country_id=1" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/operators/search?q=vodafone&country_id=1",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/operators/search?q=vodafone&country_id=1"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Example Operator\",\n      \"provider_code\": \"example-provider\",\n      \"country_id\": 1\n    }\n  ]\n}"
+            }
+          ]
         }
       ]
     },
@@ -241,37 +560,169 @@
       "item": [
         {
           "name": "Current user",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/auth/me" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/auth/me",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/auth/me"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 42,\n    \"name\": \"Example Retailer\",\n    \"email\": \"retailer@example.com\",\n    \"role\": \"retailer\",\n    \"kyc_status\": \"approved\",\n    \"is_active\": true,\n    \"roles\": [\n      \"retailer\"\n    ],\n    \"wallet\": {\n      \"id\": 7,\n      \"balance\": \"100.00\",\n      \"currency\": \"GBP\"\n    }\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Get profile",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/profile" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/profile",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/profile"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 42,\n    \"name\": \"Example Retailer\",\n    \"email\": \"retailer@example.com\",\n    \"role\": \"retailer\",\n    \"kyc_status\": \"approved\",\n    \"is_active\": true,\n    \"phone\": \"447700900123\",\n    \"shop_name\": \"Example Shop\",\n    \"address\": \"1 Example Street\",\n    \"city\": \"London\",\n    \"county\": \"Greater London\",\n    \"postcode\": \"SW1A 1AA\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Update profile",
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Example Retailer\",\n  \"email\": \"retailer@example.com\",\n  \"phone\": \"447700900123\",\n  \"shop_name\": \"Example Shop\",\n  \"address\": \"1 Example Street\",\n  \"city\": \"London\",\n  \"county\": \"Greater London\",\n  \"postcode\": \"SW1A 1AA\",\n  \"vat_number\": \"\",\n  \"company_reg_number\": \"\",\n  \"utr_number\": \"\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": "{{base_url}}/api/profile"
-          }
+            "url": "{{base_url}}/api/profile",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "url": "{{base_url}}/api/profile"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 42,\n    \"name\": \"Example Retailer\",\n    \"email\": \"retailer@example.com\",\n    \"role\": \"retailer\",\n    \"kyc_status\": \"approved\",\n    \"is_active\": true,\n    \"phone\": \"447700900123\",\n    \"shop_name\": \"Example Shop\",\n    \"address\": \"1 Example Street\",\n    \"city\": \"London\",\n    \"county\": \"Greater London\",\n    \"postcode\": \"SW1A 1AA\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Change password",
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"current_password\": \"ChangeMe123!\",\n  \"password\": \"NewSecret123!\",\n  \"password_confirmation\": \"NewSecret123!\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": "{{base_url}}/api/password"
-          }
+            "url": "{{base_url}}/api/password",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "url": "{{base_url}}/api/password"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Password updated. Please sign in again.\"\n}"
+            }
+          ]
         }
       ]
     },
@@ -280,45 +731,274 @@
       "item": [
         {
           "name": "Dashboard",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/dashboard" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/dashboard",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/dashboard"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"stats\": {\n      \"wallet_balance\": 100.0,\n      \"available_balance\": 100.0,\n      \"locked_balance\": 0.0,\n      \"today_transactions\": 0,\n      \"today_success\": 0,\n      \"today_failed\": 0,\n      \"this_month_transactions\": 0,\n      \"this_month_success\": 0,\n      \"this_month_volume\": 0.0,\n      \"total_transactions\": 0,\n      \"total_success\": 0,\n      \"success_rate\": 0,\n      \"low_balance\": false\n    },\n    \"recentTransactions\": [],\n    \"chartData\": [],\n    \"offers\": [\n      {\n        \"id\": 4,\n        \"title\": \"Welcome offer\",\n        \"description\": \"Example cashback offer\",\n        \"type\": \"percent\",\n        \"value\": 5.0,\n        \"max_cashback\": 10.0,\n        \"min_amount\": 5.0,\n        \"max_amount\": null,\n        \"expires_at\": \"2026-12-31T23:59:59Z\",\n        \"providers\": [\n          \"Example Operator\"\n        ],\n        \"remaining\": 1,\n        \"benefit\": 0.5\n      }\n    ]\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Retailer profile",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/profile" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/profile",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/profile"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 42,\n    \"name\": \"Example Retailer\",\n    \"email\": \"retailer@example.com\",\n    \"role\": \"retailer\",\n    \"kyc_status\": \"approved\",\n    \"is_active\": true,\n    \"phone\": \"447700900123\",\n    \"shop_name\": \"Example Shop\",\n    \"address\": \"1 Example Street\",\n    \"city\": \"London\",\n    \"county\": \"Greater London\",\n    \"postcode\": \"SW1A 1AA\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Update retailer profile",
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Example Retailer\",\n  \"email\": \"retailer@example.com\",\n  \"phone\": \"447700900123\",\n  \"shop_name\": \"Example Shop\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": "{{base_url}}/api/retailer/profile"
-          }
+            "url": "{{base_url}}/api/retailer/profile",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/profile"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 42,\n    \"name\": \"Example Retailer\",\n    \"email\": \"retailer@example.com\",\n    \"role\": \"retailer\",\n    \"kyc_status\": \"approved\",\n    \"is_active\": true,\n    \"phone\": \"447700900123\",\n    \"shop_name\": \"Example Shop\",\n    \"address\": \"1 Example Street\",\n    \"city\": \"London\",\n    \"county\": \"Greater London\",\n    \"postcode\": \"SW1A 1AA\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Wallet and top-ups",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/wallet?status=pending&from=2025-01-01&to=2025-12-31&page=1" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/wallet?status=pending&from=2025-01-01&to=2025-12-31&page=1",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/wallet?status=pending&from=2025-01-01&to=2025-12-31&page=1"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"wallet\": {\n      \"balance\": \"100.00\",\n      \"currency\": \"GBP\"\n    },\n    \"available_balance\": 100.0,\n    \"topups\": {\n      \"current_page\": 1,\n      \"data\": [],\n      \"last_page\": 1,\n      \"per_page\": 20,\n      \"total\": 0\n    }\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Wallet top-up details",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/wallet/topup" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/wallet/topup",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/wallet/topup"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"wallet\": {\n      \"balance\": \"100.00\",\n      \"currency\": \"GBP\"\n    },\n    \"available_balance\": 100.0,\n    \"stripe_publishable_key\": \"<publishable-key>\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Create wallet top-up PaymentIntent",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"amount\": 25\n}", "options": { "raw": { "language": "json" } } },
-            "url": "{{base_url}}/api/retailer/wallet/topup"
-          }
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 25\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/retailer/wallet/topup",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/wallet/topup"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"client_secret\": \"<payment-intent-client-secret>\",\n  \"payment_intent_id\": \"pi_example\",\n  \"amount\": 25,\n  \"currency\": \"GBP\",\n  \"stripe_publishable_key\": \"<publishable-key>\",\n  \"topup_id\": 9\n}"
+            }
+          ]
         },
         {
           "name": "Wallet ledger",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/wallet/ledger?page=1" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/wallet/ledger?page=1",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/wallet/ledger?page=1"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"current_page\": 1,\n    \"data\": [],\n    \"last_page\": 1,\n    \"per_page\": 50,\n    \"total\": 0\n  }\n}"
+            }
+          ]
         }
       ]
     },
@@ -327,61 +1007,414 @@
       "item": [
         {
           "name": "Find providers by phone",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/recharge/operators?phone_number=447700900123&country_iso=GB" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/recharge/operators?phone_number=447700900123&country_iso=GB",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/recharge/operators?phone_number=447700900123&country_iso=GB"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"country_iso\": \"GB\",\n  \"providers\": [\n    {\n      \"id\": 1,\n      \"provider_code\": \"example-provider\",\n      \"name\": \"Example Operator\"\n    }\n  ]\n}"
+            }
+          ]
         },
         {
           "name": "Providers by country",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/recharge/providers?country_iso=GB" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/recharge/providers?country_iso=GB",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/recharge/providers?country_iso=GB"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"providers\": [\n    {\n      \"provider_code\": \"example-provider\",\n      \"provider_id\": 1,\n      \"name\": \"Example Operator\",\n      \"country_iso\": \"GB\"\n    }\n  ]\n}"
+            }
+          ]
         },
         {
           "name": "Valuetopup operators",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/recharge/valuetopup/operators?country_iso=GB" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/recharge/valuetopup/operators?country_iso=GB",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/recharge/valuetopup/operators?country_iso=GB"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"providers\": [\n    {\n      \"provider_code\": \"example-provider\",\n      \"provider_id\": 1,\n      \"name\": \"Example Operator\",\n      \"country_iso\": \"GB\"\n    }\n  ]\n}"
+            }
+          ]
         },
         {
           "name": "Provider status",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/recharge/provider-status?provider_code=provider-code" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/recharge/provider-status?provider_code=provider-code",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/recharge/provider-status?provider_code=provider-code"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"provider_code\": \"example-provider\",\n    \"status\": \"available\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Products",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/recharge/products?country_iso=GB&provider_code=provider-code&valuetopup_id=1" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/recharge/products?country_iso=GB&provider_code=provider-code&valuetopup_id=1",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/recharge/products?country_iso=GB&provider_code=provider-code&valuetopup_id=1"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"products\": [\n    {\n      \"sku_code\": \"SKU-CODE\",\n      \"send_value\": 10,\n      \"receive_value\": 10,\n      \"send_currency\": \"GBP\",\n      \"receive_currency\": \"GBP\",\n      \"_source\": \"ding\"\n    }\n  ]\n}"
+            }
+          ]
         },
         {
           "name": "Promotions",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/recharge/promotions?country_isos=GB&provider_codes=provider-code" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/recharge/promotions?country_isos=GB&provider_codes=provider-code",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/recharge/promotions?country_isos=GB&provider_codes=provider-code"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"promotions\": []\n}"
+            }
+          ]
         },
         {
           "name": "Estimate Ding pricing",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/recharge/pricing?sku_code=SKU-CODE&send_value=10&send_currency_iso=GBP" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/recharge/pricing?sku_code=SKU-CODE&send_value=10&send_currency_iso=GBP",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/recharge/pricing?sku_code=SKU-CODE&send_value=10&send_currency_iso=GBP"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"pricing\": {\n    \"send_value\": 10,\n    \"send_currency\": \"GBP\",\n    \"receive_value\": 10,\n    \"receive_currency\": \"GBP\",\n    \"receive_value_excluding_tax\": 10\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Estimate Valuetopup cost",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"sku_id\": 1,\n  \"amount\": 10,\n  \"currency\": \"GBP\"\n}", "options": { "raw": { "language": "json" } } },
-            "url": "{{base_url}}/api/retailer/recharge/estimate-cost"
-          }
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku_id\": 1,\n  \"amount\": 10,\n  \"currency\": \"GBP\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/retailer/recharge/estimate-cost",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/recharge/estimate-cost"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"pricing\": {\n    \"send_value\": 10,\n    \"send_currency\": \"GBP\",\n    \"receive_value\": 10,\n    \"receive_currency\": \"GBP\",\n    \"receive_value_excluding_tax\": 10\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Validate number",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/recharge/validate-number?mobile_number=447700900123&provider_code=provider-code&gateway=ding" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/recharge/validate-number?mobile_number=447700900123&provider_code=provider-code&gateway=ding",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/recharge/validate-number?mobile_number=447700900123&provider_code=provider-code&gateway=ding"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"account_number\": \"447700900123\",\n  \"gateway\": \"ding\",\n  \"provider\": \"Example Operator\"\n}"
+            }
+          ]
         },
         {
           "name": "Product description",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/recharge/product-description?sku_code=SKU-CODE" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/recharge/product-description?sku_code=SKU-CODE",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/recharge/product-description?sku_code=SKU-CODE"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"description_markdown\": \"Example product description\",\n  \"readmore_markdown\": null,\n  \"source\": \"api\"\n}"
+            }
+          ]
         },
         {
           "name": "Submit recharge",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"sku_code\": \"SKU-CODE\",\n  \"send_value\": 10,\n  \"send_currency\": \"GBP\",\n  \"receive_value\": 10,\n  \"receive_currency\": \"GBP\",\n  \"redemption_type\": \"Immediate\",\n  \"mobile_number\": \"447700900123\",\n  \"country_id\": 1,\n  \"operator_id\": 1,\n  \"gateway\": \"ding\",\n  \"provider_code\": \"provider-code\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": "{{base_url}}/api/retailer/recharge"
-          }
+            "url": "{{base_url}}/api/retailer/recharge",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/recharge"
+              },
+              "status": "Accepted",
+              "code": 202,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Recharge request submitted. Processing...\",\n  \"data\": {\n    \"transaction\": {\n      \"id\": 1001,\n      \"receipt_number\": \"TXN-20260101-00001\",\n      \"status\": \"pending\",\n      \"amount\": \"10.00\",\n      \"currency\": \"GBP\"\n    }\n  }\n}"
+            }
+          ]
         }
       ]
     },
@@ -390,31 +1423,252 @@
       "item": [
         {
           "name": "List transactions",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/transactions?search=447700900123&status=success&type=Immediate&operator_id={{operator_id}}&from=2025-01-01&to=2025-12-31&page=1" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/transactions?search=447700900123&status=success&type=Immediate&operator_id={{operator_id}}&from=2025-01-01&to=2025-12-31&page=1",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/transactions?search=447700900123&status=success&type=Immediate&operator_id={{operator_id}}&from=2025-01-01&to=2025-12-31&page=1"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"current_page\": 1,\n    \"data\": [\n      {\n        \"id\": 1001,\n        \"receipt_number\": \"TXN-20260101-00001\",\n        \"status\": \"pending\",\n        \"amount\": \"10.00\",\n        \"currency\": \"GBP\"\n      }\n    ],\n    \"last_page\": 1,\n    \"per_page\": 25,\n    \"total\": 0\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Transaction details",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/transactions/{{transaction_id}}" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/transactions/{{transaction_id}}",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/transactions/{{transaction_id}}"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1001,\n    \"receipt_number\": \"TXN-20260101-00001\",\n    \"status\": \"pending\",\n    \"amount\": \"10.00\",\n    \"currency\": \"GBP\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Transaction status",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/transactions/{{transaction_id}}/status" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/transactions/{{transaction_id}}/status",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/transactions/{{transaction_id}}/status"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1001,\n    \"receipt_number\": \"TXN-20260101-00001\",\n    \"status\": \"pending\",\n    \"amount\": \"10.00\",\n    \"currency\": \"GBP\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Transaction receipt",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/retailer/transactions/{{transaction_id}}/receipt" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/transactions/{{transaction_id}}/receipt",
+            "description": "Response format: see the saved \"Success response format\" example under this request.\n\nResponse content type and download filename are shown in the saved response example."
+          },
+          "response": [
+            {
+              "name": "Successful PDF receipt download format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/transactions/{{transaction_id}}/receipt"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/pdf"
+                },
+                {
+                  "key": "Content-Disposition",
+                  "value": "attachment; filename=receipt_TXN-20260101-00001.pdf"
+                }
+              ],
+              "cookie": [],
+              "body": "<Binary PDF receipt; download the live response to save the receipt.>"
+            }
+          ]
         },
         {
           "name": "Legacy transaction list alias",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/transactions" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/transactions",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/transactions"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"current_page\": 1,\n    \"data\": [\n      {\n        \"id\": 1001,\n        \"receipt_number\": \"TXN-20260101-00001\",\n        \"status\": \"pending\",\n        \"amount\": \"10.00\",\n        \"currency\": \"GBP\"\n      }\n    ],\n    \"last_page\": 1,\n    \"per_page\": 25,\n    \"total\": 0\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Legacy transaction details alias",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/transactions/{{transaction_id}}" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/transactions/{{transaction_id}}",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/transactions/{{transaction_id}}"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1001,\n    \"receipt_number\": \"TXN-20260101-00001\",\n    \"status\": \"pending\",\n    \"amount\": \"10.00\",\n    \"currency\": \"GBP\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Legacy transaction status alias",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/transactions/{{transaction_id}}/status" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/transactions/{{transaction_id}}/status",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/transactions/{{transaction_id}}/status"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1001,\n    \"receipt_number\": \"TXN-20260101-00001\",\n    \"status\": \"pending\",\n    \"amount\": \"10.00\",\n    \"currency\": \"GBP\"\n  }\n}"
+            }
+          ]
         }
       ]
     },
@@ -423,91 +1677,495 @@
       "item": [
         {
           "name": "Dashboard",
-          "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/dashboard" }
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/dashboard",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/admin/dashboard"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"stats\": {\n      \"total_retailers\": 1,\n      \"active_retailers\": 1,\n      \"pending_kyc\": 0,\n      \"today_transactions\": 2,\n      \"today_success\": 2,\n      \"today_volume\": 20.0,\n      \"success_rate\": 100.0,\n      \"pending_topups\": 0,\n      \"monthly_revenue\": 100.0,\n      \"total_transactions\": 10,\n      \"ding_balance\": {\n        \"success\": true,\n        \"balance\": \"100.00\",\n        \"currency\": \"GBP\"\n      },\n      \"prepay_nation_balance\": {\n        \"success\": true,\n        \"balance\": \"50.00\",\n        \"currency\": \"GBP\"\n      }\n    },\n    \"topRetailers\": [],\n    \"recentTransactions\": [],\n    \"chartData\": []\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Retailers",
           "item": [
             {
               "name": "List retailers",
-              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/retailers?search=example&status=active&kyc_status=pending&page=1" }
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/retailers?search=example&status=active&kyc_status=pending&page=1",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/retailers?search=example&status=active&kyc_status=pending&page=1"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"current_page\": 1,\n    \"data\": [\n      {\n        \"id\": 42,\n        \"name\": \"Example Retailer\",\n        \"email\": \"retailer@example.com\",\n        \"role\": \"retailer\",\n        \"kyc_status\": \"approved\",\n        \"is_active\": true\n      }\n    ],\n    \"last_page\": 1,\n    \"per_page\": 25,\n    \"total\": 0\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Create retailer",
               "request": {
                 "method": "POST",
-                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"name\": \"New Retailer\",\n  \"email\": \"new-retailer@example.com\",\n  \"phone\": \"447700900124\",\n  \"password\": \"ChangeMe123!\",\n  \"password_confirmation\": \"ChangeMe123!\",\n  \"shop_name\": \"New Shop\"\n}",
-                  "options": { "raw": { "language": "json" } }
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
                 },
-                "url": "{{base_url}}/api/admin/retailers"
-              }
+                "url": "{{base_url}}/api/admin/retailers",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/retailers"
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 42,\n    \"name\": \"Example Retailer\",\n    \"email\": \"retailer@example.com\",\n    \"role\": \"retailer\",\n    \"kyc_status\": \"approved\",\n    \"is_active\": true,\n    \"wallet\": {\n      \"balance\": \"0.00\",\n      \"currency\": \"GBP\"\n    }\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Retailer details",
-              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}" }
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 42,\n    \"name\": \"Example Retailer\",\n    \"email\": \"retailer@example.com\",\n    \"role\": \"retailer\",\n    \"kyc_status\": \"approved\",\n    \"is_active\": true,\n    \"wallet\": {\n      \"balance\": \"100.00\",\n      \"currency\": \"GBP\"\n    },\n    \"transactions\": []\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Update retailer",
               "request": {
                 "method": "PUT",
-                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"name\": \"Example Retailer\",\n  \"email\": \"retailer@example.com\",\n  \"phone\": \"447700900123\",\n  \"shop_name\": \"Example Shop\",\n  \"is_active\": true\n}",
-                  "options": { "raw": { "language": "json" } }
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
                 },
-                "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}"
-              }
+                "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "PUT",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 42,\n    \"name\": \"Example Retailer\",\n    \"email\": \"retailer@example.com\",\n    \"role\": \"retailer\",\n    \"kyc_status\": \"approved\",\n    \"is_active\": true,\n    \"wallet\": {\n      \"balance\": \"100.00\",\n      \"currency\": \"GBP\"\n    },\n    \"transactions\": []\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Patch retailer",
               "request": {
                 "method": "PATCH",
-                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"name\": \"Example Retailer\",\n  \"email\": \"retailer@example.com\",\n  \"phone\": \"447700900123\",\n  \"is_active\": true\n}",
-                  "options": { "raw": { "language": "json" } }
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
                 },
-                "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}"
-              }
+                "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "PATCH",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 42,\n    \"name\": \"Example Retailer\",\n    \"email\": \"retailer@example.com\",\n    \"role\": \"retailer\",\n    \"kyc_status\": \"approved\",\n    \"is_active\": true,\n    \"wallet\": {\n      \"balance\": \"100.00\",\n      \"currency\": \"GBP\"\n    },\n    \"transactions\": []\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Deactivate retailer",
-              "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}" }
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "DELETE",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Retailer deactivated.\"\n}"
+                }
+              ]
             },
             {
               "name": "Approve retailer KYC",
-              "request": { "method": "POST", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}/approve" }
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}/approve",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}/approve"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 42,\n    \"name\": \"Example Retailer\",\n    \"email\": \"retailer@example.com\",\n    \"role\": \"retailer\",\n    \"kyc_status\": \"approved\",\n    \"is_active\": true\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Toggle retailer block",
-              "request": { "method": "POST", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}/block" }
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}/block",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}/block"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 42,\n    \"name\": \"Example Retailer\",\n    \"email\": \"retailer@example.com\",\n    \"role\": \"retailer\",\n    \"kyc_status\": \"approved\",\n    \"is_active\": true\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Credit retailer wallet",
               "request": {
                 "method": "POST",
-                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
-                "body": { "mode": "raw", "raw": "{\n  \"amount\": 25,\n  \"description\": \"Admin wallet credit\"\n}", "options": { "raw": { "language": "json" } } },
-                "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}/credit"
-              }
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"amount\": 25,\n  \"description\": \"Admin wallet credit\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}/credit",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}/credit"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 42,\n    \"name\": \"Example Retailer\",\n    \"email\": \"retailer@example.com\",\n    \"role\": \"retailer\",\n    \"kyc_status\": \"approved\",\n    \"is_active\": true,\n    \"wallet\": {\n      \"balance\": \"125.00\",\n      \"currency\": \"GBP\"\n    }\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Process KYC - reject example",
               "request": {
                 "method": "POST",
-                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
-                "body": { "mode": "raw", "raw": "{\n  \"action\": \"reject\",\n  \"rejection_reason\": \"Please provide the missing business document.\"\n}", "options": { "raw": { "language": "json" } } },
-                "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}/kyc"
-              }
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"action\": \"reject\",\n  \"rejection_reason\": \"Please provide the missing business document.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}/kyc",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/retailers/{{retailer_id}}/kyc"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 42,\n    \"name\": \"Example Retailer\",\n    \"email\": \"retailer@example.com\",\n    \"role\": \"retailer\",\n    \"kyc_status\": \"rejected\",\n    \"is_active\": true,\n    \"kyc_rejection_reason\": \"Please provide the missing business document.\"\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Export retailers",
-              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/octet-stream" }], "url": "{{base_url}}/api/admin/retailers/export" }
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/octet-stream"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/retailers/export",
+                "description": "Response format: see the saved \"Successful CSV download format\" example under this request.\n\nResponse content type and download filename are shown in the saved response example."
+              },
+              "response": [
+                {
+                  "name": "Successful XLSX download format",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/retailers/export"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    },
+                    {
+                      "key": "Content-Disposition",
+                      "value": "attachment; filename=retailers_YYYY-MM-DD.xlsx"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<Binary XLSX file contents; download the live response to save the spreadsheet.>"
+                }
+              ]
             }
           ]
         },
@@ -516,19 +2174,147 @@
           "item": [
             {
               "name": "List transactions",
-              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/transactions?search=447700900123&status=success&retailer_id={{retailer_id}}&operator_id={{operator_id}}&from=2025-01-01&to=2025-12-31&page=1" }
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/transactions?search=447700900123&status=success&retailer_id={{retailer_id}}&operator_id={{operator_id}}&from=2025-01-01&to=2025-12-31&page=1",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/transactions?search=447700900123&status=success&retailer_id={{retailer_id}}&operator_id={{operator_id}}&from=2025-01-01&to=2025-12-31&page=1"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"transactions\": {\n      \"current_page\": 1,\n      \"data\": [\n        {\n          \"id\": 1001,\n          \"receipt_number\": \"TXN-20260101-00001\",\n          \"status\": \"pending\",\n          \"amount\": \"10.00\",\n          \"currency\": \"GBP\"\n        }\n      ],\n      \"last_page\": 1,\n      \"per_page\": 50,\n      \"total\": 0\n    },\n    \"stats\": {\n      \"total\": 1,\n      \"success\": 0,\n      \"failed\": 0,\n      \"pending\": 1,\n      \"total_volume\": 0\n    },\n    \"retailers\": [],\n    \"operators\": [],\n    \"filters\": {}\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Transaction details",
-              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/transactions/{{transaction_id}}" }
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/transactions/{{transaction_id}}",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/transactions/{{transaction_id}}"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1001,\n    \"receipt_number\": \"TXN-20260101-00001\",\n    \"status\": \"pending\",\n    \"amount\": \"10.00\",\n    \"currency\": \"GBP\",\n    \"user\": {\n      \"id\": 42,\n      \"name\": \"Example Retailer\",\n      \"email\": \"retailer@example.com\",\n      \"role\": \"retailer\",\n      \"kyc_status\": \"approved\",\n      \"is_active\": true\n    }\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Refund transaction",
-              "request": { "method": "POST", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/transactions/{{transaction_id}}/refund" }
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/transactions/{{transaction_id}}/refund",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/transactions/{{transaction_id}}/refund"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1001,\n    \"receipt_number\": \"TXN-20260101-00001\",\n    \"status\": \"refunded\",\n    \"amount\": \"10.00\",\n    \"currency\": \"GBP\"\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Export transactions",
-              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/octet-stream" }], "url": "{{base_url}}/api/admin/transactions/export" }
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/octet-stream"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/transactions/export",
+                "description": "Response format: see the saved \"Successful CSV download format\" example under this request.\n\nResponse content type and download filename are shown in the saved response example."
+              },
+              "response": [
+                {
+                  "name": "Successful XLSX download format",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/transactions/export"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    },
+                    {
+                      "key": "Content-Disposition",
+                      "value": "attachment; filename=transactions_YYYY-MM-DD.xlsx"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "<Binary XLSX file contents; download the live response to save the spreadsheet.>"
+                }
+              ]
             }
           ]
         },
@@ -537,58 +2323,287 @@
           "item": [
             {
               "name": "List operators",
-              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/operators?search=vodafone&country_id=1&is_active=true&page=1" }
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/operators?search=vodafone&country_id=1&is_active=true&page=1",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/operators?search=vodafone&country_id=1&is_active=true&page=1"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"operators\": {\n      \"current_page\": 1,\n      \"data\": [],\n      \"last_page\": 1,\n      \"per_page\": 50,\n      \"total\": 0\n    },\n    \"countries\": []\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Create operator",
               "request": {
                 "method": "POST",
-                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"name\": \"Example Operator\",\n  \"provider_code\": \"example-provider\",\n  \"country_id\": 1,\n  \"logo_url\": \"https://example.com/logo.png\",\n  \"display_order\": 1,\n  \"is_active\": true,\n  \"is_premium\": false,\n  \"region_codes\": \"\",\n  \"payment_types\": \"\",\n  \"validation_regex\": \"\",\n  \"customer_care_number\": \"\"\n}",
-                  "options": { "raw": { "language": "json" } }
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
                 },
-                "url": "{{base_url}}/api/admin/operators"
-              }
+                "url": "{{base_url}}/api/admin/operators",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/operators"
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Example Operator\",\n    \"provider_code\": \"example-provider\",\n    \"country_id\": 1,\n    \"country\": {\n      \"id\": 1,\n      \"name\": \"United Kingdom\"\n    }\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Operator details",
-              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/operators/{{operator_id}}" }
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/operators/{{operator_id}}",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/operators/{{operator_id}}"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Example Operator\",\n    \"provider_code\": \"example-provider\",\n    \"country_id\": 1,\n    \"country\": {\n      \"id\": 1,\n      \"name\": \"United Kingdom\"\n    }\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Update operator",
               "request": {
                 "method": "PUT",
-                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"name\": \"Example Operator\",\n  \"provider_code\": \"example-provider\",\n  \"country_id\": 1,\n  \"is_active\": true,\n  \"is_premium\": false\n}",
-                  "options": { "raw": { "language": "json" } }
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
                 },
-                "url": "{{base_url}}/api/admin/operators/{{operator_id}}"
-              }
+                "url": "{{base_url}}/api/admin/operators/{{operator_id}}",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "PUT",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/operators/{{operator_id}}"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Example Operator\",\n    \"provider_code\": \"example-provider\",\n    \"country_id\": 1,\n    \"country\": {\n      \"id\": 1,\n      \"name\": \"United Kingdom\"\n    }\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Patch operator",
               "request": {
                 "method": "PATCH",
-                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"name\": \"Example Operator\",\n  \"provider_code\": \"example-provider\",\n  \"country_id\": 1,\n  \"is_active\": true\n}",
-                  "options": { "raw": { "language": "json" } }
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
                 },
-                "url": "{{base_url}}/api/admin/operators/{{operator_id}}"
-              }
+                "url": "{{base_url}}/api/admin/operators/{{operator_id}}",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "PATCH",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/operators/{{operator_id}}"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Example Operator\",\n    \"provider_code\": \"example-provider\",\n    \"country_id\": 1,\n    \"country\": {\n      \"id\": 1,\n      \"name\": \"United Kingdom\"\n    }\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Delete operator",
-              "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/operators/{{operator_id}}" }
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/operators/{{operator_id}}",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "DELETE",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/operators/{{operator_id}}"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Operator deleted.\"\n}"
+                }
+              ]
             },
             {
               "name": "Sync Ding providers for GB",
-              "request": { "method": "POST", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/operators/sync" }
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/operators/sync",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/operators/sync"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"synced\": 12,\n    \"failed_countries\": []\n  }\n}"
+                }
+              ]
             }
           ]
         },
@@ -597,16 +2612,86 @@
           "item": [
             {
               "name": "List settings",
-              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/settings" }
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/settings",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/settings"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"settings\": {},\n    \"groups\": []\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Update settings",
               "request": {
                 "method": "PUT",
-                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
-                "body": { "mode": "raw", "raw": "{\n  \"settings\": [\n    { \"id\": 1, \"value\": \"Example\" },\n    { \"id\": 2, \"value\": true }\n  ]\n}", "options": { "raw": { "language": "json" } } },
-                "url": "{{base_url}}/api/admin/settings"
-              }
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"settings\": [\n    { \"id\": 1, \"value\": \"Example\" },\n    { \"id\": 2, \"value\": true }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{base_url}}/api/admin/settings",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "PUT",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/settings"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Settings updated successfully.\"\n}"
+                }
+              ]
             }
           ]
         },
@@ -615,68 +2700,375 @@
           "item": [
             {
               "name": "List folders and numbers",
-              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/allowed-numbers?search=447700900123&folder=manual&inactive=false&page=1" }
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/allowed-numbers?search=447700900123&folder=manual&inactive=false&page=1",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/allowed-numbers?search=447700900123&folder=manual&inactive=false&page=1"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"folders\": [],\n    \"manualCount\": 0,\n    \"numbers\": null,\n    \"currentFolder\": null,\n    \"filters\": {}\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Create allowed number",
               "request": {
                 "method": "POST",
-                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
-                "body": { "mode": "raw", "raw": "{\n  \"mobile\": \"447700900123\",\n  \"serial\": \"SERIAL-001\",\n  \"provider\": \"Example Provider\",\n  \"country\": \"GB\"\n}", "options": { "raw": { "language": "json" } } },
-                "url": "{{base_url}}/api/admin/allowed-numbers"
-              }
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"mobile\": \"447700900123\",\n  \"serial\": \"SERIAL-001\",\n  \"provider\": \"Example Provider\",\n  \"country\": \"GB\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{base_url}}/api/admin/allowed-numbers",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/allowed-numbers"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"mobile\": \"447700900123\",\n    \"serial\": \"SERIAL-001\",\n    \"provider\": \"Example Provider\",\n    \"country\": \"GB\",\n    \"active\": true\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Update allowed number",
               "request": {
                 "method": "PUT",
-                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
-                "body": { "mode": "raw", "raw": "{\n  \"mobile\": \"447700900123\",\n  \"serial\": \"SERIAL-001\",\n  \"provider\": \"Example Provider\",\n  \"country\": \"GB\",\n  \"active\": true\n}", "options": { "raw": { "language": "json" } } },
-                "url": "{{base_url}}/api/admin/allowed-numbers/{{allowed_number_id}}"
-              }
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"mobile\": \"447700900123\",\n  \"serial\": \"SERIAL-001\",\n  \"provider\": \"Example Provider\",\n  \"country\": \"GB\",\n  \"active\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{base_url}}/api/admin/allowed-numbers/{{allowed_number_id}}",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "PUT",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/allowed-numbers/{{allowed_number_id}}"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"mobile\": \"447700900123\",\n    \"serial\": \"SERIAL-001\",\n    \"provider\": \"Example Provider\",\n    \"country\": \"GB\",\n    \"active\": true\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Patch allowed number",
               "request": {
                 "method": "PATCH",
-                "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"mobile\": \"447700900123\",\n  \"serial\": \"SERIAL-001\",\n  \"provider\": \"Example Provider\",\n  \"country\": \"GB\",\n  \"active\": true\n}",
-                  "options": { "raw": { "language": "json" } }
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
                 },
-                "url": "{{base_url}}/api/admin/allowed-numbers/{{allowed_number_id}}"
-              }
+                "url": "{{base_url}}/api/admin/allowed-numbers/{{allowed_number_id}}",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "PATCH",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/allowed-numbers/{{allowed_number_id}}"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"mobile\": \"447700900123\",\n    \"serial\": \"SERIAL-001\",\n    \"provider\": \"Example Provider\",\n    \"country\": \"GB\",\n    \"active\": true\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Delete allowed number",
-              "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/allowed-numbers/{{allowed_number_id}}" }
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/allowed-numbers/{{allowed_number_id}}",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "DELETE",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/allowed-numbers/{{allowed_number_id}}"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Number removed.\"\n}"
+                }
+              ]
             },
             {
-              "name": "Import allowed-number CSV",
+              "name": "Import allowed-number CSV/TXT/XLSX",
               "request": {
                 "method": "POST",
-                "header": [{ "key": "Accept", "value": "application/json" }],
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
                 "body": {
                   "mode": "formdata",
                   "formdata": [
-                    { "key": "file", "type": "file", "src": "" }
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": ""
+                    }
                   ]
                 },
-                "url": "{{base_url}}/api/admin/allowed-numbers/import-file"
-              }
+                "url": "{{base_url}}/api/admin/allowed-numbers/import-file",
+                "description": "Multipart field `file` accepts CSV, TXT, or XLSX up to 2048 KB; headers must include mobile, serial, provider, and country. Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/allowed-numbers/import-file"
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Uploaded allowed_numbers.csv: 1 imported, 0 skipped.\",\n  \"data\": {\n    \"file\": {\n      \"id\": 1,\n      \"name\": \"allowed_numbers.csv\",\n      \"total_rows\": 1,\n      \"imported_rows\": 1,\n      \"skipped_rows\": 0\n    },\n    \"imported\": 1,\n    \"skipped\": 0,\n    \"import_results\": []\n  }\n}"
+                }
+              ]
             },
             {
               "name": "Download sample CSV",
-              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/octet-stream" }], "url": "{{base_url}}/api/admin/allowed-numbers/sample" }
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/octet-stream"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/allowed-numbers/sample",
+                "description": "Response format: see the saved \"Successful CSV download format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Successful CSV download format",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/allowed-numbers/sample"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/csv"
+                    },
+                    {
+                      "key": "Content-Disposition",
+                      "value": "attachment; filename=download"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "mobile,serial,provider,country\n447700900123,829953289034771924,giffgaff,GB\n"
+                }
+              ]
             },
             {
               "name": "Download imported file",
-              "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/octet-stream" }], "url": "{{base_url}}/api/admin/allowed-numbers/files/{{allowed_file_id}}/download" }
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/octet-stream"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/allowed-numbers/files/{{allowed_file_id}}/download",
+                "description": "Response format: see the saved \"Successful CSV download format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Successful CSV download format",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/allowed-numbers/files/{{allowed_file_id}}/download"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "text",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "text/csv"
+                    },
+                    {
+                      "key": "Content-Disposition",
+                      "value": "attachment; filename=download"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "mobile,serial,provider,country\n447700900123,829953289034771924,giffgaff,GB\n"
+                }
+              ]
             },
             {
               "name": "Delete imported file",
-              "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{base_url}}/api/admin/allowed-numbers/files/{{allowed_file_id}}" }
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/allowed-numbers/files/{{allowed_file_id}}",
+                "description": "Response format: see the saved \"Success response format\" example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "DELETE",
+                    "header": [],
+                    "url": "{{base_url}}/api/admin/allowed-numbers/files/{{allowed_file_id}}"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Deleted \\\"allowed_numbers.csv\\\" and its numbers.\"\n}"
+                }
+              ]
             }
           ]
         },
@@ -684,42 +3076,148 @@
           "name": "Legacy recharge alias",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Accept", "value": "application/json" }, { "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"sku_code\": \"SKU-CODE\",\n  \"send_value\": 10,\n  \"redemption_type\": \"Immediate\",\n  \"mobile_number\": \"447700900123\",\n  \"country_id\": 1,\n  \"operator_id\": 1,\n  \"gateway\": \"ding\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
-            "url": "{{base_url}}/api/transactions/topup"
-          }
+            "url": "{{base_url}}/api/transactions/topup",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": "{{base_url}}/api/transactions/topup"
+              },
+              "status": "Accepted",
+              "code": 202,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Recharge request submitted. Processing...\",\n  \"data\": {\n    \"transaction\": {\n      \"id\": 1001,\n      \"receipt_number\": \"TXN-20260101-00001\",\n      \"status\": \"pending\",\n      \"amount\": \"10.00\",\n      \"currency\": \"GBP\"\n    }\n  }\n}"
+            }
+          ]
         }
       ]
     },
     {
       "name": "Provider webhooks (server-to-server)",
-      "auth": { "type": "noauth" },
+      "auth": {
+        "type": "noauth"
+      },
       "item": [
         {
           "name": "Ding webhook callback",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"example\": \"replace-with-provider-callback-payload\"\n}", "options": { "raw": { "language": "json" } } },
-            "url": "{{base_url}}/api/webhooks/ding"
-          }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"example\": \"replace-with-provider-callback-payload\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/webhooks/ding",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": "{{base_url}}/api/webhooks/ding"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"message\": \"OK\"\n}"
+            }
+          ]
         },
         {
           "name": "Stripe webhook callback",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"example\": \"replace-with-provider-event-payload\"\n}", "options": { "raw": { "language": "json" } } },
-            "url": "{{base_url}}/api/webhooks/stripe"
-          }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"example\": \"replace-with-provider-event-payload\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/api/webhooks/stripe",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": "{{base_url}}/api/webhooks/stripe"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": \"success\"\n}"
+            }
+          ]
         }
       ]
-    }
-  ,
+    },
     {
       "name": "NEW - Retailer commissions & offers",
       "description": "New retailer APIs added after the API baseline. The dashboard now includes visible active offers; eligible offers are filtered for amount and operator.",
@@ -734,8 +3232,30 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/retailer/commissions?type=first&from=2026-01-01&to=2026-12-31"
-          }
+            "url": "{{base_url}}/api/retailer/commissions?type=first&from=2026-01-01&to=2026-12-31",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/commissions?type=first&from=2026-01-01&to=2026-12-31"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"level\": null,\n    \"next\": null,\n    \"connections\": {\n      \"actual\": 0,\n      \"level\": 0,\n      \"topups\": 0,\n      \"auto\": false\n    },\n    \"rates\": [],\n    \"commissions\": {\n      \"current_page\": 1,\n      \"data\": [],\n      \"last_page\": 1,\n      \"per_page\": 25,\n      \"total\": 0\n    },\n    \"totals\": {\n      \"today\": 0,\n      \"month\": 0,\n      \"all\": 0\n    },\n    \"filters\": {}\n  }\n}"
+            }
+          ]
         },
         {
           "name": "NEW - Find eligible offers",
@@ -747,8 +3267,30 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/retailer/offers/eligible?operator_id={{operator_id}}&amount=10"
-          }
+            "url": "{{base_url}}/api/retailer/offers/eligible?operator_id={{operator_id}}&amount=10",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/offers/eligible?operator_id={{operator_id}}&amount=10"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"offers\": [\n    {\n      \"id\": 4,\n      \"title\": \"Welcome offer\",\n      \"description\": \"Example cashback offer\",\n      \"type\": \"percent\",\n      \"value\": 5.0,\n      \"max_cashback\": 10.0,\n      \"min_amount\": 5.0,\n      \"max_amount\": null,\n      \"expires_at\": \"2026-12-31T23:59:59Z\",\n      \"providers\": [\n        \"Example Operator\"\n      ],\n      \"remaining\": 1,\n      \"benefit\": 0.5\n    }\n  ]\n}"
+            }
+          ]
         },
         {
           "name": "NEW - Dashboard (includes active offers)",
@@ -760,8 +3302,30 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/retailer/dashboard"
-          }
+            "url": "{{base_url}}/api/retailer/dashboard",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/dashboard"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"stats\": {\n      \"wallet_balance\": 100.0,\n      \"available_balance\": 100.0,\n      \"locked_balance\": 0.0,\n      \"today_transactions\": 0,\n      \"today_success\": 0,\n      \"today_failed\": 0,\n      \"this_month_transactions\": 0,\n      \"this_month_success\": 0,\n      \"this_month_volume\": 0.0,\n      \"total_transactions\": 0,\n      \"total_success\": 0,\n      \"success_rate\": 0,\n      \"low_balance\": false\n    },\n    \"recentTransactions\": [],\n    \"chartData\": [],\n    \"offers\": [\n      {\n        \"id\": 4,\n        \"title\": \"Welcome offer\",\n        \"description\": \"Example cashback offer\",\n        \"type\": \"percent\",\n        \"value\": 5.0,\n        \"max_cashback\": 10.0,\n        \"min_amount\": 5.0,\n        \"max_amount\": null,\n        \"expires_at\": \"2026-12-31T23:59:59Z\",\n        \"providers\": [\n          \"Example Operator\"\n        ],\n        \"remaining\": 1,\n        \"benefit\": 0.5\n      }\n    ]\n  }\n}"
+            }
+          ]
         }
       ]
     },
@@ -779,8 +3343,30 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/admin/analytics?network_id={{operator_id}}&connections=5&status=active&kyc_status=approved&registered_from=2026-01-01&registered_to=2026-12-31"
-          }
+            "url": "{{base_url}}/api/admin/analytics?network_id={{operator_id}}&connections=5&status=active&kyc_status=approved&registered_from=2026-01-01&registered_to=2026-12-31",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/admin/analytics?network_id={{operator_id}}&connections=5&status=active&kyc_status=approved&registered_from=2026-01-01&registered_to=2026-12-31"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"filters\": {\n      \"search\": null,\n      \"network_id\": null,\n      \"connections\": null,\n      \"status\": null,\n      \"kyc_status\": null,\n      \"city\": null,\n      \"registered_from\": null,\n      \"registered_to\": null,\n      \"activity_from\": null,\n      \"activity_to\": null\n    },\n    \"operators\": [\n      {\n        \"id\": 1,\n        \"label\": \"Example Operator ? United Kingdom\"\n      }\n    ],\n    \"cities\": [\n      \"London\"\n    ],\n    \"stats\": {\n      \"retailers\": 1,\n      \"active_retailers\": 1,\n      \"total_connections\": 5,\n      \"total_transactions\": 10,\n      \"successful_transactions\": 9,\n      \"failed_transactions\": 1,\n      \"successful_volume\": 90.0,\n      \"success_rate\": 90.0\n    },\n    \"connectionDistribution\": [\n      {\n        \"label\": \"0 connections\",\n        \"count\": 0\n      },\n      {\n        \"label\": \"1?4 connections\",\n        \"count\": 0\n      },\n      {\n        \"label\": \"5?9 connections\",\n        \"count\": 1\n      },\n      {\n        \"label\": \"10?19 connections\",\n        \"count\": 0\n      },\n      {\n        \"label\": \"20+ connections\",\n        \"count\": 0\n      }\n    ],\n    \"networkBreakdown\": [\n      {\n        \"id\": 1,\n        \"name\": \"Example Operator\",\n        \"connections\": 5\n      }\n    ],\n    \"highestRetailers\": [\n      {\n        \"id\": 42,\n        \"name\": \"Example Retailer\",\n        \"shop_name\": \"Example Shop\",\n        \"email\": \"retailer@example.com\",\n        \"city\": \"London\",\n        \"is_active\": true,\n        \"kyc_status\": \"approved\",\n        \"created_at\": \"2026-01-01\",\n        \"connections\": 5,\n        \"transactions\": 10,\n        \"successful_transactions\": 9,\n        \"successful_volume\": 90.0\n      }\n    ],\n    \"lowestRetailers\": []\n  }\n}"
+            }
+          ]
         },
         {
           "name": "NEW - List commission levels and rates",
@@ -792,8 +3378,30 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/admin/commission-levels"
-          }
+            "url": "{{base_url}}/api/admin/commission-levels",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/admin/commission-levels"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"levels\": [],\n    \"selectedLevelId\": null,\n    \"rates\": [],\n    \"operators\": []\n  }\n}"
+            }
+          ]
         },
         {
           "name": "NEW - Create commission level",
@@ -818,8 +3426,30 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/commission-levels"
-          }
+            "url": "{{base_url}}/api/admin/commission-levels",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": "{{base_url}}/api/admin/commission-levels"
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Bronze\",\n    \"min_connections\": 5,\n    \"sort_order\": 0,\n    \"is_active\": true\n  }\n}"
+            }
+          ]
         },
         {
           "name": "NEW - Update commission level",
@@ -844,8 +3474,30 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/commission-levels/{{level_id}}"
-          }
+            "url": "{{base_url}}/api/admin/commission-levels/{{level_id}}",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "url": "{{base_url}}/api/admin/commission-levels/{{level_id}}"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Bronze\",\n    \"min_connections\": 5,\n    \"sort_order\": 0,\n    \"is_active\": true\n  }\n}"
+            }
+          ]
         },
         {
           "name": "NEW - Delete commission level",
@@ -857,8 +3509,30 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/admin/commission-levels/{{level_id}}"
-          }
+            "url": "{{base_url}}/api/admin/commission-levels/{{level_id}}",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": "{{base_url}}/api/admin/commission-levels/{{level_id}}"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Level deleted.\"\n}"
+            }
+          ]
         },
         {
           "name": "NEW - Copy commission rates to a level",
@@ -883,8 +3557,30 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/commission-levels/{{level_id}}/copy-rates"
-          }
+            "url": "{{base_url}}/api/admin/commission-levels/{{level_id}}/copy-rates",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": "{{base_url}}/api/admin/commission-levels/{{level_id}}/copy-rates"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Rates copied.\"\n}"
+            }
+          ]
         },
         {
           "name": "NEW - Create commission rate",
@@ -909,8 +3605,30 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/commission-rates"
-          }
+            "url": "{{base_url}}/api/admin/commission-rates",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": "{{base_url}}/api/admin/commission-rates"
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"commission_level_id\": 1,\n    \"operator_id\": null,\n    \"min_amount\": 0,\n    \"max_amount\": null,\n    \"first_topup_amount\": 1,\n    \"first_bonus_amount\": 0.5,\n    \"is_active\": true,\n    \"steps\": [],\n    \"operator\": null\n  }\n}"
+            }
+          ]
         },
         {
           "name": "NEW - Update commission rate",
@@ -935,8 +3653,30 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/commission-rates/{{rate_id}}"
-          }
+            "url": "{{base_url}}/api/admin/commission-rates/{{rate_id}}",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "url": "{{base_url}}/api/admin/commission-rates/{{rate_id}}"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"commission_level_id\": 1,\n    \"operator_id\": null,\n    \"min_amount\": 0,\n    \"max_amount\": null,\n    \"first_topup_amount\": 1,\n    \"first_bonus_amount\": 0.5,\n    \"is_active\": true,\n    \"steps\": [],\n    \"operator\": null\n  }\n}"
+            }
+          ]
         },
         {
           "name": "NEW - Delete commission rate",
@@ -948,8 +3688,30 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/admin/commission-rates/{{rate_id}}"
-          }
+            "url": "{{base_url}}/api/admin/commission-rates/{{rate_id}}",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": "{{base_url}}/api/admin/commission-rates/{{rate_id}}"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Rate deleted.\"\n}"
+            }
+          ]
         },
         {
           "name": "NEW - List retailer commission levels",
@@ -961,8 +3723,30 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/admin/retailer-levels?level=none&page=1"
-          }
+            "url": "{{base_url}}/api/admin/retailer-levels?level=none&page=1",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/admin/retailer-levels?level=none&page=1"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"retailers\": {\n      \"current_page\": 1,\n      \"data\": [],\n      \"last_page\": 1,\n      \"per_page\": 25,\n      \"total\": 0\n    },\n    \"levels\": [],\n    \"filters\": {}\n  }\n}"
+            }
+          ]
         },
         {
           "name": "NEW - Assign retailer commission level",
@@ -987,8 +3771,30 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/retailer-levels/{{retailer_id}}"
-          }
+            "url": "{{base_url}}/api/admin/retailer-levels/{{retailer_id}}",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "url": "{{base_url}}/api/admin/retailer-levels/{{retailer_id}}"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Level updated for Example Retailer.\"\n}"
+            }
+          ]
         },
         {
           "name": "NEW - Bulk assign retailer commission level",
@@ -1013,8 +3819,30 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/retailer-levels/bulk"
-          }
+            "url": "{{base_url}}/api/admin/retailer-levels/bulk",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": "{{base_url}}/api/admin/retailer-levels/bulk"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"updated\": 1\n  }\n}"
+            }
+          ]
         },
         {
           "name": "NEW - Retailer commission level history",
@@ -1026,8 +3854,30 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/admin/retailer-levels/{{retailer_id}}/history"
-          }
+            "url": "{{base_url}}/api/admin/retailer-levels/{{retailer_id}}/history",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/admin/retailer-levels/{{retailer_id}}/history"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"history\": []\n  }\n}"
+            }
+          ]
         },
         {
           "name": "NEW - Commission report",
@@ -1039,8 +3889,30 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/admin/commissions?status=credited&type=first&from=2026-01-01&to=2026-12-31&page=1"
-          }
+            "url": "{{base_url}}/api/admin/commissions?status=credited&type=first&from=2026-01-01&to=2026-12-31&page=1",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/admin/commissions?status=credited&type=first&from=2026-01-01&to=2026-12-31&page=1"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"commissions\": {\n      \"current_page\": 1,\n      \"data\": [],\n      \"last_page\": 1,\n      \"per_page\": 50,\n      \"total\": 0\n    },\n    \"stats\": {\n      \"total_paid\": 0,\n      \"credited\": 0,\n      \"skipped\": 0\n    },\n    \"filters\": {},\n    \"retailers\": [],\n    \"operators\": [],\n    \"levels\": []\n  }\n}"
+            }
+          ]
         },
         {
           "name": "NEW - Export commissions XLSX",
@@ -1052,8 +3924,34 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/admin/commissions/export?status=credited&from=2026-01-01&to=2026-12-31"
-          }
+            "url": "{{base_url}}/api/admin/commissions/export?status=credited&from=2026-01-01&to=2026-12-31",
+            "description": "Response format: see the saved \"Successful XLSX download format\" example under this request.\n\nResponse content type and download filename are shown in the saved response example."
+          },
+          "response": [
+            {
+              "name": "Successful XLSX download format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/admin/commissions/export?status=credited&from=2026-01-01&to=2026-12-31"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                },
+                {
+                  "key": "Content-Disposition",
+                  "value": "attachment; filename=download"
+                }
+              ],
+              "cookie": [],
+              "body": "<Binary XLSX file contents; download the live response to save the spreadsheet.>"
+            }
+          ]
         },
         {
           "name": "NEW - List offers",
@@ -1065,8 +3963,30 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/admin/offers"
-          }
+            "url": "{{base_url}}/api/admin/offers",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/admin/offers"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"offers\": [\n      {\n        \"id\": 4,\n        \"title\": \"Welcome offer\",\n        \"description\": \"Example cashback offer\",\n        \"type\": \"percent\",\n        \"value\": 5.0,\n        \"max_cashback\": 10.0,\n        \"min_amount\": 5.0,\n        \"max_amount\": null,\n        \"starts_at\": null,\n        \"expires_at\": \"2026-12-31T23:59:59Z\",\n        \"expires_at_iso\": \"2026-12-31T23:59:59+00:00\",\n        \"per_retailer_limit\": 1,\n        \"total_limit\": 100,\n        \"audience\": \"all\",\n        \"is_active\": true,\n        \"status\": \"active\",\n        \"operator_ids\": [\n          1\n        ],\n        \"operator_names\": [\n          \"Example Operator\"\n        ],\n        \"retailer_ids\": [],\n        \"used\": 2,\n        \"paid\": 1.0\n      }\n    ],\n    \"operators\": [\n      {\n        \"id\": 1,\n        \"label\": \"Example Operator (GB)\"\n      }\n    ],\n    \"retailers\": [\n      {\n        \"id\": 42,\n        \"label\": \"Example Retailer ? Example Shop\"\n      }\n    ]\n  }\n}"
+            }
+          ]
         },
         {
           "name": "NEW - Create offer",
@@ -1091,8 +4011,30 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/offers"
-          }
+            "url": "{{base_url}}/api/admin/offers",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": "{{base_url}}/api/admin/offers"
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"title\": \"Welcome offer\",\n    \"type\": \"percent\",\n    \"value\": 5,\n    \"audience\": \"all\",\n    \"is_active\": true,\n    \"operators\": [],\n    \"retailers\": []\n  }\n}"
+            }
+          ]
         },
         {
           "name": "NEW - Update offer",
@@ -1117,8 +4059,30 @@
                 }
               }
             },
-            "url": "{{base_url}}/api/admin/offers/{{offer_id}}"
-          }
+            "url": "{{base_url}}/api/admin/offers/{{offer_id}}",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "url": "{{base_url}}/api/admin/offers/{{offer_id}}"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"title\": \"Welcome offer\",\n    \"type\": \"percent\",\n    \"value\": 5,\n    \"audience\": \"all\",\n    \"is_active\": true\n  }\n}"
+            }
+          ]
         },
         {
           "name": "NEW - Delete offer",
@@ -1130,8 +4094,30 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/admin/offers/{{offer_id}}"
-          }
+            "url": "{{base_url}}/api/admin/offers/{{offer_id}}",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": "{{base_url}}/api/admin/offers/{{offer_id}}"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Offer deleted.\"\n}"
+            }
+          ]
         },
         {
           "name": "NEW - Offer redemption history",
@@ -1143,8 +4129,30 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{base_url}}/api/admin/offers/{{offer_id}}/redemptions"
-          }
+            "url": "{{base_url}}/api/admin/offers/{{offer_id}}/redemptions",
+            "description": "Response format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": "{{base_url}}/api/admin/offers/{{offer_id}}/redemptions"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"redemptions\": []\n  }\n}"
+            }
+          ]
         }
       ]
     },
@@ -1176,8 +4184,29 @@
               }
             },
             "url": "{{base_url}}/api/retailer/recharge",
-            "description": "Optional offer_id reserves a currently eligible retailer offer. Replace the collection variable with an ID returned by NEW - Find eligible offers; cashback is only paid after a successful recharge."
-          }
+            "description": "Optional offer_id reserves a currently eligible retailer offer. Replace the collection variable with an ID returned by NEW - Find eligible offers; cashback is only paid after a successful recharge.\n\nResponse format: see the saved \"Success response format\" example under this request."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": "{{base_url}}/api/retailer/recharge"
+              },
+              "status": "Accepted",
+              "code": 202,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Recharge request submitted. Processing...\",\n  \"data\": {\n    \"transaction\": {\n      \"id\": 1001,\n      \"receipt_number\": \"TXN-20260101-00001\",\n      \"status\": \"pending\",\n      \"amount\": \"10.00\",\n      \"currency\": \"GBP\"\n    }\n  }\n}"
+            }
+          ]
         }
       ]
     }

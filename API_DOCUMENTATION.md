@@ -2,7 +2,7 @@
 
 This reference describes the application API under `/api`. It is intended for mobile clients and uses Laravel Sanctum personal access tokens.
 
-> **NEW API coverage — added since baseline `e16d8f6efa17fca87d88a334455c2814b717ae89`:** retailer commission summaries/history and offer eligibility; active offers in the retailer dashboard and offer selection on recharge; admin retailer analytics, commission-level/rate configuration, retailer level assignment/history, commission reports, and offer/redemption management. These routes are also grouped under **NEW** folders in the Postman collection.
+> **NEW changes — APIs added since baseline `e16d8f6efa17fca87d88a334455c2814b717ae89`:** retailer commissions (`GET /api/retailer/commissions`), offer eligibility (`GET /api/retailer/offers/eligible`), and offers on the retailer dashboard/recharge; admin analytics (`GET /api/admin/analytics`), commission levels/rates, retailer level assignment/history, commission reports/export, and offer/redemption management. The added endpoints and changed dashboard/recharge behavior are detailed in sections marked **NEW** below and grouped in **NEW** Postman folders. The Postman collection also includes a saved response-format example for every request.
 >
 > Historical retailer-connection backfill is intentionally an internal Artisan command, not a public API endpoint.
 
@@ -195,7 +195,7 @@ The request is rejected with `422` if available wallet funds are insufficient. A
 | `GET /api/retailer/transactions` | Optional `search`, `status`, `type`, `operator_id`, `from`, `to`, `page` | Own transactions only, 25 per page. `search` checks mobile/receipt; `type` is redemption type. `to` must be on/after `from`. |
 | `GET /api/retailer/transactions/{id}` | Numeric transaction ID | Own transaction details with operator and country |
 | `GET /api/retailer/transactions/{id}/status` | Numeric transaction ID | Current transaction record/status |
-| `GET /api/retailer/transactions/{transaction}/receipt` | Transaction ID | Receipt response/download according to transaction state |
+| `GET /api/retailer/transactions/{transaction}/receipt` | Transaction ID | Downloads a PDF receipt (`application/pdf`) named from the transaction receipt number |
 
 The legacy aliases `GET /api/transactions`, `GET /api/transactions/{id}`, `GET /api/transactions/{id}/status`, and `POST /api/transactions/topup` use the same retailer/KYC authorization and transaction behavior. Prefer the `/api/retailer/...` paths for new clients. The legacy `topup` route initiates a recharge and accepts the same payload as `POST /api/retailer/recharge`; it is not a wallet top-up.
 
@@ -220,7 +220,7 @@ Returns aggregate stats, top retailers, recent transactions, and chart data. Pro
 | `POST /api/admin/retailers/{retailer}/block` | No body | Toggles active state; deactivation revokes tokens |
 | `POST /api/admin/retailers/{retailer}/credit` | JSON `amount` (>0), optional `description` | Credits retailer wallet |
 | `POST /api/admin/retailers/{retailer}/kyc` | JSON `action` (`approve`/`reject`); `rejection_reason` required for reject | Processes KYC |
-| `GET /api/admin/retailers/export` | None | Downloads retailer export |
+| `GET /api/admin/retailers/export` | None | Downloads an XLSX retailer export |
 
 Optional retailer profile fields are `shop_name`, `address`, `city`, `county`, `postcode`, `vat_number`, `company_reg_number`, and `utr_number`.
 
@@ -231,7 +231,7 @@ Optional retailer profile fields are `shop_name`, `address`, `city`, `county`, `
 | `GET /api/admin/transactions` | Optional `search`, `status`, `retailer_id`, `operator_id`, `from`, `to`, `page` | Paginated transactions (50 per page), stats, retailer/operator filter options |
 | `GET /api/admin/transactions/{transaction}` | Transaction ID | Full transaction with retailer/operator/country |
 | `POST /api/admin/transactions/{transaction}/refund` | No body | Refunds only successful transactions; returns `409` otherwise |
-| `GET /api/admin/transactions/export` | None | Downloads transaction export |
+| `GET /api/admin/transactions/export` | None | Downloads an XLSX transaction export |
 
 ## Admin operators
 
@@ -267,12 +267,12 @@ Example:
 | `POST /api/admin/allowed-numbers` | Manual-number fields | Creates an allowed number; returns `201` |
 | `PUT/PATCH /api/admin/allowed-numbers/{allowed_number}` | Manual-number fields plus required boolean `active` | Updates an allowed number |
 | `DELETE /api/admin/allowed-numbers/{allowed_number}` | Number ID | Deletes a number |
-| `POST /api/admin/allowed-numbers/import-file` | Multipart form-data field `file` | Imports CSV/TXT up to 2048 KB |
+| `POST /api/admin/allowed-numbers/import-file` | Multipart form-data field `file` | Imports CSV, TXT, or XLSX up to 2048 KB; returns `201` with the file record, imported/skipped counts, and up to 200 skipped-row details |
 | `GET /api/admin/allowed-numbers/sample` | None | Downloads sample CSV |
 | `GET /api/admin/allowed-numbers/files/{allowedNumberFile}/download` | File ID | Downloads original import |
 | `DELETE /api/admin/allowed-numbers/files/{allowedNumberFile}` | File ID | Deletes an imported file and associated records |
 
-Manual number payload fields follow the web form: `mobile`, `serial`, `provider`, `country`; update also requires `active`. CSV headers must include `mobile`, `serial`, `provider`, and `country` (case-insensitive). File names must be unique. Use multipart form-data for upload; do not manually set its boundary header.
+Manual number payload fields follow the web form: `mobile`, `serial`, `provider`, `country`; update also requires `active`. CSV/XLSX headers must include `mobile`, `serial`, `provider`, and `country` (case-insensitive). File names must be unique. Use multipart form-data for upload; do not manually set its boundary header.
 
 ## NEW — retailer commissions and offers
 
@@ -339,7 +339,7 @@ Commission-rate JSON fields: required `commission_level_id`, `min_amount`, and `
 | Method and path | Request / result |
 |---|---|
 | `GET /api/admin/retailer-levels` | Paginated retailers, level options, and assignment data. Optional `search`, `level` (level ID or `none`), and `page`. |
-| `PUT /api/admin/retailer-levels/{retailer}` | JSON: optional `level_id` (nullable), `auto_level_enabled`, `actual_connections`, `topups_count`, and `reason`. |
+| `PUT /api/admin/retailer-levels/{retailer}` | JSON: optional `level_id` (nullable), `auto_level_enabled`, `actual_connections`, and `reason`. |
 | `POST /api/admin/retailer-levels/bulk` | JSON: required non-empty `retailer_ids` array; optional `level_id`, `auto_level_enabled`, and `reason`. |
 | `GET /api/admin/retailer-levels/{retailer}/history` | Returns up to 50 level changes, newest first. |
 
@@ -370,3 +370,5 @@ Offer JSON fields: required `title`, `type` (`percent` or `fixed`), `value`, `ex
 ## Postman collection
 
 Import [DingConnect API.postman_collection.json](./DingConnect%20API.postman_collection.json). Set the collection's `base_url` to your application origin and paste a token into `token`. The collection automatically saves a token from successful registration or OTP verification responses. It includes auth, public lookup, retailer, admin, webhook, upload, and export requests.
+
+Every request has a saved **Success response format** example under its Postman **Responses** tab. These examples show the JSON keys/wrappers, HTTP success status, and content type. Download endpoints use illustrative file-content placeholders (or a small CSV sample); capture the live response to save the real PDF/XLSX/export file. The examples use dummy values and do not represent live account data.
