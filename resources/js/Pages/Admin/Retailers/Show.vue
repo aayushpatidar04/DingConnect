@@ -21,7 +21,7 @@ const simLimitForm = useForm({
 });
 
 function updateSimLimit() {
-    simLimitForm.put(`/admin/sim-orders/retailers/${props.retailer.id}/limit`, {
+    simLimitForm.put(`/admin/sim-orders/retailer-limit/${props.retailer.id}`, {
         preserveScroll: true,
     });
 }

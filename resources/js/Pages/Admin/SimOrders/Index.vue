@@ -91,7 +91,7 @@ function openLimitModal(retailer) {
 }
 
 function submitLimit() {
-    limitForm.put(`/admin/sim-orders/retailers/${activeRetailer.value.id}/limit`, {
+    limitForm.put(`/admin/sim-orders/retailer-limit/${activeRetailer.value.id}`, {
         preserveScroll: true,
         onSuccess: () => {
             showLimitModal.value = false;

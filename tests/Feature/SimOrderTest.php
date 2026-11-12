@@ -95,7 +95,7 @@ class SimOrderTest extends TestCase
             'sim_order_limit' => 50,
         ]);
 
-        $response = $this->actingAs($admin)->put("/admin/sim-orders/retailers/{$retailer->id}/limit", [
+        $response = $this->actingAs($admin)->put("/admin/sim-orders/retailer-limit/{$retailer->id}", [
             'sim_order_limit' => 300,
         ]);
 
