@@ -1,8 +1,9 @@
-<script setup>
-import { Head, Link, router } from "@inertiajs/vue3";
-import { reactive, watch, computed } from "vue";
+﻿<script setup>
+import { Head, Link, router, useForm } from "@inertiajs/vue3";
+import { reactive, watch, computed, ref } from "vue";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
 import FlashMessage from "@/Components/FlashMessage.vue";
+import InputError from "@/Components/InputError.vue";
 
 defineOptions({ layout: AdminLayout });
 
@@ -10,6 +11,40 @@ const props = defineProps({
     retailers: Object,
     filters: { type: Object, default: () => ({}) },
 });
+
+const selectedIds = ref([]);
+const selectAll = computed({
+    get: () => props.retailers.data.length > 0 && selectedIds.value.length === props.retailers.data.length,
+    set: (val) => {
+        selectedIds.value = val ? props.retailers.data.map(r => r.id) : [];
+    }
+});
+
+const showBulkModal = ref(false);
+const bulkForm = useForm({
+    target: "selected",
+    retailer_ids: [],
+    sim_order_limit: 20,
+});
+
+function openBulkModal(target) {
+    bulkForm.target = target;
+    bulkForm.retailer_ids = selectedIds.value;
+    bulkForm.sim_order_limit = 20;
+    bulkForm.clearErrors();
+    showBulkModal.value = true;
+}
+
+function submitBulk() {
+    bulkForm.retailer_ids = selectedIds.value;
+    bulkForm.post("/admin/retailers/bulk-sim-limit", {
+        preserveScroll: true,
+        onSuccess: () => {
+            showBulkModal.value = false;
+            selectedIds.value = [];
+        },
+    });
+}
 
 const filters = reactive({
     search: props.filters.search ?? "",
@@ -57,12 +92,18 @@ const inputClass =
     <FlashMessage />
 
     <div class="space-y-6">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h1 class="text-3xl font-bold text-ink-900 mb-1">Retailers</h1>
-                <p class="text-ink-500">Manage registered retailers</p>
+                <p class="text-ink-500">Manage registered retailers and SIM order limits</p>
             </div>
-            <div class="flex gap-2">
+            <div class="flex flex-wrap gap-2">
+                <button
+                    @click="openBulkModal('all')"
+                    class="px-4 py-2 bg-primary/15 text-primary hover:bg-primary hover:text-ink-100 rounded-lg text-sm font-semibold transition"
+                >
+                    Set SIM Limit for ALL Retailers
+                </button>
                 <button
                     @click="exportRetailers"
                     class="px-4 py-2 bg-accent text-ink-100 rounded-lg hover:bg-accent-dark text-sm font-medium transition"
@@ -75,6 +116,17 @@ const inputClass =
                     >Add Retailer</Link
                 >
             </div>
+        </div>
+
+        <!-- Selected Action Bar -->
+        <div v-if="selectedIds.length > 0" class="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center justify-between">
+            <span class="text-sm font-semibold text-primary">{{ selectedIds.length }} retailer(s) selected</span>
+            <button
+                @click="openBulkModal('selected')"
+                class="px-4 py-2 bg-primary text-ink-100 rounded-xl text-xs font-semibold hover:bg-primary-hover transition shadow-md shadow-primary/20"
+            >
+                Set SIM Limit for Selected
+            </button>
         </div>
 
         <div class="flex gap-2 mb-4">
@@ -144,8 +196,15 @@ const inputClass =
                 <table class="min-w-full divide-y divide-dark-600">
                     <thead class="bg-surface-3">
                         <tr>
+                            <th class="px-4 py-3 text-left">
+                                <input
+                                    type="checkbox"
+                                    v-model="selectAll"
+                                    class="rounded border-surface-3 text-primary focus:ring-primary"
+                                />
+                            </th>
                             <th
-                                class="px-6 py-3 text-left text-xs font-medium text-ink-700 uppercase tracking-wider"
+                                class="px-4 py-3 text-left text-xs font-medium text-ink-700 uppercase tracking-wider"
                             >
                                 S.No.
                             </th>
@@ -192,7 +251,15 @@ const inputClass =
                             :key="retailer.id"
                             class="hover:bg-surface-2 transition"
                         >
-                            <td class="px-6 py-4 text-sm text-ink-700">
+                            <td class="px-4 py-4">
+                                <input
+                                    type="checkbox"
+                                    :value="retailer.id"
+                                    v-model="selectedIds"
+                                    class="rounded border-surface-3 text-primary focus:ring-primary"
+                                />
+                            </td>
+                            <td class="px-4 py-4 text-sm text-ink-700">
                                 {{ (retailers.from || 0) + index }}
                             </td>
                             <td class="px-6 py-4">
@@ -250,72 +317,23 @@ const inputClass =
                                     >
                                         View
                                     </Link>
-
-                                    <form
-                                        v-if="retailer.kyc_status === 'pending'"
-                                        :action="`/admin/retailers/${retailer.id}/approve`"
-                                        method="POST"
-                                    >
-                                        <input
-                                            type="hidden"
-                                            name="_token"
-                                            :value="$page.props.csrf_token"
-                                        />
-
-                                        <button
-                                            type="submit"
-                                            class="inline-flex items-center px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition"
-                                        >
-                                            Approve
-                                        </button>
-                                    </form>
-
-                                    <form
-                                        :action="`/admin/retailers/${retailer.id}/toggle-status`"
-                                        method="POST"
-                                    >
-                                        <input
-                                            type="hidden"
-                                            name="_token"
-                                            :value="$page.props.csrf_token"
-                                        />
-
-                                        <button
-                                            type="submit"
-                                            class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium text-white transition"
-                                            :class="
-                                                retailer.is_active
-                                                    ? 'bg-red-600 hover:bg-red-700'
-                                                    : 'bg-green-600 hover:bg-green-700'
-                                            "
-                                        >
-                                            {{
-                                                retailer.is_active
-                                                    ? "Make Inactive"
-                                                    : "Make Active"
-                                            }}
-                                        </button>
-                                    </form>
                                 </div>
+                            </td>
+                        </tr>
+                        <tr v-if="!retailers.data?.length">
+                            <td
+                                colspan="9"
+                                class="px-6 py-8 text-center text-ink-500"
+                            >
+                                No retailers found
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            <div
-                v-if="!retailers.data?.length"
-                class="p-8 text-center text-ink-500"
-            >
-                {{
-                    hasFilters
-                        ? "No retailers match these filters"
-                        : "No retailers found"
-                }}
-            </div>
-            <div
-                v-if="retailers.links"
-                class="mt-4 flex justify-center gap-2 p-4"
-            >
+
+            <!-- Pagination -->
+            <div v-if="retailers.links" class="p-4 flex justify-center gap-2">
                 <template v-for="link in retailers.links" :key="link.label">
                     <Link
                         v-if="link.url"
@@ -334,6 +352,63 @@ const inputClass =
                         class="px-3 py-1 rounded-lg text-sm bg-surface-2 text-ink-500"
                     />
                 </template>
+            </div>
+        </div>
+
+        <!-- Bulk SIM Limit Modal -->
+        <div
+            v-if="showBulkModal"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        >
+            <div class="bg-surface-2 border border-surface-3 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-ink-900">
+                        {{ bulkForm.target === 'all' ? 'Set SIM Limit for ALL Retailers' : `Set SIM Limit for ${selectedIds.length} Selected Retailer(s)` }}
+                    </h3>
+                    <button
+                        @click="showBulkModal = false"
+                        class="text-ink-400 hover:text-ink-900"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitBulk" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-ink-600 uppercase mb-1">
+                            New Max SIM Quantity Per Single Order
+                        </label>
+                        <input
+                            v-model.number="bulkForm.sim_order_limit"
+                            type="number"
+                            min="1"
+                            max="100000"
+                            required
+                            class="w-full border border-surface-3 rounded-xl px-4 py-2.5 text-sm bg-surface-3 text-ink-900 focus:outline-none focus:border-primary"
+                        />
+                        <p class="text-xs text-ink-500 mt-1">
+                            This will update the maximum SIM card order limit for {{ bulkForm.target === 'all' ? 'all registered retailers' : `${selectedIds.length} selected retailer(s)` }}.
+                        </p>
+                        <InputError :message="bulkForm.errors.sim_order_limit" class="mt-1" />
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-2">
+                        <button
+                            type="button"
+                            @click="showBulkModal = false"
+                            class="px-4 py-2 rounded-xl text-sm font-medium text-ink-700 hover:bg-surface-3 transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            :disabled="bulkForm.processing"
+                            class="px-5 py-2 bg-primary hover:bg-primary-hover text-ink-100 rounded-xl text-sm font-medium transition shadow-lg shadow-primary/20 disabled:opacity-50"
+                        >
+                            Apply Bulk Limit
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

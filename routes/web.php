@@ -76,6 +76,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/retailers/export', [AdminRetailerController::class, 'export'])->name('retailers.export');
     Route::get('/retailers/create', [AdminRetailerController::class, 'create'])->name('retailers.create');
     Route::post('/retailers/store', [AdminRetailerController::class, 'store'])->name('retailers.store');
+    Route::post('/retailers/bulk-sim-limit', [AdminRetailerController::class, 'bulkUpdateSimLimit'])->name('retailers.bulk-sim-limit');
     Route::get('/retailers/{retailer}', [AdminRetailerController::class, 'show'])->name('retailers.show');
     Route::post('/retailers/{retailer}/approve', [AdminRetailerController::class, 'approve'])->name('retailers.approve');
     Route::post('/retailers/{retailer}/block', [AdminRetailerController::class, 'block'])->name('retailers.block');

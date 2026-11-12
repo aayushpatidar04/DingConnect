@@ -305,6 +305,25 @@ class RetailerController extends Controller
         );
     }
 
+    public function bulkUpdateSimLimit(Request $request)
+    {
+        $data = $request->validate([
+            'target' => ['required', 'in:selected,all'],
+            'retailer_ids' => ['required_if:target,selected', 'array'],
+            'retailer_ids.*' => ['exists:users,id'],
+            'sim_order_limit' => ['required', 'integer', 'min:1', 'max:100000'],
+        ]);
+
+        $query = User::where('role', 'retailer');
+        if ($data['target'] === 'selected') {
+            $query->whereIn('id', $data['retailer_ids']);
+        }
+
+        $count = $query->update(['sim_order_limit' => $data['sim_order_limit']]);
+
+        return back()->with('success', "SIM order limit updated to {$data['sim_order_limit']} for {$count} retailer(s).");
+    }
+
     public function destroy(User $retailer)
     {
         $retailer->update(['is_active' => false]);
