@@ -23,15 +23,15 @@ class Transaction extends Model
     ];
 
     protected $casts = [
-        'ding_response'              => 'array',
-        'benefits'                   => 'array',
-        'valuetopup_response'        => 'array',
-        'ip_address'                 => 'string',
-        'callback_received'          => 'boolean',
-        'callback_received_at'       => 'datetime',
-        'amount'                     => 'decimal:4',
-        'created_at'                 => 'datetime',
-        'updated_at'                 => 'datetime',
+        'ding_response' => 'array',
+        'benefits' => 'array',
+        'valuetopup_response' => 'array',
+        'ip_address' => 'string',
+        'callback_received' => 'boolean',
+        'callback_received_at' => 'datetime',
+        'amount' => 'decimal:4',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
@@ -71,7 +71,7 @@ class Transaction extends Model
                 // grouped so it can't escape the other conditions
                 $q->where(function ($q) use ($s) {
                     $q->where('mobile_number', 'like', "%{$s}%")
-                    ->orWhere('receipt_number', 'like', "%{$s}%");
+                        ->orWhere('receipt_number', 'like', "%{$s}%");
                 });
             })
             ->when($f['status'] ?? null, fn ($q, $v) => $q->where('status', $v))

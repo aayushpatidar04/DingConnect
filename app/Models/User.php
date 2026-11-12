@@ -99,6 +99,11 @@ class User extends Authenticatable
         return $this->hasMany(ActivityLog::class);
     }
 
+    public function simOrders(): HasMany
+    {
+        return $this->hasMany(SimOrder::class);
+    }
+
     public function scopeFilter(Builder $query, array $filters): Builder
     {
         return $query

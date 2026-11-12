@@ -12,8 +12,7 @@ class ContactUsNotification extends Notification
 
     public function __construct(
         public array $data
-    ) {
-    }
+    ) {}
 
     public function via(object $notifiable): array
     {
@@ -26,10 +25,10 @@ class ContactUsNotification extends Notification
             ->subject('New Contact Form Submission')
             ->greeting('New Contact Inquiry')
             ->line('A new contact form has been submitted.')
-            ->line('Name: ' . $this->data['name'])
-            ->line('Email: ' . $this->data['email'])
-            ->line('Phone: ' . ($this->data['phone'] ?? '-'))
-            ->line('Subject: ' . $this->data['subject'])
+            ->line('Name: '.$this->data['name'])
+            ->line('Email: '.$this->data['email'])
+            ->line('Phone: '.($this->data['phone'] ?? '-'))
+            ->line('Subject: '.$this->data['subject'])
             ->line('Message:')
             ->line($this->data['message']);
     }

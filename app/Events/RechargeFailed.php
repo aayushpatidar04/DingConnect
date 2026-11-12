@@ -3,7 +3,6 @@
 namespace App\Events;
 
 use App\Models\Transaction;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -23,7 +22,7 @@ class RechargeFailed implements ShouldBroadcast
 
     public function broadcastOn(): PrivateChannel
     {
-        return new PrivateChannel('retailer.' . $this->transaction->user_id);
+        return new PrivateChannel('retailer.'.$this->transaction->user_id);
     }
 
     public function broadcastAs(): string

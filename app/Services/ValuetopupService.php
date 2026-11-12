@@ -7,8 +7,11 @@ use Illuminate\Support\Facades\Http;
 class ValuetopupService
 {
     protected string $baseUrl;
+
     protected string $username;
+
     protected string $password;
+
     protected string $countryCode = 'GB';
 
     public function __construct()
@@ -31,14 +34,14 @@ class ValuetopupService
     protected function get(string $uri, array $params = [])
     {
         return $this->client()
-            ->get($this->baseUrl . $uri, $params)
+            ->get($this->baseUrl.$uri, $params)
             ->json();
     }
 
     protected function post(string $uri, array $payload)
     {
         return $this->client()
-            ->post($this->baseUrl . $uri, $payload)
+            ->post($this->baseUrl.$uri, $payload)
             ->json();
     }
 
@@ -331,7 +334,6 @@ class ValuetopupService
      * transaction flow do not need to change.
      *
      * @param  array  $sku  Raw SKU object from /catalog/skus or /catalog/getproducts
-     * @return array
      */
     public function transformValuetopupProduct(array $sku): array
     {
@@ -364,16 +366,16 @@ class ValuetopupService
         }
 
         // Parse benefitType string if available (format: "Mobile+Minutes+Data")
-        if (!empty($sku['benefitType']) && is_string($sku['benefitType'])) {
+        if (! empty($sku['benefitType']) && is_string($sku['benefitType'])) {
             $parsed = array_map('ucfirst', explode('+', $sku['benefitType']));
-            if (!empty($parsed)) {
+            if (! empty($parsed)) {
                 $benefits = $parsed;
             }
         }
 
         return [
-            'sku_code' => 'vt-' . ($sku['skuId'] ?? ''),
-            'provider_code' => 'vt-' . ($sku['operatorId'] ?? ''),
+            'sku_code' => 'vt-'.($sku['skuId'] ?? ''),
+            'provider_code' => 'vt-'.($sku['operatorId'] ?? ''),
             'region_code' => $sku['region'] ?? '',
             'display_text' => $sku['skuName'] ?? $sku['productName'] ?? '',
             'localization_key' => '',
@@ -409,16 +411,13 @@ class ValuetopupService
     /**
      * Normalize a Valuetopup transaction response into a flat array
      * for saving to the transaction record.
-     *
-     * @param  array  $response
-     * @return array
      */
     public function normalizeValuetopupResponse(array $response): array
     {
         $payload = $response['payLoad'] ?? [];
 
         $pinNumbers = [];
-        if (!empty($payload['pins']) && is_array($payload['pins'])) {
+        if (! empty($payload['pins']) && is_array($payload['pins'])) {
             foreach ($payload['pins'] as $pin) {
                 $pinNumbers[] = [
                     'pinNumber' => $pin['pinNumber'] ?? '',
@@ -431,7 +430,7 @@ class ValuetopupService
         }
 
         $receiptText = null;
-        if (!empty($pinNumbers)) {
+        if (! empty($pinNumbers)) {
             $lines = [];
             foreach ($pinNumbers as $pin) {
                 $lines[] = "PIN: {$pin['pinNumber']}";

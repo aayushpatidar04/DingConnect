@@ -20,7 +20,9 @@ class OfferServiceTest extends TestCase
     use RefreshDatabase;
 
     private Country $country;
+
     private Operator $vodafone;
+
     private Operator $ee;
 
     protected function setUp(): void

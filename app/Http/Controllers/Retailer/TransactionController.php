@@ -3,14 +3,13 @@
 namespace App\Http\Controllers\Retailer;
 
 use App\Http\Controllers\Controller;
-use App\Models\Operator;
 use App\Models\AllowedNumber;
+use App\Models\Operator;
 use App\Models\Transaction;
 use App\Services\DingConnectService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-
 
 class TransactionController extends Controller
 {
@@ -30,19 +29,19 @@ class TransactionController extends Controller
                         ->orWhere('receipt_number', 'like', "%{$search}%");
                 });
             })
-            ->when($filters['status'] ?? null, fn($q, $v) => $q->where('status', $v))
+            ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when($filters['type'] ?? null, function ($q, $type) {
                 if ($type === 'Immediate') {
                     // the page displays a null redemption_type as "Immediate"
-                    $q->where(fn($q) => $q->where('redemption_type', 'Immediate')
+                    $q->where(fn ($q) => $q->where('redemption_type', 'Immediate')
                         ->orWhereNull('redemption_type'));
                 } else {
                     $q->where('redemption_type', $type);
                 }
             })
-            ->when($filters['operator_id'] ?? null, fn($q, $v) => $q->where('operator_id', $v))
-            ->when($filters['from'] ?? null, fn($q, $v) => $q->whereDate('created_at', '>=', $v))
-            ->when($filters['to'] ?? null, fn($q, $v) => $q->whereDate('created_at', '<=', $v))
+            ->when($filters['operator_id'] ?? null, fn ($q, $v) => $q->where('operator_id', $v))
+            ->when($filters['from'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '>=', $v))
+            ->when($filters['to'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '<=', $v))
             ->orderByDesc('created_at')
             ->paginate(25)
             ->withQueryString(); // keeps filters in the pagination links
@@ -84,7 +83,7 @@ class TransactionController extends Controller
                     ]);
                 }
             } catch (\Throwable $e) {
-                \Log::warning('Description backfill failed for transaction ' . $transaction->id . ': ' . $e->getMessage());
+                \Log::warning('Description backfill failed for transaction '.$transaction->id.': '.$e->getMessage());
             }
         }
 

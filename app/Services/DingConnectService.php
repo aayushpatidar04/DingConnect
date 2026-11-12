@@ -3,15 +3,16 @@
 namespace App\Services;
 
 use App\Models\Transaction;
+use Exception;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
-use Exception;
 
 class DingConnectService
 {
     protected string $baseUrl;
+
     protected string $apiKey;
+
     protected string $customerId;
 
     public function __construct()
@@ -28,9 +29,9 @@ class DingConnectService
     protected function get(string $endpoint, array $params = []): array
     {
         try {
-            $url = $this->baseUrl . $endpoint;
-            if (!empty($params)) {
-                $url .= '?' . http_build_query($params);
+            $url = $this->baseUrl.$endpoint;
+            if (! empty($params)) {
+                $url .= '?'.http_build_query($params);
             }
 
             $response = Http::timeout(30)
@@ -42,13 +43,15 @@ class DingConnectService
                 if (($data['ResultCode'] ?? 0) == 1) {
                     return ['success' => true, 'data' => $data];
                 }
+
                 return ['success' => false, 'error' => $data['ErrorCodes'][0] ?? $data['Message'] ?? 'API error', 'raw' => $data];
             }
 
-            return ['success' => false, 'error' => 'HTTP ' . $response->status(), 'body' => substr($response->body(), 0, 200)];
+            return ['success' => false, 'error' => 'HTTP '.$response->status(), 'body' => substr($response->body(), 0, 200)];
 
         } catch (Exception $e) {
-            Log::error('DingConnect GET Error: ' . $e->getMessage());
+            Log::error('DingConnect GET Error: '.$e->getMessage());
+
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
@@ -56,7 +59,7 @@ class DingConnectService
     protected function postForm(string $endpoint, array $formData = []): array
     {
         try {
-            $url = $this->baseUrl . $endpoint;
+            $url = $this->baseUrl.$endpoint;
 
             $response = Http::timeout(90)
                 ->withHeaders(['api_key' => $this->apiKey])
@@ -68,13 +71,15 @@ class DingConnectService
                 if (($data['ResultCode'] ?? 0) == 1) {
                     return ['success' => true, 'data' => $data];
                 }
+
                 return ['success' => false, 'error' => $data['ErrorCodes'][0] ?? $data['Message'] ?? 'API error', 'raw' => $data];
             }
 
-            return ['success' => false, 'error' => 'HTTP ' . $response->status(), 'body' => substr($response->body(), 0, 200)];
+            return ['success' => false, 'error' => 'HTTP '.$response->status(), 'body' => substr($response->body(), 0, 200)];
 
         } catch (Exception $e) {
-            Log::error('DingConnect POST Error: ' . $e->getMessage());
+            Log::error('DingConnect POST Error: '.$e->getMessage());
+
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
@@ -82,7 +87,7 @@ class DingConnectService
     protected function postJson(string $endpoint, array $jsonData = []): array
     {
         try {
-            $url = $this->baseUrl . $endpoint;
+            $url = $this->baseUrl.$endpoint;
 
             $response = Http::timeout(90)
                 ->withHeaders(['api_key' => $this->apiKey])
@@ -94,13 +99,15 @@ class DingConnectService
                 if (($data['ResultCode'] ?? 0) == 1) {
                     return ['success' => true, 'data' => $data];
                 }
+
                 return ['success' => false, 'error' => $data['ErrorCodes'][0] ?? $data['Message'] ?? 'API error', 'raw' => $data];
             }
 
-            return ['success' => false, 'error' => 'HTTP ' . $response->status(), 'body' => substr($response->body(), 0, 200)];
+            return ['success' => false, 'error' => 'HTTP '.$response->status(), 'body' => substr($response->body(), 0, 200)];
 
         } catch (Exception $e) {
-            Log::error('DingConnect POST JSON Error: ' . $e->getMessage());
+            Log::error('DingConnect POST JSON Error: '.$e->getMessage());
+
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
@@ -117,12 +124,15 @@ class DingConnectService
     public function getProviders(?string $countryIso = null, ?string $providerCodes = null, ?string $accountNumber = null): array
     {
         $params = [];
-        if ($countryIso)
+        if ($countryIso) {
             $params['countryIsos'] = $countryIso;
-        if ($providerCodes)
+        }
+        if ($providerCodes) {
             $params['providerCodes'] = $providerCodes;
-        if ($accountNumber)
+        }
+        if ($accountNumber) {
             $params['accountNumber'] = $accountNumber;
+        }
 
         $result = $this->get('/api/V1/GetProviders', $params);
 
@@ -139,6 +149,7 @@ class DingConnectService
                             return true;
                         }
                     }
+
                     return false;
                 }));
                 $result['data']['Items'] = $filtered;
@@ -179,15 +190,19 @@ class DingConnectService
     public function getProviderStatus(?string $providerCodes = null): array
     {
         $params = [];
-        if ($providerCodes)
+        if ($providerCodes) {
             $params['providerCodes'] = $providerCodes;
+        }
+
         return $this->get('/api/V1/GetProviderStatus', $params);
     }
 
     public function getProductDescriptions(array $skuCodes, ?string $languageCode = 'en'): array
     {
-        if (empty($skuCodes))
+        if (empty($skuCodes)) {
             return ['success' => true, 'data' => []];
+        }
+
         return $this->get('/api/V1/GetProductDescriptions', [
             'languageCodes' => $languageCode,
             'skuCodes' => implode(',', array_slice($skuCodes, 0, 50)),
@@ -202,10 +217,13 @@ class DingConnectService
     public function getPromotions(?string $countryIsos = null, ?string $providerCodes = null): array
     {
         $params = [];
-        if ($countryIsos)
+        if ($countryIsos) {
             $params['countryIsos'] = $countryIsos;
-        if ($providerCodes)
+        }
+        if ($providerCodes) {
             $params['providerCodes'] = $providerCodes;
+        }
+
         return $this->get('/api/V1/GetPromotions', $params);
     }
 
@@ -222,10 +240,13 @@ class DingConnectService
             'SkuCode' => $skuCode,
             'SendValue' => $sendValue,
         ];
-        if ($sendCurrencyIso)
+        if ($sendCurrencyIso) {
             $data['SendCurrencyIso'] = $sendCurrencyIso;
-        if ($receiveValue)
+        }
+        if ($receiveValue) {
             $data['ReceiveValue'] = $receiveValue;
+        }
+
         return $this->postJson('/api/V1/EstimatePrices', $data);
     }
 
@@ -238,7 +259,7 @@ class DingConnectService
         $formData = [
             'SkuCode' => $skuCode,
             'SendValue' => (float) $sendValue,
-            'AccountNumber' => !empty($accountNumber) ? $accountNumber : '0000000000',
+            'AccountNumber' => ! empty($accountNumber) ? $accountNumber : '0000000000',
             'DistributorRef' => $distributorRef,
             'ValidateOnly' => $validateOnly ? 'true' : 'false',
         ];
@@ -249,7 +270,7 @@ class DingConnectService
 
         if ($settings && count($settings) > 0) {
             $formData['Settings'] = collect($settings)
-                ->map(fn($v, $k) => ['Name' => $k, 'Value' => $v])
+                ->map(fn ($v, $k) => ['Name' => $k, 'Value' => $v])
                 ->values()
                 ->all();
         }
@@ -271,12 +292,15 @@ class DingConnectService
             'Take' => $take,
             'Skip' => $skip,
         ];
-        if ($transferRef)
+        if ($transferRef) {
             $payload['TransferRef'] = $transferRef;
-        if ($distributorRef)
+        }
+        if ($distributorRef) {
             $payload['DistributorRef'] = $distributorRef;
-        if ($accountNumber)
+        }
+        if ($accountNumber) {
             $payload['AccountNumber'] = $accountNumber;
+        }
 
         return $this->postJson('/api/V1/ListTransferRecords', $payload);
     }
@@ -290,6 +314,7 @@ class DingConnectService
         $payload = [
             'TransferId' => json_encode(['TransferRef' => $transferRef, 'DistributorRef' => $distributorRef]),
         ];
+
         return $this->postJson('/api/V1/CancelTransfers', $payload);
     }
 
@@ -299,7 +324,7 @@ class DingConnectService
      */
     public function checkStatus(string $dingTransactionId): array
     {
-        return $this->get('/api/V1/Transfer/' . $dingTransactionId);
+        return $this->get('/api/V1/Transfer/'.$dingTransactionId);
     }
 
     /**
@@ -308,10 +333,10 @@ class DingConnectService
     public function sendTopUp(array $params): array
     {
         return $this->sendTransfer(
-            skuCode: $params['countryIso'] . '-' . ($params['operatorCode'] ?? 'default'),
+            skuCode: $params['countryIso'].'-'.($params['operatorCode'] ?? 'default'),
             sendValue: (float) $params['amount'],
             accountNumber: preg_replace('/[^0-9]/', '', $params['mobileNumber'] ?? ''),
-            distributorRef: 'ORD-' . uniqid(),
+            distributorRef: 'ORD-'.uniqid(),
             validateOnly: false,
         );
     }
@@ -324,13 +349,13 @@ class DingConnectService
     {
         $dingTransactionId = $payload['TransferId']['TransferRef'] ?? null;
 
-        if (!$dingTransactionId) {
+        if (! $dingTransactionId) {
             throw new \InvalidArgumentException('Missing TransferID in callback');
         }
 
         $transaction = Transaction::where('ding_transaction_id', $dingTransactionId)->first();
 
-        if (!$transaction) {
+        if (! $transaction) {
             Log::warning("Ding callback for unknown transaction: {$dingTransactionId}");
             throw new Exception("Transaction not found: {$dingTransactionId}");
         }

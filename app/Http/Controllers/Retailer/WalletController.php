@@ -25,7 +25,7 @@ class WalletController extends Controller
 
         $topups = WalletTopup::query()
             ->where('user_id', $user->id)
-            ->when($filters['status'] ?? null, fn($q, $v) => $q->where('status', $v))
+            ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when($filters['type'] ?? null, function ($q, $type) {
                 match ($type) {
                     'card', 'bank_transfer' => $q->where('payment_method', $type),
@@ -33,16 +33,16 @@ class WalletController extends Controller
                     default => null,
                 };
             })
-            ->when($filters['from'] ?? null, fn($q, $v) => $q->whereDate('created_at', '>=', $v))
-            ->when($filters['to'] ?? null, fn($q, $v) => $q->whereDate('created_at', '<=', $v))
+            ->when($filters['from'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '>=', $v))
+            ->when($filters['to'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '<=', $v))
             ->latest()
             ->paginate(20)
             ->withQueryString(); // keeps filters in the pagination links
 
         // Receipt numbers of the recharges that commission / offer entries belong to
         $rechargeIds = $topups->getCollection()
-            ->filter(fn(WalletTopup $t) => $this->isSystemEntry($t))
-            ->map(fn(WalletTopup $t) => data_get($t->payment_response, 'recharge_transaction_id'))
+            ->filter(fn (WalletTopup $t) => $this->isSystemEntry($t))
+            ->map(fn (WalletTopup $t) => data_get($t->payment_response, 'recharge_transaction_id'))
             ->filter()
             ->unique();
 
@@ -50,7 +50,7 @@ class WalletController extends Controller
             ->whereIn('id', $rechargeIds)
             ->pluck('receipt_number', 'id');
 
-        $topups->through(fn(WalletTopup $t) => $this->present($t, $recharges));
+        $topups->through(fn (WalletTopup $t) => $this->present($t, $recharges));
 
         // All-time totals of completed entries
         $totals = WalletTopup::where('user_id', $user->id)
@@ -139,7 +139,7 @@ class WalletController extends Controller
     public function initiateTopUp(Request $request)
     {
         $request->validate([
-            'amount' => 'required|numeric|min:' . config('platform.pricing.min_recharge', 10) . '|max:' . config('platform.pricing.max_recharge', 10000),
+            'amount' => 'required|numeric|min:'.config('platform.pricing.min_recharge', 10).'|max:'.config('platform.pricing.max_recharge', 10000),
         ]);
 
         $paymentService = app(PaymentService::class);
@@ -152,7 +152,7 @@ class WalletController extends Controller
             $user->email
         );
 
-        if (!$result['success']) {
+        if (! $result['success']) {
             return response()->json(['success' => false, 'error' => $result['error']], 400);
         }
 
@@ -188,7 +188,7 @@ class WalletController extends Controller
     public function ledger(Request $request)
     {
         $user = $request->user();
-        $ledgers = WalletLedger::whereHas('wallet', fn($q) => $q->where('user_id', $user->id))
+        $ledgers = WalletLedger::whereHas('wallet', fn ($q) => $q->where('user_id', $user->id))
             ->with('wallet')
             ->latest()
             ->paginate(50);

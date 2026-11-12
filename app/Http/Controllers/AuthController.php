@@ -43,7 +43,7 @@ class AuthController extends Controller
             ]);
 
         }
-        
+
         $remember = $request->boolean('remember');
 
         // Do not leave the user authenticated before OTP verification.

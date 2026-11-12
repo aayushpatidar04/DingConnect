@@ -3,10 +3,9 @@
 namespace App\Services;
 
 use App\Models\WalletTopup;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Stripe\StripeClient;
 use Stripe\Exception\ApiErrorException;
+use Stripe\StripeClient;
 
 class PaymentService
 {
@@ -51,10 +50,12 @@ class PaymentService
             ];
 
         } catch (ApiErrorException $e) {
-            Log::error('Stripe Payment Intent Error: ' . $e->getMessage());
+            Log::error('Stripe Payment Intent Error: '.$e->getMessage());
+
             return ['success' => false, 'error' => $e->getMessage()];
         } catch (\Exception $e) {
-            Log::error('Payment Intent Creation Error: ' . $e->getMessage());
+            Log::error('Payment Intent Creation Error: '.$e->getMessage());
+
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
@@ -74,7 +75,8 @@ class PaymentService
             ];
 
         } catch (ApiErrorException $e) {
-            Log::error('Stripe Confirm Error: ' . $e->getMessage());
+            Log::error('Stripe Confirm Error: '.$e->getMessage());
+
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
@@ -90,7 +92,9 @@ class PaymentService
         if ($type === 'payment_intent.succeeded') {
             $paymentIntentId = $dataObject['id'] ?? null;
 
-            if (!$paymentIntentId) return null;
+            if (! $paymentIntentId) {
+                return null;
+            }
 
             $topup = WalletTopup::where('stripe_payment_intent_id', $paymentIntentId)->first();
 
@@ -106,7 +110,7 @@ class PaymentService
                     $topup->user_id,
                     $topup->amount,
                     $topup->id,
-                    "Wallet top-up via Stripe"
+                    'Wallet top-up via Stripe'
                 );
 
                 return $topup->fresh();
@@ -116,7 +120,9 @@ class PaymentService
         if ($type === 'payment_intent.payment_failed') {
             $paymentIntentId = $dataObject['id'] ?? null;
 
-            if (!$paymentIntentId) return null;
+            if (! $paymentIntentId) {
+                return null;
+            }
 
             $topup = WalletTopup::where('stripe_payment_intent_id', $paymentIntentId)->first();
 
@@ -155,7 +161,8 @@ class PaymentService
             ];
 
         } catch (ApiErrorException $e) {
-            Log::error('Stripe Refund Error: ' . $e->getMessage());
+            Log::error('Stripe Refund Error: '.$e->getMessage());
+
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }

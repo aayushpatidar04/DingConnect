@@ -57,8 +57,8 @@ class LandingController extends Controller
             'mail',
             'support@mkallnetwork.com'
         )->notify(
-                new ContactUsNotification($data)
-            );
+            new ContactUsNotification($data)
+        );
 
         return back()->with(
             'success',

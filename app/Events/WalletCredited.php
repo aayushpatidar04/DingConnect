@@ -14,8 +14,11 @@ class WalletCredited implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $user;
+
     public $amount;
+
     public $balance;
+
     public $message;
 
     public function __construct(User $user, float $amount, float $balance)
@@ -29,7 +32,7 @@ class WalletCredited implements ShouldBroadcast
 
     public function broadcastOn()
     {
-        return new PrivateChannel('user.' . $this->user->id);
+        return new PrivateChannel('user.'.$this->user->id);
     }
 
     public function broadcastAs()

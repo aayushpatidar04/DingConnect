@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\WalletCredited;
 use App\Http\Controllers\Controller;
 use App\Services\PaymentService;
 use Illuminate\Http\Request;
@@ -9,9 +10,7 @@ use Illuminate\Support\Facades\Log;
 
 class PaymentWebhookController extends Controller
 {
-    public function __construct(protected PaymentService $paymentService)
-    {
-    }
+    public function __construct(protected PaymentService $paymentService) {}
 
     public function webhook(Request $request)
     {
@@ -26,7 +25,7 @@ class PaymentWebhookController extends Controller
         $topup = $this->paymentService->processWebhook($payload);
 
         if ($topup) {
-            broadcast(new \App\Events\WalletCredited(
+            broadcast(new WalletCredited(
                 $topup->user,
                 (float) $topup->amount,
                 $topup->user->wallet->balance

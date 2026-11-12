@@ -2,6 +2,8 @@
 
 namespace App\Jobs;
 
+use App\Events\RechargeSuccess;
+use App\Models\Transaction;
 use App\Services\DingConnectService;
 use App\Services\WalletService;
 use Illuminate\Bus\Queueable;
@@ -15,6 +17,7 @@ class ProcessDingWebhook implements ShouldQueue
     use Dispatchable, Queueable;
 
     public array $payload;
+
     public int $timeout = 30;
 
     public function __construct(array $payload)
@@ -27,8 +30,9 @@ class ProcessDingWebhook implements ShouldQueue
         \Log::info(json_encode($this->payload));
         try {
             $transactionId = $this->payload['TransactionId'] ?? null;
-            if (!$transactionId) {
+            if (! $transactionId) {
                 Log::warning('Ding webhook missing TransactionId');
+
                 return;
             }
 
@@ -36,30 +40,31 @@ class ProcessDingWebhook implements ShouldQueue
                 ->where('ding_transaction_id', $transactionId)
                 ->first();
 
-            if (!$transaction) {
+            if (! $transaction) {
                 Log::warning('Ding webhook for unknown transaction', ['ding_transaction_id' => $transactionId]);
+
                 return;
             }
 
             $statusMap = [
                 'SUCCESSFUL' => 'success',
-                'Success'    => 'success',
-                'FAILED'     => 'failed',
-                'Failure'    => 'failed',
-                'PENDING'    => 'processing',
-                'CANCELLED'  => 'cancelled',
+                'Success' => 'success',
+                'FAILED' => 'failed',
+                'Failure' => 'failed',
+                'PENDING' => 'processing',
+                'CANCELLED' => 'cancelled',
             ];
 
-            $newStatus     = $statusMap[strtoupper($this->payload['Status'] ?? '')] ?? 'processing';
+            $newStatus = $statusMap[strtoupper($this->payload['Status'] ?? '')] ?? 'processing';
             $failureReason = $this->payload['FailureReason'] ?? null;
 
             DB::table('transactions')->where('id', $transaction->id)->update([
-                'status'                => $newStatus,
-                'failure_reason'        => $failureReason,
-                'callback_received'     => true,
-                'callback_received_at'  => now(),
-                'ding_response'         => json_encode($this->payload),
-                'updated_at'            => now(),
+                'status' => $newStatus,
+                'failure_reason' => $failureReason,
+                'callback_received' => true,
+                'callback_received_at' => now(),
+                'ding_response' => json_encode($this->payload),
+                'updated_at' => now(),
             ]);
 
             $walletService = app(WalletService::class);
@@ -80,16 +85,16 @@ class ProcessDingWebhook implements ShouldQueue
                 );
 
                 DB::table('transaction_commissions')->insert([
-                    'transaction_id'    => $transaction->id,
-                    'user_id'           => $transaction->user_id,
-                    'operator_id'       => $transaction->operator_id,
-                    'amount'            => $transaction->amount,
-                    'commission_rate'   => (float) config('platform.commission_default', 2.5),
+                    'transaction_id' => $transaction->id,
+                    'user_id' => $transaction->user_id,
+                    'operator_id' => $transaction->operator_id,
+                    'amount' => $transaction->amount,
+                    'commission_rate' => (float) config('platform.commission_default', 2.5),
                     'commission_amount' => ($transaction->amount * (float) config('platform.commission_default', 2.5)) / 100,
-                    'created_at'        => now(),
+                    'created_at' => now(),
                 ]);
 
-                broadcast(new \App\Events\RechargeSuccess(\App\Models\Transaction::find($transaction->id)));
+                broadcast(new RechargeSuccess(Transaction::find($transaction->id)));
             }
 
             // Failure — refund the hold back to balance

@@ -17,9 +17,7 @@ class OfferService
     /** A reserved use only counts while its recharge is still alive or has succeeded. */
     private const COUNTED_TRANSACTION_STATUSES = ['pending', 'processing', 'success'];
 
-    public function __construct(protected WalletService $wallets)
-    {
-    }
+    public function __construct(protected WalletService $wallets) {}
 
     // =========================================================================
     // USAGE

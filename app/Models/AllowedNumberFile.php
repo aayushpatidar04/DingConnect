@@ -1,4 +1,5 @@
 <?php
+
 // app/Models/AllowedNumberFile.php
 
 namespace App\Models;

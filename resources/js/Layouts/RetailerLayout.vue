@@ -154,6 +154,16 @@ function logout() {
                             >Transactions</Link
                         >
                         <Link
+                            href="/retailer/sim-orders"
+                            class="px-3 py-2 rounded-lg text-sm font-medium transition"
+                            :class="
+                                $page.url.includes('/sim-orders')
+                                    ? 'bg-surface-3 text-ink-900'
+                                    : 'text-ink-500 hover:text-ink-900 hover:bg-surface-2'
+                            "
+                            >SIM Orders</Link
+                        >
+                        <Link
                             href="/retailer/wallet"
                             class="px-3 py-2 rounded-lg text-sm font-medium transition"
                             :class="
@@ -328,6 +338,11 @@ function logout() {
                         href="/retailer/transactions"
                         class="block px-3 py-2 rounded-lg text-base font-medium text-ink-500 hover:text-ink-900 hover:bg-surface-2"
                         >Transactions</Link
+                    >
+                    <Link
+                        href="/retailer/sim-orders"
+                        class="block px-3 py-2 rounded-lg text-base font-medium text-ink-500 hover:text-ink-900 hover:bg-surface-2"
+                        >SIM Orders</Link
                     >
                     <Link
                         href="/retailer/wallet"

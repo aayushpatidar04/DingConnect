@@ -21,7 +21,7 @@ class RechargeProcessing implements ShouldBroadcast
 
     public function broadcastOn(): PrivateChannel
     {
-        return new PrivateChannel('retailer.' . $this->transaction->user_id);
+        return new PrivateChannel('retailer.'.$this->transaction->user_id);
     }
 
     public function broadcastAs(): string

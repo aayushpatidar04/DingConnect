@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Retailer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
+use App\Services\OfferService;
 use App\Services\WalletService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-
 
 class DashboardController extends Controller
 {
@@ -66,7 +66,7 @@ class DashboardController extends Controller
             ];
         }
 
-        $offers = app(\App\Services\OfferService::class)->activeFor($user);
+        $offers = app(OfferService::class)->activeFor($user);
 
         return Inertia::render('Retailer/Dashboard', compact('stats', 'recentTransactions', 'chartData', 'offers'));
     }

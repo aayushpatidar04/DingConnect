@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\RetailerAnalyticsController;
 use App\Http\Controllers\Admin\RetailerController as AdminRetailerController;
 use App\Http\Controllers\Admin\RetailerLevelController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
+use App\Http\Controllers\Admin\SimOrderController as AdminSimOrderController;
 use App\Http\Controllers\Admin\TransactionController as AdminTransactionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\AuthController;
@@ -25,6 +26,7 @@ use App\Http\Controllers\Retailer\OfferController as RetailerOfferController;
 use App\Http\Controllers\Retailer\PosterController as RetailerPosterController;
 use App\Http\Controllers\Retailer\ProfileController as RetailerProfileController;
 use App\Http\Controllers\Retailer\RechargeController;
+use App\Http\Controllers\Retailer\SimOrderController as RetailerSimOrderController;
 use App\Http\Controllers\Retailer\TransactionController as RetailerTransactionController;
 use App\Http\Controllers\Retailer\WalletController as RetailerWalletController;
 use Illuminate\Support\Facades\Broadcast;
@@ -135,6 +137,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::resource('network-plans', AdminOperatorPlanController::class)
         ->only(['index', 'store', 'update', 'destroy'])
         ->parameters(['network-plans' => 'operator_plan']);
+
+    Route::get('sim-orders', [AdminSimOrderController::class, 'index'])->name('sim-orders.index');
+    Route::put('sim-orders/{simOrder}', [AdminSimOrderController::class, 'updateStatus'])->name('sim-orders.update-status');
 });
 
 // ==========================================================================
@@ -170,6 +175,8 @@ Route::prefix('retailer')->name('retailer.')->middleware(['auth', 'retailer', 'k
     Route::post('/recharge/estimate-cost', [RechargeController::class, 'estimateCost'])->name('recharge.estimate-cost');
 
     Route::get('/commissions', [RetailerCommissionController::class, 'index'])->name('commissions.index');
+    Route::get('/sim-orders', [RetailerSimOrderController::class, 'index'])->name('sim-orders.index');
+    Route::post('/sim-orders', [RetailerSimOrderController::class, 'store'])->name('sim-orders.store');
     Route::get('/offers/eligible', [RetailerOfferController::class, 'eligible'])->name('offers.eligible');
     Route::get('/posters', [RetailerPosterController::class, 'index'])->name('posters.index');
     Route::get('/network-offers', [NetworkOfferController::class, 'index'])->name('network-offers');

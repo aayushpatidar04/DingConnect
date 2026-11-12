@@ -2,24 +2,35 @@
 
 namespace App\Providers;
 
+use App\Events\RechargeFailed;
+use App\Events\RechargeSuccess;
+use App\Events\WalletCredited;
+use App\Listeners\CreditOfferCashback;
+use App\Listeners\CreditRechargeCommission;
+use App\Listeners\ReleaseOfferRedemption;
+use App\Listeners\SendRechargeFailedNotification;
+use App\Listeners\SendRechargeFailedSms;
+use App\Listeners\SendRechargeSuccessNotification;
+use App\Listeners\SendRechargeSuccessSms;
+use App\Listeners\SendWalletCreditNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
 {
     protected $listen = [
-        \App\Events\RechargeSuccess::class => [
-            \App\Listeners\SendRechargeSuccessNotification::class,
-            \App\Listeners\SendRechargeSuccessSms::class,
-            \App\Listeners\CreditRechargeCommission::class,
-            \App\Listeners\CreditOfferCashback::class,
+        RechargeSuccess::class => [
+            SendRechargeSuccessNotification::class,
+            SendRechargeSuccessSms::class,
+            CreditRechargeCommission::class,
+            CreditOfferCashback::class,
         ],
-        \App\Events\RechargeFailed::class => [
-            \App\Listeners\SendRechargeFailedNotification::class,
-            \App\Listeners\SendRechargeFailedSms::class,
-            \App\Listeners\ReleaseOfferRedemption::class,
+        RechargeFailed::class => [
+            SendRechargeFailedNotification::class,
+            SendRechargeFailedSms::class,
+            ReleaseOfferRedemption::class,
         ],
-        \App\Events\WalletCredited::class => [
-            \App\Listeners\SendWalletCreditNotification::class,
+        WalletCredited::class => [
+            SendWalletCreditNotification::class,
         ],
     ];
 

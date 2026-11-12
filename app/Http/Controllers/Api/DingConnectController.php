@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\DingCallback;
 use App\Models\Transaction;
 use App\Services\DingConnectService;
 use Illuminate\Http\Request;
@@ -11,9 +10,7 @@ use Illuminate\Support\Facades\Log;
 
 class DingConnectController extends Controller
 {
-    public function __construct(protected DingConnectService $dingService)
-    {
-    }
+    public function __construct(protected DingConnectService $dingService) {}
 
     public function callback(Request $request)
     {
@@ -27,10 +24,12 @@ class DingConnectController extends Controller
             ], 200);
 
         } catch (\InvalidArgumentException $e) {
-            Log::error('Invalid DingConnect callback: ' . $e->getMessage());
+            Log::error('Invalid DingConnect callback: '.$e->getMessage());
+
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 400);
         } catch (\Exception $e) {
-            Log::error('DingConnect callback processing error: ' . $e->getMessage());
+            Log::error('DingConnect callback processing error: '.$e->getMessage());
+
             return response()->json(['status' => 'error', 'message' => 'Processing failed'], 500);
         }
     }

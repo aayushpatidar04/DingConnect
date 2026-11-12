@@ -3,18 +3,18 @@
 namespace App\Exports;
 
 use App\Models\WalletLedger;
+use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class WalletLedgersExport implements FromQuery, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
+class WalletLedgersExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapping, WithStyles
 {
-    public function __construct(protected int $userId)
-    {
-    }
+    public function __construct(protected int $userId) {}
 
     public function headings(): array
     {
@@ -31,10 +31,10 @@ class WalletLedgersExport implements FromQuery, WithHeadings, WithMapping, WithS
         ];
     }
 
-    public function query(): \Illuminate\Database\Eloquent\Builder
+    public function query(): Builder
     {
         return WalletLedger::query()
-            ->whereHas('wallet', fn($q) => $q->where('user_id', $this->userId))
+            ->whereHas('wallet', fn ($q) => $q->where('user_id', $this->userId))
             ->orderByDesc('created_at');
     }
 
@@ -53,11 +53,11 @@ class WalletLedgersExport implements FromQuery, WithHeadings, WithMapping, WithS
         ];
     }
 
-    public function styles(Worksheet $sheet): array|null
+    public function styles(Worksheet $sheet): ?array
     {
         $sheet->getStyle('1:1')->getFont()->setBold(true);
         $sheet->getStyle('1:1')->getFill()
-            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            ->setFillType(Fill::FILL_SOLID)
             ->getStartColor()->setARGB('FFE5E7EB');
 
         return [];

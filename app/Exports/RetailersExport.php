@@ -14,7 +14,7 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class RetailersExport implements FromQuery, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
+class RetailersExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapping, WithStyles
 {
     public function headings(): array
     {
@@ -43,9 +43,7 @@ class RetailersExport implements FromQuery, WithHeadings, WithMapping, WithStyle
         ];
     }
 
-    public function __construct(protected array $filters = [])
-    {
-    }
+    public function __construct(protected array $filters = []) {}
 
     public function query(): Builder|QueryBuilder|Relation
     {
@@ -87,7 +85,7 @@ class RetailersExport implements FromQuery, WithHeadings, WithMapping, WithStyle
         ];
     }
 
-    public function styles(Worksheet $sheet): array|null
+    public function styles(Worksheet $sheet): ?array
     {
         $sheet->getStyle('1:1')->getFont()->setBold(true);
         $sheet->getStyle('1:1')->getFill()

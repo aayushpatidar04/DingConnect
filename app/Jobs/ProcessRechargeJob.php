@@ -2,32 +2,33 @@
 
 namespace App\Jobs;
 
+use App\Events\RechargeFailed;
+use App\Events\RechargeProcessing;
+use App\Events\RechargeSuccess;
+use App\Models\Transaction;
 use App\Services\DingConnectService;
 use App\Services\ValuetopupService;
-use App\Models\Transaction;
-use App\Events\RechargeSuccess;
-use App\Events\RechargeFailed;
+use App\Services\WalletService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
 
 class ProcessRechargeJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $timeout = 90;
+
     public int $tries = 3;
 
     public function __construct(
         public Transaction $transaction,
         public ?string $accountNumber = null,
         public ?array $settings = null,
-    ) {
-    }
+    ) {}
 
     public function handle(DingConnectService $dingService, ValuetopupService $vtService): void
     {
@@ -36,7 +37,7 @@ class ProcessRechargeJob implements ShouldQueue
         }
 
         $this->transaction->update(['status' => 'processing']);
-        broadcast(new \App\Events\RechargeProcessing($this->transaction));
+        broadcast(new RechargeProcessing($this->transaction));
 
         $gateway = $this->transaction->gateway ?? 'ding';
 
@@ -56,11 +57,12 @@ class ProcessRechargeJob implements ShouldQueue
         $skuCode = $this->transaction->sku_code;
         $sendValue = (float) $this->transaction->send_value;
         $accountNumber = $this->accountNumber ?: preg_replace('/[^0-9]/', '', $this->transaction->mobile_number);
-        $distributorRef = 'TXN-' . $this->transaction->id;
+        $distributorRef = 'TXN-'.$this->transaction->id;
         $settings = $this->settings ?? [];
 
-        if (!$skuCode) {
+        if (! $skuCode) {
             $this->markFailed('Missing SKU code for transaction');
+
             return;
         }
 
@@ -107,21 +109,21 @@ class ProcessRechargeJob implements ShouldQueue
 
         if (empty($this->transaction->description_markdown) || empty($this->transaction->readmore_markdown)) {
             try {
-                $dingService = app(\App\Services\DingConnectService::class);
+                $dingService = app(DingConnectService::class);
                 $descResult = $dingService->getProductDescriptions([$this->transaction->sku_code]);
                 $item = $descResult['data']['Items'][0] ?? null;
                 if ($item) {
                     $this->transaction->update([
                         'description_markdown' => $item['DescriptionMarkdown'] ?? $this->transaction->description_markdown,
-                        'readmore_markdown'    => $item['ReadMoreMarkdown'] ?? $this->transaction->readmore_markdown,
+                        'readmore_markdown' => $item['ReadMoreMarkdown'] ?? $this->transaction->readmore_markdown,
                     ]);
                 }
             } catch (\Throwable $e) {
-                Log::warning('Product description backfill failed for transaction ' . $this->transaction->id . ': ' . $e->getMessage());
+                Log::warning('Product description backfill failed for transaction '.$this->transaction->id.': '.$e->getMessage());
             }
         }
 
-        $walletService = app(\App\Services\WalletService::class);
+        $walletService = app(WalletService::class);
         $walletService->releaseHold(
             $this->transaction->user_id,
             (float) $this->transaction->send_value,
@@ -147,8 +149,9 @@ class ProcessRechargeJob implements ShouldQueue
         $skuId = $this->settings['ValuetopupSkuId'] ?? null;
         $correlationId = $this->transaction->valuetopup_correlation_id;
 
-        if (!$skuId || !$correlationId) {
+        if (! $skuId || ! $correlationId) {
             $this->markFailed('Missing Valuetopup SKU ID or correlation ID');
+
             return;
         }
 
@@ -176,6 +179,7 @@ class ProcessRechargeJob implements ShouldQueue
                 'valuetopup_response' => $result,
             ]);
             $this->pollValuetopupStatus($vt, $correlationId);
+
             return;
         }
 
@@ -192,9 +196,10 @@ class ProcessRechargeJob implements ShouldQueue
 
             $result = $vt->status($correlationId);
 
-            if (!$vt->isValuetopupInProgress($result)) {
+            if (! $vt->isValuetopupInProgress($result)) {
                 // Got a definitive result
                 $this->finalizeValuetopupTransaction($vt, $result);
+
                 return;
             }
 
@@ -214,7 +219,7 @@ class ProcessRechargeJob implements ShouldQueue
         if ($vt->isValuetopupSuccess($result)) {
             $this->transaction->update(array_merge($normalized, ['status' => 'success']));
 
-            $walletService = app(\App\Services\WalletService::class);
+            $walletService = app(WalletService::class);
             $walletService->releaseHold(
                 $this->transaction->user_id,
                 (float) $this->transaction->send_value,
@@ -249,7 +254,7 @@ class ProcessRechargeJob implements ShouldQueue
             'failure_reason' => $reason,
         ]);
 
-        $walletService = app(\App\Services\WalletService::class);
+        $walletService = app(WalletService::class);
         $walletService->releaseHold(
             $this->transaction->user_id,
             (float) $this->transaction->send_value,
@@ -260,4 +265,3 @@ class ProcessRechargeJob implements ShouldQueue
         broadcast(new RechargeFailed($this->transaction));
     }
 }
-

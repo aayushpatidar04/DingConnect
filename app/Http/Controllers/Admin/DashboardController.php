@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Retailer;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\WalletTopup;
@@ -39,11 +38,9 @@ class DashboardController extends Controller
         $topRetailers = User::where('role', 'retailer')
             ->select('id', 'shop_name', 'name', 'phone')
             ->withCount([
-                'transactions as month_transactions' => fn($q) =>
-                    $q->whereMonth('created_at', now()->month),
-                'transactions as month_success' => fn($q) =>
-                    $q->whereMonth('created_at', now()->month)
-                        ->where('status', 'success'),
+                'transactions as month_transactions' => fn ($q) => $q->whereMonth('created_at', now()->month),
+                'transactions as month_success' => fn ($q) => $q->whereMonth('created_at', now()->month)
+                    ->where('status', 'success'),
             ])
             ->orderByDesc('month_success')   // ranked by successful transactions
             ->orderByDesc('month_transactions') // tiebreak on total
@@ -54,7 +51,7 @@ class DashboardController extends Controller
             ->orderByDesc('created_at')
             ->limit(10)
             ->get()
-            ->map(fn($t) => [
+            ->map(fn ($t) => [
                 'id' => $t->id,
                 'retailer' => $t->user?->shop_name ?? $t->user?->name,
                 'mobile' => $t->mobile_number,
@@ -87,7 +84,7 @@ class DashboardController extends Controller
             ->orderBy('date')
             ->get();
 
-        return $data->map(fn($d) => [
+        return $data->map(fn ($d) => [
             'date' => $d->date,
             'revenue' => (float) $d->revenue,
             'count' => (int) $d->count,
@@ -110,7 +107,8 @@ class DashboardController extends Controller
                 'currency' => $data['CurrencyIso'] ?? 'GBP',
             ];
         } catch (\Throwable $e) {
-            Log::warning('Ding balance fetch failed: ' . $e->getMessage());
+            Log::warning('Ding balance fetch failed: '.$e->getMessage());
+
             return ['success' => false]; // frontend shows "N/A"
         }
     }
@@ -131,7 +129,7 @@ class DashboardController extends Controller
             // Balance is inside payLoad.balance.
             $balance = $data['payLoad']['balance'] ?? null;
 
-            if (!is_numeric($balance)) {
+            if (! is_numeric($balance)) {
                 return ['success' => false];
             }
 
@@ -142,11 +140,10 @@ class DashboardController extends Controller
             ];
         } catch (\Throwable $e) {
             Log::warning(
-                'Prepay Nation balance fetch failed: ' . $e->getMessage()
+                'Prepay Nation balance fetch failed: '.$e->getMessage()
             );
 
             return ['success' => false];
         }
     }
-
 }

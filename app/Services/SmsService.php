@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\Log;
 class SmsService
 {
     protected string $authKey;
+
     protected string $senderId;
+
     protected string $templateId;
 
     public function __construct()
@@ -43,7 +45,8 @@ class SmsService
             return $response->successful();
 
         } catch (\Exception $e) {
-            Log::error("SMS OTP Error: " . $e->getMessage());
+            Log::error('SMS OTP Error: '.$e->getMessage());
+
             return false;
         }
     }
@@ -73,7 +76,8 @@ class SmsService
             return $response->successful();
 
         } catch (\Exception $e) {
-            Log::error("SMS Send Error: " . $e->getMessage());
+            Log::error('SMS Send Error: '.$e->getMessage());
+
             return false;
         }
     }
@@ -84,6 +88,7 @@ class SmsService
     public function sendRechargeSuccess(string $phone, string $mobileNumber, float $amount, string $operator): bool
     {
         $message = "Your recharge of £ {$amount} for {$mobileNumber} on {$operator} was successful. Thank you!";
+
         return $this->send($phone, $message);
     }
 
@@ -93,6 +98,7 @@ class SmsService
     public function sendRechargeFailed(string $phone, string $mobileNumber, float $amount): bool
     {
         $message = "Your recharge of £ {$amount} for {$mobileNumber} failed. Amount has been refunded to your wallet.";
+
         return $this->send($phone, $message);
     }
 
@@ -102,9 +108,10 @@ class SmsService
     protected function formatPhone(string $phone): string
     {
         $phone = preg_replace('/[^0-9]/', '', $phone);
-        if (!str_starts_with($phone, '91') && strlen($phone) === 10) {
-            $phone = '91' . $phone;
+        if (! str_starts_with($phone, '91') && strlen($phone) === 10) {
+            $phone = '91'.$phone;
         }
+
         return $phone;
     }
 }

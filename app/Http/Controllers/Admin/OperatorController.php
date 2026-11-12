@@ -7,7 +7,6 @@ use App\Models\Country;
 use App\Models\Operator;
 use App\Services\DingConnectService;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -18,8 +17,8 @@ class OperatorController extends Controller
         $query = Operator::with('country')->orderBy('display_order')->orderBy('name');
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%')
-                ->orWhere('slug', 'like', '%' . $request->search . '%');
+            $query->where('name', 'like', '%'.$request->search.'%')
+                ->orWhere('slug', 'like', '%'.$request->search.'%');
         }
 
         if ($request->filled('country_id')) {
@@ -96,13 +95,14 @@ class OperatorController extends Controller
         foreach ($countryCodes as $isoCode) {
             $operatorResult = $dingService->getProviders($isoCode);
 
-            if (!$operatorResult['success']) {
+            if (! $operatorResult['success']) {
                 $failedCountries[] = $isoCode;
+
                 continue;
             }
 
             $localCountry = Country::where('iso_code', $isoCode)->first();
-            if (!$localCountry) {
+            if (! $localCountry) {
                 continue;
             }
 
@@ -120,6 +120,7 @@ class OperatorController extends Controller
                             return true;
                         }
                     }
+
                     return false;
                 })->values()->all();
             }
@@ -127,7 +128,7 @@ class OperatorController extends Controller
             foreach ($filtered as $operatorData) {
                 $providerCode = $operatorData['ProviderCode'] ?? null;
 
-                if(!$providerCode) {
+                if (! $providerCode) {
                     continue;
                 }
 
@@ -155,7 +156,7 @@ class OperatorController extends Controller
 
         $msg = "Synced {$synced} operators from DingConnect";
         if (count($failedCountries) > 0) {
-            $msg .= " (failed for: " . implode(', ', $failedCountries) . ")";
+            $msg .= ' (failed for: '.implode(', ', $failedCountries).')';
         }
 
         return back()->with('success', $msg);

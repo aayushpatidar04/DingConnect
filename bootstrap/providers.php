@@ -2,8 +2,8 @@
 
 use App\Providers\AppServiceProvider;
 use App\Providers\RouteServiceProvider;
-use Spatie\Permission\PermissionServiceProvider;
 use Barryvdh\DomPDF\ServiceProvider;
+use Spatie\Permission\PermissionServiceProvider;
 
 return [
     AppServiceProvider::class,

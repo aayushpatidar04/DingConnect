@@ -46,7 +46,7 @@ return [
             'app_id' => env('PUSHER_APP_ID'),
             'options' => [
                 'cluster' => env('PUSHER_APP_CLUSTER'),
-                'host' => 'api-' . env('PUSHER_APP_CLUSTER', 'mt1') . '.pusher.com',
+                'host' => 'api-'.env('PUSHER_APP_CLUSTER', 'mt1').'.pusher.com',
                 'port' => 443,
                 'scheme' => 'https',
                 'encrypted' => true,

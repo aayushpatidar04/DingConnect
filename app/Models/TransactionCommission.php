@@ -13,8 +13,8 @@ class TransactionCommission extends Model
     ];
 
     protected $casts = [
-        'amount'            => 'decimal:4',
-        'commission_rate'   => 'decimal:2',
+        'amount' => 'decimal:4',
+        'commission_rate' => 'decimal:2',
         'commission_amount' => 'decimal:4',
     ];
 

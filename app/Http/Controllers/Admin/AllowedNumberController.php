@@ -33,7 +33,6 @@ class AllowedNumberController extends Controller
             $currentFolder = ['id' => $file->id, 'name' => $file->name, 'is_manual' => false];
         }
 
-
         $numbers = null;
         $folders = null;
 
@@ -42,8 +41,8 @@ class AllowedNumberController extends Controller
             $numbers = AllowedNumber::query()
                 ->when(
                     $currentFolder['is_manual'],
-                    fn($q) => $q->whereNull('file_name'),
-                    fn($q) => $q->where('file_name', $currentFolder['name'])
+                    fn ($q) => $q->whereNull('file_name'),
+                    fn ($q) => $q->where('file_name', $currentFolder['name'])
                 )
                 ->when($search !== '', function ($q) use ($search) {
                     $q->where(function ($q) use ($search) {
@@ -54,7 +53,7 @@ class AllowedNumberController extends Controller
                 })
                 ->when(
                     $request->boolean('inactive'),
-                    fn($q) => $q->where('active', false)
+                    fn ($q) => $q->where('active', false)
                 )
                 ->orderByDesc('created_at')
                 ->paginate(50)
@@ -81,7 +80,7 @@ class AllowedNumberController extends Controller
                     })
                     ->when(
                         $request->boolean('inactive'),
-                        fn($q) => $q->where('active', false)
+                        fn ($q) => $q->where('active', false)
                     )
                     ->orderByDesc('created_at')
                     ->paginate(50)
@@ -94,7 +93,6 @@ class AllowedNumberController extends Controller
                 ->orderByDesc('created_at')
                 ->get();
         }
-
 
         $data = [
             'folders' => $folders,
@@ -204,7 +202,7 @@ class AllowedNumberController extends Controller
             $header = fgetcsv($handle, 0, ',', '"', '\\');
         }
 
-        if (!$header || $header === [null]) {
+        if (! $header || $header === [null]) {
             if ($spreadsheet !== null) {
                 $spreadsheet->disconnectWorksheets();
             } elseif (is_resource($handle)) {
@@ -215,18 +213,18 @@ class AllowedNumberController extends Controller
         }
 
         $header[0] = preg_replace('/^\xEF\xBB\xBF/', '', (string) $header[0]);
-        $col = array_flip(array_map(fn($h) => strtolower(trim((string) $h)), $header));
+        $col = array_flip(array_map(fn ($h) => strtolower(trim((string) $h)), $header));
 
         $requiredColumns = ['mobile', 'serial', 'provider', 'country'];
         $missingColumns = [];
 
         foreach ($requiredColumns as $required) {
-            if (!isset($col[$required])) {
+            if (! isset($col[$required])) {
                 $missingColumns[] = "\"{$required}\"";
             }
         }
 
-        if (!empty($missingColumns)) {
+        if (! empty($missingColumns)) {
             if ($spreadsheet !== null) {
                 $spreadsheet->disconnectWorksheets();
             } elseif (is_resource($handle)) {
@@ -246,7 +244,7 @@ class AllowedNumberController extends Controller
         $skipped = [];
         $seen = [];
         $processRow = function (array $cells, int $line) use (&$rows, &$skipped, &$seen, $col, $pi, $ci): void {
-            if (count(array_filter($cells, fn($c) => trim((string) $c) !== '')) === 0) {
+            if (count(array_filter($cells, fn ($c) => trim((string) $c) !== '')) === 0) {
                 return;
             }
 
@@ -262,7 +260,7 @@ class AllowedNumberController extends Controller
                 return;
             }
 
-            $key = $mobile . '|' . strtolower($serial);
+            $key = $mobile.'|'.strtolower($serial);
             if (isset($seen[$key])) {
                 $skipped[] = ['line' => $line, 'mobile' => $mobile, 'serial' => $serial, 'reason' => 'duplicate_in_file'];
 
@@ -303,11 +301,11 @@ class AllowedNumberController extends Controller
         // pairs that already exist in the table
         $existing = [];
         $remember = function ($r) use (&$existing) {
-            $existing[$r->mobile . '|' . strtolower($r->serial)] = true;
+            $existing[$r->mobile.'|'.strtolower($r->serial)] = true;
         };
 
-        $mobiles = array_values(array_unique(array_filter(array_column($rows, 'mobile'), fn($m) => $m !== '0')));
-        $serials = array_values(array_unique(array_filter(array_column($rows, 'serial'), fn($s) => $s !== '0')));
+        $mobiles = array_values(array_unique(array_filter(array_column($rows, 'mobile'), fn ($m) => $m !== '0')));
+        $serials = array_values(array_unique(array_filter(array_column($rows, 'serial'), fn ($s) => $s !== '0')));
 
         foreach (array_chunk($mobiles, 1000) as $chunk) {
             AllowedNumber::whereIn('mobile', $chunk)->get(['mobile', 'serial'])->each($remember);
@@ -318,7 +316,7 @@ class AllowedNumberController extends Controller
 
         $toInsert = [];
         foreach ($rows as $r) {
-            if (isset($existing[$r['mobile'] . '|' . strtolower($r['serial'])])) {
+            if (isset($existing[$r['mobile'].'|'.strtolower($r['serial'])])) {
                 $skipped[] = ['line' => null, 'mobile' => $r['mobile'], 'serial' => $r['serial'], 'reason' => 'duplicate_existing'];
 
                 continue;
@@ -344,7 +342,7 @@ class AllowedNumberController extends Controller
                 ]);
 
                 foreach (array_chunk($toInsert, 500) as $chunk) {
-                    AllowedNumber::insert(array_map(fn($r) => $r + [
+                    AllowedNumber::insert(array_map(fn ($r) => $r + [
                         'user_id' => Auth::id(),
                         'file_name' => $name,
                         'active' => true,
@@ -378,7 +376,7 @@ class AllowedNumberController extends Controller
 
     public function downloadFile(AllowedNumberFile $allowedNumberFile)
     {
-        if (!Storage::exists($allowedNumberFile->path)) {
+        if (! Storage::exists($allowedNumberFile->path)) {
             if (request()->is('api/*')) {
                 abort(404, 'The stored file could not be found on the server.');
             }
@@ -437,7 +435,7 @@ class AllowedNumberController extends Controller
 
         // UK trunk-prefix form 0XXXXXXXXXX -> 44XXXXXXXXXX
         if (strlen($c) === 11 && str_starts_with($c, '0')) {
-            $c = '44' . substr($c, 1);
+            $c = '44'.substr($c, 1);
         }
 
         return strlen($c) >= 5 ? $c : '0';
@@ -487,7 +485,7 @@ class AllowedNumberController extends Controller
                 'string',
                 'max:50',
                 Rule::unique('allowed_numbers', 'mobile')
-                    ->where(fn($q) => $q->where('serial', $serial))
+                    ->where(fn ($q) => $q->where('serial', $serial))
                     ->ignore($ignoreId),
             ],
             'serial' => ['required', 'string', 'max:100'],

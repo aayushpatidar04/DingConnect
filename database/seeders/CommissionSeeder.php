@@ -51,6 +51,7 @@ class CommissionSeeder extends Seeder
 
                 if ($operators->isEmpty()) {
                     $this->command?->warn("No operator found for {$provider}; skipped. Sync operators, then add its rates in Admin > Commission.");
+
                     continue;
                 }
 

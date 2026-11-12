@@ -3,7 +3,6 @@
 namespace App\Events;
 
 use App\Models\Transaction;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -15,6 +14,7 @@ class RechargeSuccess implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public Transaction $transaction;
+
     public ?string $receiptNumber;
 
     public function __construct(Transaction $transaction, ?string $receiptNumber = null)
@@ -25,7 +25,7 @@ class RechargeSuccess implements ShouldBroadcast
 
     public function broadcastOn(): PrivateChannel
     {
-        return new PrivateChannel('retailer.' . $this->transaction->user_id);
+        return new PrivateChannel('retailer.'.$this->transaction->user_id);
     }
 
     public function broadcastAs(): string
@@ -36,14 +36,14 @@ class RechargeSuccess implements ShouldBroadcast
     public function broadcastWith(): array
     {
         return [
-            'transaction_id'   => $this->transaction->id,
-            'receipt_number'   => $this->receiptNumber,
-            'receipt_text'     => $this->transaction->receipt_text,
-            'redemption_type'  => $this->transaction->redemption_type,
-            'mobile_number'    => $this->transaction->mobile_number,
-            'amount'           => $this->transaction->amount,
-            'status'           => 'success',
-            'message'          => "Recharge of £ {$this->transaction->amount} for {$this->transaction->mobile_number} was successful!",
+            'transaction_id' => $this->transaction->id,
+            'receipt_number' => $this->receiptNumber,
+            'receipt_text' => $this->transaction->receipt_text,
+            'redemption_type' => $this->transaction->redemption_type,
+            'mobile_number' => $this->transaction->mobile_number,
+            'amount' => $this->transaction->amount,
+            'status' => 'success',
+            'message' => "Recharge of £ {$this->transaction->amount} for {$this->transaction->mobile_number} was successful!",
         ];
     }
 }

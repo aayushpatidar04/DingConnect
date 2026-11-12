@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Offer extends Model
 {
     public const TYPE_PERCENT = 'percent';
+
     public const TYPE_FIXED = 'fixed';
 
     protected $fillable = [

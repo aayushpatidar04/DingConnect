@@ -13,7 +13,7 @@ class OperatorController extends Controller
     {
         $country = DB::table('countries')->where('iso_code', $countryIso)->first();
 
-        if (!$country) {
+        if (! $country) {
             return response()->json(['success' => false, 'message' => 'Country not found'], 404);
         }
 
@@ -24,7 +24,7 @@ class OperatorController extends Controller
             ->get([
                 'id', 'name', 'slug', 'provider_code',
                 'logo_url', 'region_codes', 'payment_types',
-                'validation_regex', 'customer_care_number', 'is_premium'
+                'validation_regex', 'customer_care_number', 'is_premium',
             ]);
 
         return response()->json(['success' => true, 'data' => $operators]);
@@ -36,8 +36,8 @@ class OperatorController extends Controller
         $countryId = $request->get('country_id');
 
         $operators = DB::table('operators')
-            ->when($countryId, fn($q) => $q->where('country_id', $countryId))
-            ->when($query, fn($q) => $q->where('name', 'like', "%{$query}%"))
+            ->when($countryId, fn ($q) => $q->where('country_id', $countryId))
+            ->when($query, fn ($q) => $q->where('name', 'like', "%{$query}%"))
             ->where('is_active', true)
             ->orderBy('display_order')
             ->get(['id', 'name', 'slug', 'provider_code', 'country_id', 'logo_url']);

@@ -9,6 +9,7 @@ class WalletTopup extends Model
 {
     /** payment_gateway values for entries created by the commission system */
     public const GATEWAY_COMMISSION = 'commission';
+
     public const GATEWAY_BONUS = 'bonus';
 
     /** payment_gateway value for wallet credits added manually by an admin */

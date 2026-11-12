@@ -19,7 +19,7 @@ class Setting extends Model
     {
         try {
             $record = static::where('key', $key)->first();
-            if (!$record) {
+            if (! $record) {
                 return $default;
             }
             $val = $record->value;

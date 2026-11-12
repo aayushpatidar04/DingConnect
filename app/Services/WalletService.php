@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Models\Wallet;
-use App\Models\WalletLedger;
 use Illuminate\Support\Facades\DB;
 
 class WalletService
@@ -12,9 +11,10 @@ class WalletService
     protected function resolveUserAndWallet(int $userId): array
     {
         $wallet = DB::table('wallets')->where('user_id', $userId)->first();
-        if (!$wallet) {
-            throw new \RuntimeException('Wallet not found for user ' . $userId);
+        if (! $wallet) {
+            throw new \RuntimeException('Wallet not found for user '.$userId);
         }
+
         return [
             'userId' => $userId,
             'walletId' => (int) $wallet->id,
@@ -37,6 +37,7 @@ class WalletService
     public function getBalance(int $userId): float
     {
         $wallet = DB::table('wallets')->where('user_id', $userId)->first();
+
         return $wallet ? (float) $wallet->balance : 0.0;
     }
 
@@ -122,16 +123,16 @@ class WalletService
     protected function ledger(array $info, ?int $referenceId, string $type, float $amount, string $description, float $balanceBefore, float $balanceAfter): void
     {
         DB::table('wallet_ledgers')->insert([
-            'wallet_id'      => $info['walletId'],
+            'wallet_id' => $info['walletId'],
             'transaction_id' => $referenceId,
-            'type'           => $type,
-            'amount'         => $amount,
+            'type' => $type,
+            'amount' => $amount,
             'balance_before' => $balanceBefore,
-            'balance_after'  => $balanceAfter,
-            'description'    => $description,
-            'ip_address'     => request()->ip(),
-            'user_agent'     => request()->userAgent() ?? null,
-            'created_at'     => now(),
+            'balance_after' => $balanceAfter,
+            'description' => $description,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent() ?? null,
+            'created_at' => now(),
         ]);
     }
 }
