@@ -85,7 +85,7 @@ const limitForm = useForm({
 function openLimitModal(retailer) {
     if (!retailer) return;
     activeRetailer.value = retailer;
-    limitForm.sim_order_limit = retailer.sim_order_limit ?? 50;
+    limitForm.sim_order_limit = retailer.sim_order_limit ?? 20;
     limitForm.clearErrors();
     showLimitModal.value = true;
 }

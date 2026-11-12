@@ -17,7 +17,7 @@ const props = defineProps({
 
 const creditForm = useForm({ amount: "", description: "" });
 const simLimitForm = useForm({
-    sim_order_limit: props.retailer.sim_order_limit ?? 500,
+    sim_order_limit: props.retailer.sim_order_limit ?? 20,
 });
 
 function updateSimLimit() {

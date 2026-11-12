@@ -17,7 +17,7 @@ class SimOrderController extends Controller
     public function index(Request $request): JsonResponse|Response
     {
         $user = $request->user();
-        $simOrderLimit = $user->sim_order_limit ?? 50;
+        $simOrderLimit = $user->sim_order_limit ?? 20;
 
         if ($request->is('api/*')) {
             $filters = $request->validate([
@@ -73,7 +73,7 @@ class SimOrderController extends Controller
     public function store(Request $request): JsonResponse|RedirectResponse
     {
         $user = $request->user();
-        $maxLimit = $user->sim_order_limit ?? 50;
+        $maxLimit = $user->sim_order_limit ?? 20;
 
         $data = $request->validate([
             'quantity' => ['required', 'integer', 'min:1', "max:{$maxLimit}"],

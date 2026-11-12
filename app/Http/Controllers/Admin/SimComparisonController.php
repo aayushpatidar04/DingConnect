@@ -41,7 +41,6 @@ class SimComparisonController extends Controller
         ]);
 
         $operators = Operator::whereIn('id', $request->operator_ids)->get();
-        $operatorNames = $operators->pluck('name')->map(fn ($n) => strtolower(trim($n)))->toArray();
         [$year, $month] = explode('-', $request->reconciliation_month);
 
         $file = $request->file('report_file');
@@ -102,44 +101,6 @@ class SimComparisonController extends Controller
                 }
             }
 
-            // Parse provider data rows and filter by selected operator names
-            $providerRecords = [];
-            for ($i = 2; $i <= count($rows); $i++) {
-                $row = $rows[$i] ?? null;
-                if (! $row) {
-                    continue;
-                }
-
-                $mobile = trim((string) ($row[$headerMap['mobile']] ?? ''));
-                if ($mobile === '') {
-                    continue;
-                }
-
-                $provName = trim((string) ($row[$headerMap['provider']] ?? ''));
-                $provNameLower = strtolower($provName);
-
-                $matchesOperator = false;
-                foreach ($operatorNames as $opName) {
-                    if ($provNameLower === $opName || str_contains($provNameLower, $opName) || str_contains($opName, $provNameLower)) {
-                        $matchesOperator = true;
-                        break;
-                    }
-                }
-
-                if (! $matchesOperator) {
-                    continue; // Skip rows from other providers in the file
-                }
-
-                $providerRecords[] = [
-                    'provider' => $provName,
-                    'mobile' => $mobile,
-                    'serial' => trim((string) ($row[$headerMap['serial']] ?? '')),
-                    'country' => trim((string) ($row[$headerMap['country']] ?? '')),
-                ];
-            }
-
-            Storage::delete($filePath);
-
             // Fetch internal connection records (successful transactions for these operators and month)
             $internalTransactions = Transaction::with(['user:id,name,shop_name,email', 'operator:id,name'])
                 ->whereIn('operator_id', $request->operator_ids)
@@ -148,11 +109,11 @@ class SimComparisonController extends Controller
                 ->where('status', 'success')
                 ->get();
 
-            // Index internal records by mobile number
+            // Group internal records by normalized mobile number (last 10 digits, allowing multiple recharges per number)
             $internalByMobile = [];
             foreach ($internalTransactions as $txn) {
-                $normMobile = preg_replace('/[^0-9]/', '', $txn->mobile_number);
-                $internalByMobile[$normMobile] = [
+                $normMobile = $this->normalizeMobileNumber($txn->mobile_number);
+                $internalByMobile[$normMobile][] = [
                     'id' => $txn->id,
                     'mobile' => $txn->mobile_number,
                     'serial' => $txn->receipt_number ?? '-',
@@ -168,35 +129,100 @@ class SimComparisonController extends Controller
                 ];
             }
 
+            // Parse provider data rows and group by normalized mobile number (last 10 digits, allowing multiple recharges per number)
+            $providerByMobile = [];
+            $totalProviderRowsParsed = 0;
+
+            for ($i = 2; $i <= count($rows); $i++) {
+                $row = $rows[$i] ?? null;
+                if (! $row) {
+                    continue;
+                }
+
+                $mobile = trim((string) ($row[$headerMap['mobile']] ?? ''));
+                if ($mobile === '') {
+                    continue;
+                }
+
+                $provName = trim((string) ($row[$headerMap['provider']] ?? ''));
+                $provNameLower = strtolower($provName);
+
+                $matchesOperator = false;
+                foreach ($operators as $op) {
+                    if ($this->providersMatch($provNameLower, strtolower(trim($op->name)))) {
+                        $matchesOperator = true;
+                        break;
+                    }
+                }
+
+                if (! $matchesOperator) {
+                    continue; // Skip rows from other providers in the file
+                }
+
+                $totalProviderRowsParsed++;
+                $normProvMobile = $this->normalizeMobileNumber($mobile);
+
+                $providerByMobile[$normProvMobile][] = [
+                    'provider' => $provName,
+                    'mobile' => $mobile,
+                    'serial' => trim((string) ($row[$headerMap['serial']] ?? '')),
+                    'country' => trim((string) ($row[$headerMap['country']] ?? '')),
+                ];
+            }
+
+            Storage::delete($filePath);
+
+            if ($totalProviderRowsParsed === 0) {
+                throw ValidationException::withMessages(['report_file' => 'No matching provider records found in the uploaded file for the selected operators.']);
+            }
+
             $matched = [];
             $missingFromProvider = [];
             $additionalInProvider = [];
 
-            $checkedInternalMobiles = [];
+            $allMobiles = array_unique(array_merge(array_keys($internalByMobile), array_keys($providerByMobile)));
 
-            foreach ($providerRecords as $pRec) {
-                $normProvMobile = preg_replace('/[^0-9]/', '', $pRec['mobile']);
+            foreach ($allMobiles as $normMobile) {
+                $pList = $providerByMobile[$normMobile] ?? [];
+                $iList = $internalByMobile[$normMobile] ?? [];
 
-                if (isset($internalByMobile[$normProvMobile])) {
-                    $internalMatch = $internalByMobile[$normProvMobile];
-                    $checkedInternalMobiles[$normProvMobile] = true;
+                $pCount = count($pList);
+                $iCount = count($iList);
+
+                $minCount = min($pCount, $iCount);
+
+                // Match up to minCount
+                for ($idx = 0; $idx < $minCount; $idx++) {
+                    $pRec = $pList[$idx];
+                    $iRec = $iList[$idx];
                     $matched[] = [
                         'mobile' => $pRec['mobile'],
-                        'serial' => $pRec['serial'] !== '' ? $pRec['serial'] : $internalMatch['serial'],
+                        'serial' => $pRec['serial'] !== '' ? $pRec['serial'] : $iRec['serial'],
                         'provider' => $pRec['provider'],
                         'country' => $pRec['country'],
-                        'retailer' => $internalMatch['retailer'],
-                        'internal_date' => $internalMatch['created_at'],
+                        'retailer' => $iRec['retailer'],
+                        'internal_date' => $iRec['created_at'],
                     ];
-                } else {
-                    $additionalInProvider[] = $pRec;
+                }
+
+                // If provider has more recharges than internal records
+                if ($pCount > $iCount) {
+                    for ($idx = $minCount; $idx < $pCount; $idx++) {
+                        $additionalInProvider[] = $pList[$idx];
+                    }
+                }
+
+                // If internal records have more recharges than provider report (Provider Missed)
+                if ($iCount > $pCount) {
+                    for ($idx = $minCount; $idx < $iCount; $idx++) {
+                        $missingFromProvider[] = $iList[$idx];
+                    }
                 }
             }
 
-            foreach ($internalByMobile as $normMobile => $internalRec) {
-                if (! isset($checkedInternalMobiles[$normMobile])) {
-                    $missingFromProvider[] = $internalRec;
-                }
+            $totalInternalCount = 0;
+            foreach ($internalByMobile as $iList) {
+                $totalInternalCount += count($iList);
             }
 
             $comparison = SimProviderComparison::create([
@@ -206,8 +232,8 @@ class SimComparisonController extends Controller
                 'reconciliation_month' => $request->reconciliation_month,
                 'file_name' => $fileName,
                 'provider_name' => $operators->pluck('name')->implode(', '),
-                'total_internal' => count($internalByMobile),
-                'total_provider' => count($providerRecords),
+                'total_internal' => $totalInternalCount,
+                'total_provider' => $totalProviderRowsParsed,
                 'matched_count' => count($matched),
                 'missing_count' => count($missingFromProvider),
                 'additional_count' => count($additionalInProvider),
@@ -234,6 +260,46 @@ class SimComparisonController extends Controller
                 'report_file' => 'Error processing file: '.$e->getMessage(),
             ]);
         }
+    }
+
+    private function normalizeMobileNumber(string $mobile): string
+    {
+        $digits = preg_replace('/[^0-9]/', '', $mobile);
+
+        return strlen($digits) >= 10 ? substr($digits, -10) : $digits;
+    }
+
+    private function providersMatch(string $fileProv, string $dbProv): bool
+    {
+        $fileNorm = $this->normalizeProviderString($fileProv);
+        $dbNorm = $this->normalizeProviderString($dbProv);
+
+        if ($fileNorm === '' || $dbNorm === '') {
+            return false;
+        }
+
+        if ($fileNorm === $dbNorm || str_contains($fileNorm, $dbNorm) || str_contains($dbNorm, $fileNorm)) {
+            return true;
+        }
+
+        // Special check for 3 / Three
+        $threeVariants = ['3', 'three', 'threeuk', '3uk', '3unitedkingdom'];
+        if (in_array($fileNorm, $threeVariants) && in_array($dbNorm, $threeVariants)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function normalizeProviderString(string $name): string
+    {
+        $lower = strtolower(trim($name));
+        $lower = str_replace(['3', 'three'], '3', $lower);
+
+        $cleaned = preg_replace('/[^a-z0-9]/', '', $lower);
+        $cleaned = str_replace(['uk', 'unitedkingdom'], '', $cleaned);
+
+        return $cleaned;
     }
 
     public function show(SimProviderComparison $simComparison)

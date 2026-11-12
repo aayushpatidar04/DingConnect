@@ -48,7 +48,7 @@ class SimOrderController extends Controller
                         'shop_name' => $order->user->shop_name,
                         'email' => $order->user->email,
                         'phone' => $order->user->phone,
-                        'sim_order_limit' => $order->user->sim_order_limit ?? 50,
+                        'sim_order_limit' => $order->user->sim_order_limit ?? 20,
                     ] : null,
                 ]);
 
@@ -180,7 +180,7 @@ class SimOrderController extends Controller
                 'shop_name' => $order->user->shop_name,
                 'email' => $order->user->email,
                 'phone' => $order->user->phone,
-                'sim_order_limit' => $order->user->sim_order_limit ?? 50,
+                'sim_order_limit' => $order->user->sim_order_limit ?? 20,
             ] : null,
         ];
     }
