@@ -83,7 +83,7 @@ class SimOrderApiTest extends TestCase
         $this->assertDatabaseCount('sim_orders', 0);
     }
 
-    public function test_retailer_without_custom_limit_uses_default_limit_of_50(): void
+    public function test_retailer_without_custom_limit_uses_default_limit_of_20(): void
     {
         $retailer = User::factory()->create([
             'role' => 'retailer',
@@ -93,7 +93,7 @@ class SimOrderApiTest extends TestCase
         ]);
 
         $this->withToken($retailer->createToken('test')->plainTextToken)
-            ->postJson('/api/retailer/sim-orders', ['quantity' => 51])
+            ->postJson('/api/retailer/sim-orders', ['quantity' => 21])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('quantity');
         $this->assertDatabaseCount('sim_orders', 0);
@@ -112,7 +112,7 @@ class SimOrderApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.orders.data.0.id', $order->id)
-            ->assertJsonPath('data.orders.data.0.retailer.sim_order_limit', 50)
+            ->assertJsonPath('data.orders.data.0.retailer.sim_order_limit', 20)
             ->assertJsonPath('data.stats.pending', 1);
 
         $this->withToken($token)

@@ -5,6 +5,7 @@ namespace Tests\Feature\Api;
 use App\Models\Country;
 use App\Models\Operator;
 use App\Models\SimProviderComparison;
+use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -22,6 +23,7 @@ class SimComparisonApiTest extends TestCase
         $comparison = SimProviderComparison::create([
             'admin_id' => $admin->id,
             'operator_id' => $operator->id,
+            'operator_ids' => [$operator->id],
             'reconciliation_month' => '2026-11',
             'file_name' => 'provider_report.csv',
             'provider_name' => $operator->name,
@@ -39,6 +41,7 @@ class SimComparisonApiTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.comparisons.data.0.id', $comparison->id)
             ->assertJsonPath('data.comparisons.data.0.matched_count', 1)
+            ->assertJsonPath('data.comparisons.data.0.operator_ids.0', $operator->id)
             ->assertJsonPath('data.comparisons.data.0.operator.id', $operator->id)
             ->assertJsonPath('data.operators.0.id', $operator->id)
             ->assertJsonMissingPath('data.comparisons.data.0.report_data');
@@ -57,7 +60,7 @@ class SimComparisonApiTest extends TestCase
 
         $response = $this->withToken($token)
             ->post('/api/admin/sim-comparisons', [
-                'operator_id' => $operator->id,
+                'operator_ids' => [$operator->id],
                 'reconciliation_month' => '2026-11',
                 'report_file' => $file,
             ], ['Accept' => 'application/json']);
@@ -65,6 +68,8 @@ class SimComparisonApiTest extends TestCase
         $response->assertCreated()
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.comparison.operator.id', $operator->id)
+            ->assertJsonPath('data.comparison.operator_ids.0', $operator->id)
+            ->assertJsonPath('data.comparison.operators.0.id', $operator->id)
             ->assertJsonPath('data.comparison.file_name', 'provider_report.csv')
             ->assertJsonPath('data.comparison.total_provider', 1)
             ->assertJsonPath('data.comparison.additional_count', 1)
@@ -94,7 +99,7 @@ class SimComparisonApiTest extends TestCase
 
         $this->withToken($admin->createToken('test')->plainTextToken)
             ->post('/api/admin/sim-comparisons', [
-                'operator_id' => $operator->id,
+                'operator_ids' => [$operator->id],
                 'reconciliation_month' => '2026-11',
                 'report_file' => UploadedFile::fake()->createWithContent(
                     'invalid_report.csv',
@@ -118,7 +123,7 @@ class SimComparisonApiTest extends TestCase
 
         $this->withToken($admin->createToken('test')->plainTextToken)
             ->post('/api/admin/sim-comparisons', [
-                'operator_id' => $operator->id,
+                'operator_ids' => [$operator->id],
                 'reconciliation_month' => '2026-11',
                 'report_file' => UploadedFile::fake()->createWithContent(
                     'provider_report.exe',
@@ -129,6 +134,59 @@ class SimComparisonApiTest extends TestCase
             ->assertJsonValidationErrors('report_file');
 
         $this->assertDatabaseCount('sim_provider_comparisons', 0);
+    }
+
+    public function test_admin_comparison_supports_multiple_providers_and_matches_normalized_duplicate_numbers(): void
+    {
+        $this->travelTo('2026-11-12 12:00:00');
+        Storage::fake();
+        $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
+        $retailer = User::factory()->create(['role' => 'retailer', 'is_active' => true]);
+        $giffgaff = $this->createOperator();
+        $three = $this->createOperator('Three', 'three', 'TH');
+
+        foreach ([
+            [$giffgaff, '07712345678', 'R-GG-1'],
+            [$giffgaff, '07712345678', 'R-GG-2'],
+            [$three, '447712345678', 'R-TH-1'],
+        ] as [$operator, $mobile, $receipt]) {
+            Transaction::create([
+                'user_id' => $retailer->id,
+                'mobile_number' => $mobile,
+                'operator_id' => $operator->id,
+                'country_id' => $operator->country_id,
+                'amount' => 10,
+                'status' => 'success',
+                'receipt_number' => $receipt,
+            ]);
+        }
+
+        $file = UploadedFile::fake()->createWithContent(
+            'providers.csv',
+            "Provider,Mobile,Serial,Country\nGiffGaff,+44 7712 345678,SN-1,UK\n3 UK,07712345678,SN-2,UK\nGiffGaff,07000111222,SN-3,UK\nVodafone,07111111111,SN-4,UK\n",
+        );
+
+        $response = $this->withToken($admin->createToken('test')->plainTextToken)
+            ->post('/api/admin/sim-comparisons', [
+                'operator_ids' => [$giffgaff->id, $three->id],
+                'reconciliation_month' => '2026-11',
+                'report_file' => $file,
+            ], ['Accept' => 'application/json']);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.comparison.provider_name', 'GiffGaff, Three')
+            ->assertJsonPath('data.comparison.operator_ids.0', $giffgaff->id)
+            ->assertJsonPath('data.comparison.operator_ids.1', $three->id)
+            ->assertJsonPath('data.comparison.total_internal', 3)
+            ->assertJsonPath('data.comparison.total_provider', 3)
+            ->assertJsonPath('data.comparison.matched_count', 2)
+            ->assertJsonPath('data.comparison.missing_count', 1)
+            ->assertJsonPath('data.comparison.additional_count', 1)
+            ->assertJsonPath('data.comparison.operators.1.name', 'Three');
+
+        $comparison = SimProviderComparison::findOrFail($response->json('data.comparison.id'));
+        $this->assertSame([$giffgaff->id, $three->id], $comparison->operator_ids);
+        Storage::disk(config('filesystems.default'))->assertDirectoryEmpty('temp');
     }
 
     public function test_sim_comparison_routes_require_authentication_and_admin_role(): void
@@ -146,19 +204,21 @@ class SimComparisonApiTest extends TestCase
             ->assertForbidden();
     }
 
-    private function createOperator(): Operator
+    private function createOperator(string $name = 'GiffGaff', string $slug = 'giffgaff', string $providerCode = 'GG'): Operator
     {
-        $country = Country::create([
-            'name' => 'United Kingdom',
-            'iso_code' => 'GB',
-            'iso_code_3' => 'GBR',
-            'currency' => 'GBP',
-        ]);
+        $country = Country::firstOrCreate(
+            ['iso_code' => 'GB'],
+            [
+                'name' => 'United Kingdom',
+                'iso_code_3' => 'GBR',
+                'currency' => 'GBP',
+            ],
+        );
 
         return Operator::create([
-            'name' => 'GiffGaff',
-            'slug' => 'giffgaff',
-            'provider_code' => 'GG',
+            'name' => $name,
+            'slug' => $slug,
+            'provider_code' => $providerCode,
             'country_id' => $country->id,
             'is_active' => true,
         ]);

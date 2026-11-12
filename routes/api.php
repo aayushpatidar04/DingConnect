@@ -70,6 +70,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
             ->whereNumber('simComparison');
 
         Route::get('/retailers/export', [WebRetailerController::class, 'export']);
+        Route::post('/retailers/bulk-sim-limit', [AdminRetailerController::class, 'bulkUpdateSimLimit']);
         Route::apiResource('retailers', AdminRetailerController::class);
         Route::post('/retailers/{retailer}/approve', [AdminRetailerController::class, 'approve']);
         Route::post('/retailers/{retailer}/block', [AdminRetailerController::class, 'block']);

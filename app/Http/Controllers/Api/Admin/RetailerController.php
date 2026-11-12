@@ -12,6 +12,41 @@ use Spatie\Permission\Models\Role;
 
 class RetailerController extends Controller
 {
+    public function bulkUpdateSimLimit(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'target' => ['required', 'in:selected,all'],
+            'retailer_ids' => ['required_if:target,selected', 'array'],
+            'retailer_ids.*' => [
+                'required',
+                'integer',
+                'distinct',
+                Rule::exists('users', 'id')->where('role', 'retailer'),
+            ],
+            'sim_order_limit' => ['required', 'integer', 'min:1', 'max:100000'],
+        ]);
+
+        $retailers = User::where('role', 'retailer');
+
+        if ($validated['target'] === 'selected') {
+            $retailers->whereIn('id', $validated['retailer_ids']);
+        }
+
+        $updatedCount = $retailers->update([
+            'sim_order_limit' => $validated['sim_order_limit'],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "SIM order limit updated to {$validated['sim_order_limit']} for {$updatedCount} retailer(s).",
+            'data' => [
+                'target' => $validated['target'],
+                'sim_order_limit' => $validated['sim_order_limit'],
+                'updated_count' => $updatedCount,
+            ],
+        ]);
+    }
+
     public function index(Request $request): JsonResponse
     {
         $filters = $request->validate([

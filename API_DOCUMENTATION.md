@@ -2,7 +2,7 @@
 
 This reference describes the application API under `/api`. It is intended for mobile clients and uses Laravel Sanctum personal access tokens.
 
-> **NEW changes — APIs added since baseline `e16d8f6efa17fca87d88a334455c2814b717ae89`:** retailer commissions (`GET /api/retailer/commissions`), offer eligibility (`GET /api/retailer/offers/eligible`), and offers on the retailer dashboard/recharge; admin analytics (`GET /api/admin/analytics`), commission levels/rates, retailer level assignment/history, commission reports/export, offer/redemption management, SIM order management, and **SIM provider-file comparisons**. SIM comparison routes are detailed in the section marked **NEW — SIM provider-file comparisons** and grouped in a **NEW** Postman folder. The Postman collection includes a saved response-format example for every request.
+> **NEW changes — APIs added since baseline `e16d8f6efa17fca87d88a334455c2814b717ae89`:** retailer commissions (`GET /api/retailer/commissions`), offer eligibility (`GET /api/retailer/offers/eligible`), and offers on the retailer dashboard/recharge; admin analytics (`GET /api/admin/analytics`), commission levels/rates, retailer level assignment/history, commission reports/export, offer/redemption management, SIM order management (including bulk retailer limits and a default limit of 20), and **SIM provider-file comparisons** (multiple providers and normalized matching). These newest changes are marked in their sections below and in the Postman collection. Each request includes a saved response-format example.
 >
 > Historical retailer-connection backfill is intentionally an internal Artisan command, not a public API endpoint.
 
@@ -220,9 +220,12 @@ Returns aggregate stats, top retailers, recent transactions, and chart data. Pro
 | `POST /api/admin/retailers/{retailer}/block` | No body | Toggles active state; deactivation revokes tokens |
 | `POST /api/admin/retailers/{retailer}/credit` | JSON `amount` (>0), optional `description` | Credits retailer wallet |
 | `POST /api/admin/retailers/{retailer}/kyc` | JSON `action` (`approve`/`reject`); `rejection_reason` required for reject | Processes KYC |
+| `POST /api/admin/retailers/bulk-sim-limit` | JSON `target` (`selected` or `all`), `sim_order_limit` (integer 1–100000); `retailer_ids` required as an array when target is `selected` | Updates the limit for selected retailer IDs or every retailer; returns `updated_count` |
 | `GET /api/admin/retailers/export` | None | Downloads an XLSX retailer export |
 
 Optional retailer profile fields are `shop_name`, `address`, `city`, `county`, `postcode`, `vat_number`, `company_reg_number`, and `utr_number`.
+
+The bulk limit endpoint only updates records whose role is `retailer`. For `target: "selected"`, every ID must identify a retailer. For `target: "all"`, IDs are not used to select records; `retailer_ids` may be omitted or empty, and any supplied IDs must still identify retailers.
 
 ## Admin transactions
 
@@ -374,7 +377,7 @@ These are the mobile APIs for the SIM ordering functionality added to the web ap
 | `GET /api/retailer/sim-orders` | Optional query `status` (`pending`, `processing`, `dispatched`, `delivered`, `rejected`), `from`, `to`, `page` | Own orders only, paginated 15 per page, with status counts, configured order limit, and applied filters |
 | `POST /api/retailer/sim-orders` | JSON body with required integer `quantity` (minimum 1; cannot exceed the retailer's limit) | Creates a `pending` order and notifies admins; returns `201` |
 
-When `users.sim_order_limit` is null, the default limit is **50 SIM cards per order**. The GET response reports the effective limit as `data.sim_order_limit` and `data.stats.sim_order_limit`; the same effective limit is enforced by POST. The admin can change an individual retailer's limit as described below.
+When `users.sim_order_limit` is null, the default limit is **20 SIM cards per order**. The GET response reports the effective limit as `data.sim_order_limit` and `data.stats.sim_order_limit`; the same effective limit is enforced by POST. Admins can update an individual or bulk retailer limit as described below.
 
 Example create request:
 
@@ -410,7 +413,7 @@ Example create response:
 | `PUT /api/admin/sim-orders/{simOrder}` | JSON `status` (one of the five statuses above); optional `tracking_notes` (max 1000 characters) | Updates status/notes, sets dispatch/delivery timestamps the first time the corresponding status is entered, notifies the retailer, and returns the order |
 | `PUT /api/admin/sim-orders/retailers/{retailer}/limit` | JSON `sim_order_limit` (integer from 1 through 100000) | Updates the retailer's per-order limit and returns the retailer ID and new limit |
 
-The existing `GET /api/admin/retailers` and `GET /api/admin/retailers/{retailer}` responses also include `sim_order_limit`, so the admin app can display the configured override on the retailer profile. A `null` value means the default of 50 applies; use the limit endpoint above to set an explicit value.
+The existing `GET /api/admin/retailers` and `GET /api/admin/retailers/{retailer}` responses also include `sim_order_limit`, so the admin app can display the configured override on the retailer profile. A `null` value means the default of 20 applies; use either limit endpoint above to set an explicit value.
 
 Status request example:
 
@@ -432,11 +435,37 @@ These admin-only Sanctum endpoints expose the SIM reconciliation and provider-fi
 
 | Method and path | Parameters | Result |
 |---|---|---|
-| `GET /api/admin/sim-comparisons` | Optional `page` query parameter | Paginated history (15 per page), summary counts, admin/operator details, and an `operators` array for selecting a provider. Detailed row data is returned by the show endpoint, not included in the list. |
-| `POST /api/admin/sim-comparisons` | Multipart form-data: required `operator_id` (existing operator ID), `reconciliation_month` (`YYYY-MM`), and `report_file` (XLSX, XLS, CSV, or TXT; max 10 MB) | Compares the provider report with successful internal transactions for that operator and month. Returns `201` and the saved comparison. |
+| `GET /api/admin/sim-comparisons` | Optional `page` query parameter | Paginated history (15 per page), summary counts, provider IDs/names, admin/operator details, and an `operators` array for selecting providers. Detailed row data is returned by the show endpoint, not included in the list. |
+| `POST /api/admin/sim-comparisons` | Multipart form-data: required `operator_ids` array (one or more existing operator IDs), `reconciliation_month` (`YYYY-MM`), and `report_file` (XLSX, XLS, CSV, or TXT; max 10 MB) | Compares the provider report with successful internal transactions for the selected operators and month. Returns `201` and the saved comparison. |
 | `GET /api/admin/sim-comparisons/{simComparison}` | Path `simComparison` is the comparison ID | Returns the summary and full `report_data` for matched, missing-from-provider, and additional provider records. |
 
-The uploaded file must pass content-based validation for a supported format, use one of the allowed extensions, and include the case-insensitive headers `Provider`, `Mobile`, `Serial`, and `Country`. For mobile numbers, matching ignores non-digit characters. The API response contains `success`, `message` where applicable, and `data.comparison`. Validation or report-content errors return `422` with Laravel's standard `message` and `errors` object; unexpected processing failures use the framework's standard `500` response.
+**Web parity added in the latest changes:** comparisons can include multiple providers. The upload filters provider rows against the selected operators (including aliases such as `3 UK` for `Three`) and matches numbers using their last 10 digits after removing non-digits. Repeated numbers are compared by row count, so unmatched repeat transactions appear in `missing_from_provider` or `additional_in_provider`.
+
+The uploaded file must pass content-based validation for a supported format, use one of the allowed extensions, and include the case-insensitive headers `Provider`, `Mobile`, `Serial`, and `Country`. The API response contains `success`, `message` where applicable, and `data.comparison`; the saved result includes `operator_ids` and an `operators` array. Validation or report-content errors return `422` with Laravel's standard `message` and `errors` object; unexpected processing failures use the framework's standard `500` response.
+
+Bulk limit request example:
+
+```json
+{
+  "target": "selected",
+  "retailer_ids": [42, 43],
+  "sim_order_limit": 35
+}
+```
+
+Bulk limit response format:
+
+```json
+{
+  "success": true,
+  "message": "SIM order limit updated to 35 for 2 retailer(s).",
+  "data": {
+    "target": "selected",
+    "sim_order_limit": 35,
+    "updated_count": 2
+  }
+}
+```
 
 Example upload response format:
 
@@ -449,6 +478,7 @@ Example upload response format:
       "id": 12,
       "admin_id": 1,
       "operator_id": 3,
+      "operator_ids": [3, 4],
       "reconciliation_month": "2026-11",
       "file_name": "provider_report.csv",
       "provider_name": "GiffGaff",
@@ -500,6 +530,10 @@ Example upload response format:
       },
       "admin": { "id": 1, "name": "Admin User" },
       "operator": { "id": 3, "name": "GiffGaff" },
+      "operators": [
+        { "id": 3, "name": "GiffGaff" },
+        { "id": 4, "name": "Three" }
+      ],
       "created_at": "2026-11-12T06:30:00+00:00",
       "updated_at": "2026-11-12T06:30:00+00:00"
     }
@@ -515,6 +549,6 @@ The show response uses the same `data.comparison` shape. The list response uses 
 
 ## Postman collection
 
-Import [DingConnect API.postman_collection.json](./DingConnect%20API.postman_collection.json). Set the collection's `base_url` to your application origin and paste a token into `token`. The collection automatically saves a token from successful registration or OTP verification responses. It includes auth, public lookup, retailer, admin, SIM order and SIM comparison, webhook, upload, and export requests.
+Import [DingConnect API.postman_collection.json](./DingConnect%20API.postman_collection.json). Set the collection's `base_url` to your application origin and paste a token into `token`. The collection automatically saves a token from successful registration or OTP verification responses. It includes auth, public lookup, retailer, admin, SIM order and SIM comparison (including multi-provider upload), webhook, upload, and export requests.
 
 Every request has a saved **Success response format** example under its Postman **Responses** tab. These examples show the JSON keys/wrappers, HTTP success status, and content type. Download endpoints use illustrative file-content placeholders (or a small CSV sample); capture the live response to save the real PDF/XLSX/export file. The examples use dummy values and do not represent live account data.
