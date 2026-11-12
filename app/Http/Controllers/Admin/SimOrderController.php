@@ -15,7 +15,7 @@ class SimOrderController extends Controller
 {
     public function index(Request $request)
     {
-        $orders = SimOrder::with('user:id,name,shop_name,email,phone')
+        $orders = SimOrder::with('user:id,name,shop_name,email,phone,sim_order_limit')
             ->filter($request->only(['search', 'status', 'from', 'to']))
             ->orderByDesc('created_at')
             ->paginate(15)
@@ -34,6 +34,7 @@ class SimOrderController extends Controller
                     'shop_name' => $order->user->shop_name,
                     'email' => $order->user->email,
                     'phone' => $order->user->phone,
+                    'sim_order_limit' => $order->user->sim_order_limit ?? 50,
                 ] : null,
             ]);
 

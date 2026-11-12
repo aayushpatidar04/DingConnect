@@ -79,13 +79,13 @@ const showLimitModal = ref(false);
 const activeRetailer = ref(null);
 
 const limitForm = useForm({
-    sim_order_limit: 500,
+    sim_order_limit: 50,
 });
 
 function openLimitModal(retailer) {
     if (!retailer) return;
     activeRetailer.value = retailer;
-    limitForm.sim_order_limit = retailer.sim_order_limit ?? 500;
+    limitForm.sim_order_limit = retailer.sim_order_limit ?? 50;
     limitForm.clearErrors();
     showLimitModal.value = true;
 }
@@ -268,7 +268,7 @@ const hoveredPoint = ref(null);
                             :cx="pt.x"
                             :cy="pt.y"
                             r="5"
-                            class="fill-surface-2 stroke-primary transition-all duration-200 cursor-pointer hover:scale-150"
+                            class="fill-surface-2 stroke-primary transition-all duration-200 cursor-pointer"
                             stroke-width="3"
                             @mouseenter="hoveredPoint = pt"
                             @mouseleave="hoveredPoint = null"
