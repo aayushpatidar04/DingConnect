@@ -10,6 +10,7 @@ class SimProviderComparison extends Model
     protected $fillable = [
         'admin_id',
         'operator_id',
+        'operator_ids',
         'reconciliation_month',
         'file_name',
         'provider_name',
@@ -22,6 +23,7 @@ class SimProviderComparison extends Model
     ];
 
     protected $casts = [
+        'operator_ids' => 'array',
         'total_internal' => 'integer',
         'total_provider' => 'integer',
         'matched_count' => 'integer',

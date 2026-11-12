@@ -34,7 +34,7 @@ class SimComparisonTest extends TestCase
         $file = UploadedFile::fake()->createWithContent('provider_report.csv', $csvContent);
 
         $response = $this->actingAs($admin)->post(route('admin.sim-comparisons.store'), [
-            'operator_id' => $operator->id,
+            'operator_ids' => [$operator->id],
             'reconciliation_month' => now()->format('Y-m'),
             'report_file' => $file,
         ]);
@@ -42,7 +42,6 @@ class SimComparisonTest extends TestCase
         $response->assertRedirect();
         $this->assertDatabaseHas('sim_provider_comparisons', [
             'admin_id' => $admin->id,
-            'operator_id' => $operator->id,
             'file_name' => 'provider_report.csv',
         ]);
     }
@@ -68,7 +67,7 @@ class SimComparisonTest extends TestCase
         $file = UploadedFile::fake()->createWithContent('invalid_report.csv', $csvContent);
 
         $response = $this->actingAs($admin)->post(route('admin.sim-comparisons.store'), [
-            'operator_id' => $operator->id,
+            'operator_ids' => [$operator->id],
             'reconciliation_month' => now()->format('Y-m'),
             'report_file' => $file,
         ]);

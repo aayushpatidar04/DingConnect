@@ -1,8 +1,10 @@
 ﻿<script setup>
 import { Head, Link, useForm } from "@inertiajs/vue3";
+import { computed } from "vue";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
 import FlashMessage from "@/Components/FlashMessage.vue";
 import InputError from "@/Components/InputError.vue";
+import MultiProviderDropdown from "@/Components/MultiProviderDropdown.vue";
 
 defineOptions({ layout: AdminLayout });
 
@@ -12,10 +14,14 @@ const props = defineProps({
 });
 
 const uploadForm = useForm({
-    operator_id: props.operators[0]?.id ?? "",
+    operator_ids: props.operators.map((o) => o.id), // default select all
     reconciliation_month: new Date().toISOString().slice(0, 7), // default current YYYY-MM
     report_file: null,
 });
+
+const operatorOptions = computed(() =>
+    props.operators.map((o) => ({ id: o.id, label: o.name }))
+);
 
 function submitReport() {
     uploadForm.post("/admin/sim-comparisons", {
@@ -39,7 +45,7 @@ function submitReport() {
                     SIM Connection Reconciliation & Provider File Comparison
                 </h1>
                 <p class="text-ink-500">
-                    Select a network provider and reconciliation month, then upload the provider report to cross-reference recharges and identify missed connections.
+                    Select multiple network providers and reconciliation month, then upload the provider report to cross-reference recharges and identify missed connections.
                 </p>
             </div>
         </div>
@@ -57,19 +63,15 @@ function submitReport() {
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-ink-600 uppercase mb-1">
-                            Network Provider
+                            Network Providers (Select One or More)
                         </label>
-                        <select
-                            v-model="uploadForm.operator_id"
-                            required
-                            class="w-full border border-surface-3 rounded-xl px-4 py-2.5 text-sm bg-surface-3 text-ink-900 focus:outline-none focus:border-primary"
-                        >
-                            <option value="" disabled>Select Provider</option>
-                            <option v-for="op in operators" :key="op.id" :value="op.id">
-                                {{ op.name }}
-                            </option>
-                        </select>
-                        <InputError :message="uploadForm.errors.operator_id" class="mt-1" />
+                        <MultiProviderDropdown
+                            v-model="uploadForm.operator_ids"
+                            :options="operatorOptions"
+                            placeholder="Search providers..."
+                            emptyText="No providers selected"
+                        />
+                        <InputError :message="uploadForm.errors.operator_ids" class="mt-1" />
                     </div>
 
                     <div>
@@ -127,7 +129,7 @@ function submitReport() {
                         <tr class="border-b border-surface-3 bg-surface-3/50 text-xs font-semibold text-ink-600 uppercase tracking-wider">
                             <th class="p-4">ID</th>
                             <th class="p-4">File Name</th>
-                            <th class="p-4">Provider</th>
+                            <th class="p-4">Providers</th>
                             <th class="p-4">Month</th>
                             <th class="p-4">Internal</th>
                             <th class="p-4">Provider</th>
@@ -156,7 +158,7 @@ function submitReport() {
                                 {{ comp.file_name }}
                             </td>
                             <td class="p-4 font-medium">
-                                {{ comp.operator?.name || comp.provider_name }}
+                                {{ comp.provider_name }}
                             </td>
                             <td class="p-4 text-xs font-semibold">
                                 {{ comp.reconciliation_month || '-' }}

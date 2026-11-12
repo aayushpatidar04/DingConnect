@@ -6,20 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\Operator;
 use App\Models\SimProviderComparison;
 use App\Models\Transaction;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
-use Inertia\Response;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class SimComparisonController extends Controller
 {
-    public function index(Request $request): JsonResponse|Response
+    public function index(Request $request)
     {
         $comparisons = SimProviderComparison::with(['admin:id,name', 'operator:id,name'])
             ->orderByDesc('created_at')
@@ -28,62 +25,31 @@ class SimComparisonController extends Controller
 
         $operators = Operator::orderBy('name')->get(['id', 'name']);
 
-        if ($request->is('api/*')) {
-            $comparisons->through(fn (SimProviderComparison $comparison): array => [
-                'id' => $comparison->id,
-                'file_name' => $comparison->file_name,
-                'provider_name' => $comparison->provider_name,
-                'operator' => $comparison->operator,
-                'reconciliation_month' => $comparison->reconciliation_month,
-                'total_internal' => $comparison->total_internal,
-                'total_provider' => $comparison->total_provider,
-                'matched_count' => $comparison->matched_count,
-                'missing_count' => $comparison->missing_count,
-                'additional_count' => $comparison->additional_count,
-                'admin' => $comparison->admin,
-                'created_at' => $comparison->created_at?->toIso8601String(),
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'comparisons' => $comparisons,
-                    'operators' => $operators,
-                ],
-            ]);
-        }
-
         return Inertia::render('Admin/SimComparison/Index', [
             'comparisons' => $comparisons,
             'operators' => $operators,
         ]);
     }
 
-    public function store(Request $request): JsonResponse|RedirectResponse
+    public function store(Request $request)
     {
-        $validated = $request->validate([
-            'operator_id' => ['required', 'exists:operators,id'],
+        $request->validate([
+            'operator_ids' => ['required', 'array', 'min:1'],
+            'operator_ids.*' => ['exists:operators,id'],
             'reconciliation_month' => ['required', 'date_format:Y-m'],
-            'report_file' => ['required', 'file', 'mimes:xlsx,xls,csv,txt', 'extensions:xlsx,xls,csv,txt', 'max:10240'],
+            'report_file' => ['required', 'file', 'mimes:xlsx,xls,csv,txt', 'max:10240'],
         ]);
 
-        $operator = Operator::findOrFail($validated['operator_id']);
-        [$year, $month] = explode('-', $validated['reconciliation_month']);
+        $operators = Operator::whereIn('id', $request->operator_ids)->get();
+        $operatorNames = $operators->pluck('name')->map(fn ($n) => strtolower(trim($n)))->toArray();
+        [$year, $month] = explode('-', $request->reconciliation_month);
 
         $file = $request->file('report_file');
         $fileName = $file->getClientOriginalName();
-        $filePath = null;
+        $filePath = $file->storeAs('temp', uniqid().'_'.$fileName);
+        $absolutePath = Storage::path($filePath);
 
         try {
-            $filePath = $file->store('temp');
-
-            if ($filePath === false) {
-                throw ValidationException::withMessages([
-                    'report_file' => 'The uploaded file could not be stored.',
-                ]);
-            }
-
-            $absolutePath = Storage::path($filePath);
             $extension = strtolower($file->getClientOriginalExtension());
             $rows = [];
 
@@ -121,6 +87,7 @@ class SimComparisonController extends Controller
             }
 
             if (! empty($missingHeaders)) {
+                Storage::delete($filePath);
                 throw ValidationException::withMessages([
                     'report_file' => 'The uploaded provider report is missing mandatory header(s): '.implode(', ', $missingHeaders).'. Required headers: Provider, Mobile, Serial, Country.',
                 ]);
@@ -135,7 +102,7 @@ class SimComparisonController extends Controller
                 }
             }
 
-            // Parse provider data rows
+            // Parse provider data rows and filter by selected operator names
             $providerRecords = [];
             for ($i = 2; $i <= count($rows); $i++) {
                 $row = $rows[$i] ?? null;
@@ -148,21 +115,34 @@ class SimComparisonController extends Controller
                     continue;
                 }
 
+                $provName = trim((string) ($row[$headerMap['provider']] ?? ''));
+                $provNameLower = strtolower($provName);
+
+                $matchesOperator = false;
+                foreach ($operatorNames as $opName) {
+                    if ($provNameLower === $opName || str_contains($provNameLower, $opName) || str_contains($opName, $provNameLower)) {
+                        $matchesOperator = true;
+                        break;
+                    }
+                }
+
+                if (! $matchesOperator) {
+                    continue; // Skip rows from other providers in the file
+                }
+
                 $providerRecords[] = [
-                    'provider' => trim((string) ($row[$headerMap['provider']] ?? '')),
+                    'provider' => $provName,
                     'mobile' => $mobile,
                     'serial' => trim((string) ($row[$headerMap['serial']] ?? '')),
                     'country' => trim((string) ($row[$headerMap['country']] ?? '')),
                 ];
             }
 
-            if (empty($providerRecords)) {
-                throw ValidationException::withMessages(['report_file' => 'No valid data rows found in the uploaded file.']);
-            }
+            Storage::delete($filePath);
 
-            // Fetch internal connection records (successful transactions for this specific operator and month)
+            // Fetch internal connection records (successful transactions for these operators and month)
             $internalTransactions = Transaction::with(['user:id,name,shop_name,email', 'operator:id,name'])
-                ->where('operator_id', $operator->id)
+                ->whereIn('operator_id', $request->operator_ids)
                 ->whereYear('created_at', $year)
                 ->whereMonth('created_at', $month)
                 ->where('status', 'success')
@@ -176,7 +156,7 @@ class SimComparisonController extends Controller
                     'id' => $txn->id,
                     'mobile' => $txn->mobile_number,
                     'serial' => $txn->receipt_number ?? '-',
-                    'provider' => $txn->operator?->name ?? $operator->name,
+                    'provider' => $txn->operator?->name ?? 'Unknown',
                     'country' => $txn->country?->name ?? 'UK',
                     'retailer' => $txn->user ? [
                         'id' => $txn->user->id,
@@ -189,8 +169,8 @@ class SimComparisonController extends Controller
             }
 
             $matched = [];
-            $missingFromProvider = []; // Present internally, missing in provider report (Provider missed)
-            $additionalInProvider = []; // Present in provider report, missing internally
+            $missingFromProvider = [];
+            $additionalInProvider = [];
 
             $checkedInternalMobiles = [];
 
@@ -221,10 +201,11 @@ class SimComparisonController extends Controller
 
             $comparison = SimProviderComparison::create([
                 'admin_id' => Auth::id(),
-                'operator_id' => $operator->id,
-                'reconciliation_month' => $validated['reconciliation_month'],
+                'operator_id' => $request->operator_ids[0],
+                'operator_ids' => $request->operator_ids,
+                'reconciliation_month' => $request->reconciliation_month,
                 'file_name' => $fileName,
-                'provider_name' => $operator->name,
+                'provider_name' => $operators->pluck('name')->implode(', '),
                 'total_internal' => count($internalByMobile),
                 'total_provider' => count($providerRecords),
                 'matched_count' => count($matched),
@@ -237,37 +218,27 @@ class SimComparisonController extends Controller
                 ],
             ]);
 
-            if ($request->is('api/*')) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'SIM connection reconciliation completed successfully.',
-                    'data' => [
-                        'comparison' => $comparison->load(['admin:id,name', 'operator:id,name']),
-                    ],
-                ], 201);
-            }
-
             return redirect()->route('admin.sim-comparisons.show', $comparison)
                 ->with('success', 'SIM connection reconciliation completed successfully.');
-        } finally {
-            if ($filePath && Storage::exists($filePath)) {
+
+        } catch (\Throwable $e) {
+            if (Storage::exists($filePath)) {
                 Storage::delete($filePath);
             }
+
+            if ($e instanceof ValidationException) {
+                throw $e;
+            }
+
+            throw ValidationException::withMessages([
+                'report_file' => 'Error processing file: '.$e->getMessage(),
+            ]);
         }
     }
 
-    public function show(SimProviderComparison $simComparison, Request $request): JsonResponse|Response
+    public function show(SimProviderComparison $simComparison)
     {
         $simComparison->load(['admin:id,name', 'operator:id,name']);
-
-        if ($request->is('api/*')) {
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'comparison' => $simComparison,
-                ],
-            ]);
-        }
 
         return Inertia::render('Admin/SimComparison/Show', [
             'comparison' => $simComparison,
