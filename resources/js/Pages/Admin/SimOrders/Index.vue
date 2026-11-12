@@ -120,6 +120,53 @@ const statusBadge = (status) => {
 const maxDailyQty = computed(() =>
     Math.max(...(props.monthlyData || []).map((d) => d.total_quantity), 1)
 );
+
+const chartPoints = computed(() => {
+    const data = props.monthlyData || [];
+    if (data.length === 0) return [];
+    const width = 800;
+    const height = 200;
+    const padding = 30;
+    const usableWidth = width - padding * 2;
+    const usableHeight = height - padding * 2;
+    const max = maxDailyQty.value;
+
+    return data.map((item, index) => {
+        const x = data.length === 1 ? width / 2 : padding + (index / (data.length - 1)) * usableWidth;
+        const y = height - padding - (item.total_quantity / max) * usableHeight;
+        return {
+            x,
+            y,
+            ...item,
+        };
+    });
+});
+
+const svgPath = computed(() => {
+    const pts = chartPoints.value;
+    if (pts.length === 0) return "";
+    if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
+    
+    let path = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[i];
+        const p1 = pts[i + 1];
+        const midX = (p0.x + p1.x) / 2;
+        path += ` Q ${p0.x} ${p0.y}, ${midX} ${(p0.y + p1.y) / 2} T ${p1.x} ${p1.y}`;
+    }
+    return path;
+});
+
+const svgAreaPath = computed(() => {
+    const pts = chartPoints.value;
+    if (pts.length === 0) return "";
+    const first = pts[0];
+    const last = pts[pts.length - 1];
+    const line = svgPath.value;
+    return `${line} L ${last.x} 200 L ${first.x} 200 Z`;
+});
+
+const hoveredPoint = ref(null);
 </script>
 
 <template>
@@ -138,100 +185,102 @@ const maxDailyQty = computed(() =>
 
         <!-- Stats Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-            <div class="bg-surface-2 border border-surface-3 rounded-2xl p-4">
-                <p class="text-sm font-medium text-ink-500">Total Orders</p>
+            <div class="bg-surface-2 border border-surface-3 rounded-2xl p-4 shadow-sm">
+                <p class="text-xs font-semibold uppercase tracking-wider text-ink-500">Total Orders</p>
                 <p class="text-2xl font-bold text-ink-900 mt-1">
                     {{ stats.total }}
                 </p>
             </div>
-            <div class="bg-surface-2 border border-surface-3 rounded-2xl p-4">
-                <p class="text-sm font-medium text-amber-600">Pending</p>
+            <div class="bg-surface-2 border border-surface-3 rounded-2xl p-4 shadow-sm">
+                <p class="text-xs font-semibold uppercase tracking-wider text-amber-600">Pending</p>
                 <p class="text-2xl font-bold text-amber-600 mt-1">
                     {{ stats.pending }}
                 </p>
             </div>
-            <div class="bg-surface-2 border border-surface-3 rounded-2xl p-4">
-                <p class="text-sm font-medium text-blue-600">Processing</p>
+            <div class="bg-surface-2 border border-surface-3 rounded-2xl p-4 shadow-sm">
+                <p class="text-xs font-semibold uppercase tracking-wider text-blue-600">Processing</p>
                 <p class="text-2xl font-bold text-blue-600 mt-1">
                     {{ stats.processing }}
                 </p>
             </div>
-            <div class="bg-surface-2 border border-surface-3 rounded-2xl p-4">
-                <p class="text-sm font-medium text-purple-600">Dispatched</p>
+            <div class="bg-surface-2 border border-surface-3 rounded-2xl p-4 shadow-sm">
+                <p class="text-xs font-semibold uppercase tracking-wider text-purple-600">Dispatched</p>
                 <p class="text-2xl font-bold text-purple-600 mt-1">
                     {{ stats.dispatched }}
                 </p>
             </div>
-            <div class="bg-surface-2 border border-surface-3 rounded-2xl p-4">
-                <p class="text-sm font-medium text-emerald-600">Delivered</p>
+            <div class="bg-surface-2 border border-surface-3 rounded-2xl p-4 shadow-sm">
+                <p class="text-xs font-semibold uppercase tracking-wider text-emerald-600">Delivered</p>
                 <p class="text-2xl font-bold text-emerald-600 mt-1">
                     {{ stats.delivered }}
                 </p>
             </div>
-            <div class="bg-surface-2 border border-surface-3 rounded-2xl p-4">
-                <p class="text-sm font-medium text-primary">Month SIM Qty</p>
+            <div class="bg-surface-2 border border-surface-3 rounded-2xl p-4 shadow-sm">
+                <p class="text-xs font-semibold uppercase tracking-wider text-primary">Month SIM Qty</p>
                 <p class="text-2xl font-bold text-primary mt-1">
                     {{ stats.this_month_quantity }}
                 </p>
             </div>
         </div>
 
-        <!-- Analytics Chart Card with High Contrast UI -->
+        <!-- Analytics Area & Line Chart Card -->
         <div class="bg-surface-2 border border-surface-3 rounded-2xl p-6 shadow-sm">
-            <div class="flex items-center justify-between mb-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-2">
                 <div>
                     <h3 class="text-lg font-bold text-ink-900">
                         SIM Ordering Analytics (Last 30 Days)
                     </h3>
                     <p class="text-xs text-ink-500 mt-0.5">
-                        Daily requested SIM card quantities
+                        Interactive trend of requested SIM card volumes over time
                     </p>
+                </div>
+                <div v-if="hoveredPoint" class="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-xl font-semibold border border-primary/20">
+                    {{ hoveredPoint.date }}: <strong class="text-ink-900">{{ hoveredPoint.total_quantity }} SIMs</strong> ({{ hoveredPoint.total_orders }} orders)
                 </div>
             </div>
 
             <div v-if="monthlyData.length === 0" class="text-center py-12 text-ink-400">
                 No orders recorded in the last 30 days.
             </div>
-            <div v-else class="relative pt-6 pb-8 px-2">
-                <!-- Y-Axis Gridlines -->
-                <div class="absolute inset-0 flex flex-col justify-between pointer-events-none pb-8 pt-6 opacity-20">
-                    <div class="border-b border-ink-500 w-full"></div>
-                    <div class="border-b border-ink-500 w-full"></div>
-                    <div class="border-b border-ink-500 w-full"></div>
-                </div>
+            <div v-else class="relative pt-4 pb-2">
+                <svg viewBox="0 0 800 200" class="w-full h-64 overflow-visible">
+                    <defs>
+                        <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="var(--color-primary, #6366f1)" stop-opacity="0.35" />
+                            <stop offset="100%" stop-color="var(--color-primary, #6366f1)" stop-opacity="0.0" />
+                        </linearGradient>
+                    </defs>
 
-                <div class="h-56 flex items-end gap-2 relative z-10 overflow-x-auto">
-                    <div
-                        v-for="item in monthlyData"
-                        :key="item.date"
-                        class="flex-1 flex flex-col items-center group relative min-w-[32px]"
-                    >
-                        <!-- Tooltip -->
-                        <div
-                            class="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center bg-surface-950 text-ink-100 text-xs rounded-xl py-1.5 px-3 z-20 whitespace-nowrap shadow-xl border border-surface-800"
-                        >
-                            <span class="font-bold text-primary">{{ item.date }}</span>
-                            <span class="text-ink-200">{{ item.total_quantity }} SIMs ({{ item.total_orders }} orders)</span>
-                        </div>
+                    <!-- Horizontal Grid lines -->
+                    <line x1="30" y1="30" x2="770" y2="30" stroke="currentColor" class="text-surface-3" stroke-dasharray="4 4" stroke-width="1" />
+                    <line x1="30" y1="100" x2="770" y2="100" stroke="currentColor" class="text-surface-3" stroke-dasharray="4 4" stroke-width="1" />
+                    <line x1="30" y1="170" x2="770" y2="170" stroke="currentColor" class="text-surface-3" stroke-dasharray="4 4" stroke-width="1" />
 
-                        <!-- Bar Value Tag on Hover -->
-                        <span class="text-[10px] font-bold text-ink-700 mb-1 opacity-0 group-hover:opacity-100 transition">
-                            {{ item.total_quantity }}
-                        </span>
+                    <!-- Area Fill -->
+                    <path :d="svgAreaPath" fill="url(#chartGradient)" />
 
-                        <!-- Bar -->
-                        <div
-                            class="w-full bg-primary hover:bg-primary-hover rounded-t-lg transition-all duration-300 shadow-md shadow-primary/20"
-                            :style="{
-                                height: Math.max(12, (item.total_quantity / maxDailyQty) * 100) + '%',
-                            }"
-                        ></div>
+                    <!-- Smooth Curve Line -->
+                    <path :d="svgPath" fill="none" stroke="var(--color-primary, #6366f1)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
 
-                        <!-- Date Label -->
-                        <span class="text-[11px] font-medium text-ink-700 mt-2 whitespace-nowrap">
-                            {{ item.date.slice(5) }}
-                        </span>
-                    </div>
+                    <!-- Data Points -->
+                    <g v-for="pt in chartPoints" :key="pt.date">
+                        <circle
+                            :cx="pt.x"
+                            :cy="pt.y"
+                            r="5"
+                            class="fill-surface-2 stroke-primary transition-all duration-200 cursor-pointer hover:scale-150"
+                            stroke-width="3"
+                            @mouseenter="hoveredPoint = pt"
+                            @mouseleave="hoveredPoint = null"
+                        />
+                    </g>
+                </svg>
+
+                <!-- X Axis Date Labels (sampled or all) -->
+                <div class="flex justify-between items-center text-[11px] text-ink-500 font-medium px-4 mt-2">
+                    <span v-if="monthlyData.length > 0">{{ monthlyData[0].date }}</span>
+                    <span v-if="monthlyData.length > 2">{{ monthlyData[Math.floor(monthlyData.length / 2)].date }}</span>
+                    <span v-if="monthlyData.length > 1">{{ monthlyData[monthlyData.length - 1].date }}</span>
                 </div>
             </div>
         </div>

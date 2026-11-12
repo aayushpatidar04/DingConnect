@@ -139,8 +139,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
         ->parameters(['network-plans' => 'operator_plan']);
 
     Route::get('sim-orders', [AdminSimOrderController::class, 'index'])->name('sim-orders.index');
-    Route::put('sim-orders/{simOrder}', [AdminSimOrderController::class, 'updateStatus'])->name('sim-orders.update-status');
     Route::put('sim-orders/retailers/{retailer}/limit', [AdminSimOrderController::class, 'updateRetailerLimit'])->name('sim-orders.retailer-limit');
+    Route::put('sim-orders/{simOrder}', [AdminSimOrderController::class, 'updateStatus'])->name('sim-orders.update-status');
 });
 
 // ==========================================================================
