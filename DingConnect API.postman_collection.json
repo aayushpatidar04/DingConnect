@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "e331be21-4ef8-49f9-bdf6-23574dacda41",
     "name": "DingConnect API",
-    "description": "DingConnect mobile application API. Set base_url to the application origin and token to a Sanctum bearer token. Requests marked NEW cover features added since API baseline e16d8f6efa17fca87d88a334455c2814b717ae89. See API_DOCUMENTATION.md for request details, validation, and response behavior. Every request includes a saved Postman response example showing its success response format; examples use illustrative values, not live data.",
+    "description": "DingConnect mobile application API. Set base_url to the application origin and token to a Sanctum bearer token. Requests marked NEW cover features added since API baseline e16d8f6efa17fca87d88a334455c2814b717ae89. See API_DOCUMENTATION.md for request details, validation, and response behavior. Every request includes a saved Postman response example showing its success response format; examples use illustrative values, not live data. New since the last documentation update: SIM ordering and retailer-specific SIM order limits, grouped under NEW - SIM Orders.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -68,6 +68,11 @@
     },
     {
       "key": "offer_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "sim_order_id",
       "value": "1",
       "type": "string"
     }
@@ -1744,7 +1749,7 @@
                     }
                   ],
                   "cookie": [],
-                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"current_page\": 1,\n    \"data\": [\n      {\n        \"id\": 42,\n        \"name\": \"Example Retailer\",\n        \"email\": \"retailer@example.com\",\n        \"role\": \"retailer\",\n        \"kyc_status\": \"approved\",\n        \"is_active\": true\n      }\n    ],\n    \"last_page\": 1,\n    \"per_page\": 25,\n    \"total\": 0\n  }\n}"
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"current_page\": 1,\n    \"data\": [\n      {\n        \"id\": 42,\n        \"name\": \"Example Retailer\",\n        \"email\": \"retailer@example.com\",\n        \"role\": \"retailer\",\n        \"kyc_status\": \"approved\",\n        \"is_active\": true,\n        \"sim_order_limit\": 300\n      }\n    ],\n    \"last_page\": 1,\n    \"per_page\": 25,\n    \"total\": 0\n  }\n}"
                 }
               ]
             },
@@ -1827,7 +1832,7 @@
                     }
                   ],
                   "cookie": [],
-                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 42,\n    \"name\": \"Example Retailer\",\n    \"email\": \"retailer@example.com\",\n    \"role\": \"retailer\",\n    \"kyc_status\": \"approved\",\n    \"is_active\": true,\n    \"wallet\": {\n      \"balance\": \"100.00\",\n      \"currency\": \"GBP\"\n    },\n    \"transactions\": []\n  }\n}"
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 42,\n    \"name\": \"Example Retailer\",\n    \"email\": \"retailer@example.com\",\n    \"role\": \"retailer\",\n    \"kyc_status\": \"approved\",\n    \"is_active\": true,\n    \"wallet\": {\n      \"balance\": \"100.00\",\n      \"currency\": \"GBP\"\n    },\n    \"transactions\": [],\n    \"sim_order_limit\": 300\n  }\n}"
                 }
               ]
             },
@@ -4205,6 +4210,275 @@
               ],
               "cookie": [],
               "body": "{\n  \"success\": true,\n  \"message\": \"Recharge request submitted. Processing...\",\n  \"data\": {\n    \"transaction\": {\n      \"id\": 1001,\n      \"receipt_number\": \"TXN-20260101-00001\",\n      \"status\": \"pending\",\n      \"amount\": \"10.00\",\n      \"currency\": \"GBP\"\n    }\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "NEW - SIM Orders",
+      "description": "SIM ordering endpoints added to support the new web SIM order workflow in mobile. See the NEW sections below.",
+      "item": [
+        {
+          "name": "NEW - Retailer SIM orders",
+          "description": "New APIs for mobile retailer SIM ordering. Requires bearer authentication, active retailer role, and approved KYC.",
+          "item": [
+            {
+              "name": "List my SIM orders",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/retailer/sim-orders?status=pending&from=2026-01-01&to=2026-12-31&page=1",
+                "description": "Optional filters: status, from, to, page. Returns only the authenticated retailer?s orders.\n\nResponse format: see the saved success response example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{base_url}}/api/retailer/sim-orders?status=pending&from=2026-01-01&to=2026-12-31&page=1"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"orders\": {\n      \"current_page\": 1,\n      \"data\": [\n        {\n          \"id\": 101,\n          \"quantity\": 25,\n          \"status\": \"pending\",\n          \"tracking_notes\": null,\n          \"dispatched_at\": null,\n          \"delivered_at\": null,\n          \"created_at\": \"2026-11-12T06:30:00+00:00\"\n        }\n      ],\n      \"first_page_url\": \"{{base_url}}/api/retailer/sim-orders?page=1\",\n      \"from\": 1,\n      \"last_page\": 1,\n      \"last_page_url\": \"{{base_url}}/api/retailer/sim-orders?page=1\",\n      \"links\": [],\n      \"next_page_url\": null,\n      \"path\": \"{{base_url}}/api/retailer/sim-orders\",\n      \"per_page\": 15,\n      \"prev_page_url\": null,\n      \"to\": 1,\n      \"total\": 1\n    },\n    \"stats\": {\n      \"total\": 1,\n      \"pending\": 1,\n      \"dispatched\": 0,\n      \"delivered\": 0,\n      \"sim_order_limit\": 50\n    },\n    \"sim_order_limit\": 50,\n    \"filters\": {\n      \"status\": \"pending\",\n      \"from\": \"2026-01-01\",\n      \"to\": \"2026-12-31\"\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "Place a SIM order",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/retailer/sim-orders",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"quantity\": 25\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Quantity must be an integer from 1 through your effective sim_order_limit. A null retailer limit defaults to 50. Admin users are notified after order creation.\n\nResponse format: see the saved success response example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{base_url}}/api/retailer/sim-orders"
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"SIM card order placed successfully! You will be notified when it is dispatched.\",\n  \"data\": {\n    \"order\": {\n      \"id\": 101,\n      \"quantity\": 25,\n      \"status\": \"pending\",\n      \"tracking_notes\": null,\n      \"dispatched_at\": null,\n      \"delivered_at\": null,\n      \"created_at\": \"2026-11-12T06:30:00+00:00\"\n    }\n  }\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "NEW - Admin SIM order management",
+          "description": "New admin APIs for reviewing SIM orders, updating fulfillment status, and setting retailer limits. Requires bearer authentication, an active account, and admin role.",
+          "item": [
+            {
+              "name": "List SIM orders",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/sim-orders?search=Example&status=pending&from=2026-01-01&to=2026-12-31&page=1",
+                "description": "Optional filters: search retailer name/shop/email, status, from, to, page. Includes global counts, monthly quantity, and per-order retailer limit.\n\nResponse format: see the saved success response example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{base_url}}/api/admin/sim-orders?search=Example&status=pending&from=2026-01-01&to=2026-12-31&page=1"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"orders\": {\n      \"current_page\": 1,\n      \"data\": [\n        {\n          \"id\": 101,\n          \"quantity\": 25,\n          \"status\": \"pending\",\n          \"tracking_notes\": null,\n          \"dispatched_at\": null,\n          \"delivered_at\": null,\n          \"created_at\": \"2026-11-12T06:30:00+00:00\",\n          \"retailer\": {\n            \"id\": 42,\n            \"name\": \"Example Retailer\",\n            \"shop_name\": \"Example Shop\",\n            \"email\": \"retailer@example.com\",\n            \"phone\": \"447700900123\",\n            \"sim_order_limit\": 50\n          }\n        }\n      ],\n      \"first_page_url\": \"{{base_url}}/api/admin/sim-orders?page=1\",\n      \"from\": 1,\n      \"last_page\": 1,\n      \"last_page_url\": \"{{base_url}}/api/admin/sim-orders?page=1\",\n      \"links\": [],\n      \"next_page_url\": null,\n      \"path\": \"{{base_url}}/api/admin/sim-orders\",\n      \"per_page\": 15,\n      \"prev_page_url\": null,\n      \"to\": 1,\n      \"total\": 1\n    },\n    \"stats\": {\n      \"total\": 1,\n      \"pending\": 1,\n      \"processing\": 0,\n      \"dispatched\": 0,\n      \"delivered\": 0,\n      \"this_month_quantity\": 25\n    },\n    \"monthly_data\": [\n      {\n        \"date\": \"2026-11-12\",\n        \"total_quantity\": 25,\n        \"total_orders\": 1\n      }\n    ],\n    \"filters\": {\n      \"search\": \"Example\",\n      \"status\": \"pending\",\n      \"from\": \"2026-01-01\",\n      \"to\": \"2026-12-31\"\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "Update SIM order status",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/sim-orders/{{sim_order_id}}",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"dispatched\",\n  \"tracking_notes\": \"Sent by courier.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Allowed status values: pending, processing, dispatched, delivered, rejected. First transition to dispatched/delivered stamps its timestamp and notifies the retailer.\n\nResponse format: see the saved success response example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{base_url}}/api/admin/sim-orders/{{sim_order_id}}"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Order status updated to Dispatched.\",\n  \"data\": {\n    \"order\": {\n      \"id\": 101,\n      \"quantity\": 25,\n      \"status\": \"dispatched\",\n      \"tracking_notes\": \"Sent by courier.\",\n      \"dispatched_at\": \"2026-11-12T06:35:00+00:00\",\n      \"delivered_at\": null,\n      \"created_at\": \"2026-11-12T06:30:00+00:00\",\n      \"retailer\": {\n        \"id\": 42,\n        \"name\": \"Example Retailer\",\n        \"shop_name\": \"Example Shop\",\n        \"email\": \"retailer@example.com\",\n        \"phone\": \"447700900123\",\n        \"sim_order_limit\": 50\n      }\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "Set retailer SIM order limit",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/sim-orders/retailers/{{retailer_id}}/limit",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"sim_order_limit\": 300\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Limit is an integer from 1 through 100000 SIM cards per order. Affects subsequent retailer orders.\n\nResponse format: see the saved success response example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{base_url}}/api/admin/sim-orders/retailers/{{retailer_id}}/limit"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"SIM order limit for Example Shop updated to 300.\",\n  \"data\": {\n    \"retailer_id\": 42,\n    \"sim_order_limit\": 300\n  }\n}"
+                }
+              ]
             }
           ]
         }

@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\OfferController as WebOfferController;
 use App\Http\Controllers\Admin\RetailerAnalyticsController as WebRetailerAnalyticsController;
 use App\Http\Controllers\Admin\RetailerController as WebRetailerController;
 use App\Http\Controllers\Admin\RetailerLevelController as WebRetailerLevelController;
+use App\Http\Controllers\Admin\SimOrderController as AdminSimOrderController;
 use App\Http\Controllers\Admin\TransactionController as WebTransactionController;
 use App\Http\Controllers\Api\Admin\OperatorController as AdminOperatorController;
 use App\Http\Controllers\Api\Admin\RetailerController as AdminRetailerController;
@@ -25,6 +26,7 @@ use App\Http\Controllers\Api\WebhookController;
 use App\Http\Controllers\Retailer\CommissionController as WebRetailerCommissionController;
 use App\Http\Controllers\Retailer\OfferController as WebRetailerOfferController;
 use App\Http\Controllers\Retailer\RechargeController;
+use App\Http\Controllers\Retailer\SimOrderController as RetailerSimOrderController;
 use App\Http\Controllers\Retailer\TransactionController as RetailerTransactionController;
 use App\Http\Controllers\Retailer\WalletController as RetailerWebWalletController;
 use Illuminate\Support\Facades\Route;
@@ -56,6 +58,11 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     Route::middleware('admin')->prefix('admin')->name('api.admin.')->group(function (): void {
         Route::get('/dashboard', [DashboardController::class, 'admin']);
         Route::get('/analytics', [WebRetailerAnalyticsController::class, 'index']);
+        Route::get('/sim-orders', [AdminSimOrderController::class, 'index']);
+        Route::put('/sim-orders/retailers/{retailer}/limit', [AdminSimOrderController::class, 'updateRetailerLimit'])
+            ->whereNumber('retailer');
+        Route::put('/sim-orders/{simOrder}', [AdminSimOrderController::class, 'updateStatus'])
+            ->whereNumber('simOrder');
 
         Route::get('/retailers/export', [WebRetailerController::class, 'export']);
         Route::apiResource('retailers', AdminRetailerController::class);
@@ -107,6 +114,8 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         Route::get('/dashboard', [DashboardController::class, 'retailer']);
         Route::get('/commissions', [WebRetailerCommissionController::class, 'index']);
         Route::get('/offers/eligible', [WebRetailerOfferController::class, 'eligible']);
+        Route::get('/sim-orders', [RetailerSimOrderController::class, 'index']);
+        Route::post('/sim-orders', [RetailerSimOrderController::class, 'store']);
         Route::get('/profile', [ProfileController::class, 'show']);
         Route::put('/profile', [ProfileController::class, 'update']);
 

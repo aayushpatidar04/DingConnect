@@ -6,37 +6,51 @@ use App\Http\Controllers\Controller;
 use App\Models\SimOrder;
 use App\Models\User;
 use App\Notifications\SimOrderStatusUpdatedNotification;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class SimOrderController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse|Response
     {
+        $filters = $request->is('api/*')
+            ? $request->validate([
+                'search' => ['nullable', 'string', 'max:100'],
+                'status' => ['nullable', 'in:'.implode(',', SimOrder::STATUSES)],
+                'from' => ['nullable', 'date'],
+                'to' => ['nullable', 'date', 'after_or_equal:from'],
+            ])
+            : $request->only(['search', 'status', 'from', 'to']);
+
         $orders = SimOrder::with('user:id,name,shop_name,email,phone,sim_order_limit')
-            ->filter($request->only(['search', 'status', 'from', 'to']))
+            ->filter($filters)
             ->orderByDesc('created_at')
             ->paginate(15)
             ->withQueryString()
-            ->through(fn (SimOrder $order) => [
-                'id' => $order->id,
-                'quantity' => $order->quantity,
-                'status' => $order->status,
-                'tracking_notes' => $order->tracking_notes,
-                'dispatched_at' => $order->dispatched_at?->format('d M Y H:i'),
-                'delivered_at' => $order->delivered_at?->format('d M Y H:i'),
-                'created_at' => $order->created_at->format('d M Y H:i'),
-                'retailer' => $order->user ? [
-                    'id' => $order->user->id,
-                    'name' => $order->user->name,
-                    'shop_name' => $order->user->shop_name,
-                    'email' => $order->user->email,
-                    'phone' => $order->user->phone,
-                    'sim_order_limit' => $order->user->sim_order_limit ?? 50,
-                ] : null,
-            ]);
+            ->through(fn (SimOrder $order) => $request->is('api/*')
+                ? $this->apiOrderData($order)
+                : [
+                    'id' => $order->id,
+                    'quantity' => $order->quantity,
+                    'status' => $order->status,
+                    'tracking_notes' => $order->tracking_notes,
+                    'dispatched_at' => $order->dispatched_at?->format('d M Y H:i'),
+                    'delivered_at' => $order->delivered_at?->format('d M Y H:i'),
+                    'created_at' => $order->created_at->format('d M Y H:i'),
+                    'retailer' => $order->user ? [
+                        'id' => $order->user->id,
+                        'name' => $order->user->name,
+                        'shop_name' => $order->user->shop_name,
+                        'email' => $order->user->email,
+                        'phone' => $order->user->phone,
+                        'sim_order_limit' => $order->user->sim_order_limit ?? 50,
+                    ] : null,
+                ]);
 
         $stats = [
             'total' => SimOrder::count(),
@@ -65,15 +79,27 @@ class SimOrderController extends Controller
             ])
             ->toArray();
 
+        if ($request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'orders' => $orders,
+                    'stats' => $stats,
+                    'monthly_data' => $monthlyData,
+                    'filters' => $filters,
+                ],
+            ]);
+        }
+
         return Inertia::render('Admin/SimOrders/Index', [
             'orders' => $orders,
             'stats' => $stats,
-            'filters' => $request->only(['search', 'status', 'from', 'to']),
+            'filters' => $filters,
             'monthlyData' => $monthlyData,
         ]);
     }
 
-    public function updateStatus(Request $request, SimOrder $simOrder)
+    public function updateStatus(Request $request, SimOrder $simOrder): JsonResponse|RedirectResponse
     {
         $data = $request->validate([
             'status' => ['required', Rule::in(SimOrder::STATUSES)],
@@ -98,11 +124,21 @@ class SimOrderController extends Controller
 
         $simOrder->user->notify(new SimOrderStatusUpdatedNotification($simOrder));
 
+        if ($request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Order status updated to '.ucfirst($data['status']).'.',
+                'data' => ['order' => $this->apiOrderData($simOrder->load('user:id,name,shop_name,email,phone,sim_order_limit'))],
+            ]);
+        }
+
         return back()->with('success', 'Order status updated to '.ucfirst($data['status']).'.');
     }
 
-    public function updateRetailerLimit(Request $request, User $retailer)
+    public function updateRetailerLimit(Request $request, User $retailer): JsonResponse|RedirectResponse
     {
+        abort_unless($retailer->role === 'retailer', 404);
+
         $data = $request->validate([
             'sim_order_limit' => ['required', 'integer', 'min:1', 'max:100000'],
         ]);
@@ -111,6 +147,41 @@ class SimOrderController extends Controller
             'sim_order_limit' => $data['sim_order_limit'],
         ]);
 
+        if ($request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => "SIM order limit for {$retailer->shop_name} updated to {$data['sim_order_limit']}.",
+                'data' => [
+                    'retailer_id' => $retailer->id,
+                    'sim_order_limit' => $retailer->sim_order_limit,
+                ],
+            ]);
+        }
+
         return back()->with('success', "SIM order limit for {$retailer->shop_name} updated to {$data['sim_order_limit']}.");
+    }
+
+    /**
+     * @return array<string, int|string|null|array<string, int|string|null>>
+     */
+    private function apiOrderData(SimOrder $order): array
+    {
+        return [
+            'id' => $order->id,
+            'quantity' => $order->quantity,
+            'status' => $order->status,
+            'tracking_notes' => $order->tracking_notes,
+            'dispatched_at' => $order->dispatched_at?->toIso8601String(),
+            'delivered_at' => $order->delivered_at?->toIso8601String(),
+            'created_at' => $order->created_at?->toIso8601String(),
+            'retailer' => $order->user ? [
+                'id' => $order->user->id,
+                'name' => $order->user->name,
+                'shop_name' => $order->user->shop_name,
+                'email' => $order->user->email,
+                'phone' => $order->user->phone,
+                'sim_order_limit' => $order->user->sim_order_limit ?? 50,
+            ] : null,
+        ];
     }
 }

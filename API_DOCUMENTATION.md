@@ -2,7 +2,7 @@
 
 This reference describes the application API under `/api`. It is intended for mobile clients and uses Laravel Sanctum personal access tokens.
 
-> **NEW changes — APIs added since baseline `e16d8f6efa17fca87d88a334455c2814b717ae89`:** retailer commissions (`GET /api/retailer/commissions`), offer eligibility (`GET /api/retailer/offers/eligible`), and offers on the retailer dashboard/recharge; admin analytics (`GET /api/admin/analytics`), commission levels/rates, retailer level assignment/history, commission reports/export, and offer/redemption management. The added endpoints and changed dashboard/recharge behavior are detailed in sections marked **NEW** below and grouped in **NEW** Postman folders. The Postman collection also includes a saved response-format example for every request.
+> **NEW changes — APIs added since baseline `e16d8f6efa17fca87d88a334455c2814b717ae89`:** retailer commissions (`GET /api/retailer/commissions`), offer eligibility (`GET /api/retailer/offers/eligible`), and offers on the retailer dashboard/recharge; admin analytics (`GET /api/admin/analytics`), commission levels/rates, retailer level assignment/history, commission reports/export, offer/redemption management, and **SIM order management** (retailer order/list endpoints and admin order/status/retailer-limit endpoints). SIM order endpoints are detailed in the section marked **NEW — SIM orders** and grouped in a **NEW** Postman folder. The Postman collection includes a saved response-format example for every request.
 >
 > Historical retailer-connection backfill is intentionally an internal Artisan command, not a public API endpoint.
 
@@ -363,12 +363,75 @@ These routes require an active admin account.
 
 Offer JSON fields: required `title`, `type` (`percent` or `fixed`), `value`, `expires_at`, and `audience` (`all` or `selected`); optional `description`, `max_cashback`, `min_amount`, `max_amount`, `starts_at`, `per_retailer_limit`, `total_limit`, `is_active`, `operator_ids`, and `retailer_ids`. Percentage values cannot exceed 100. A selected audience requires at least one retailer ID. The API reuses the same eligibility, reservation, and settlement rules as web recharge.
 
+## NEW — SIM orders and retailer order limit
+
+These are the mobile APIs for the SIM ordering functionality added to the web application. They use Sanctum bearer tokens and JSON. Admin endpoints require an active admin account; retailer endpoints require an active retailer account and approved KYC. SIM quantities and limits are counts of SIM cards, not currency values.
+
+### Retailer SIM orders
+
+| Method and path | Parameters | Result |
+|---|---|---|
+| `GET /api/retailer/sim-orders` | Optional query `status` (`pending`, `processing`, `dispatched`, `delivered`, `rejected`), `from`, `to`, `page` | Own orders only, paginated 15 per page, with status counts, configured order limit, and applied filters |
+| `POST /api/retailer/sim-orders` | JSON body with required integer `quantity` (minimum 1; cannot exceed the retailer's limit) | Creates a `pending` order and notifies admins; returns `201` |
+
+When `users.sim_order_limit` is null, the default limit is **50 SIM cards per order**. The GET response reports the effective limit as `data.sim_order_limit` and `data.stats.sim_order_limit`; the same effective limit is enforced by POST. The admin can change an individual retailer's limit as described below.
+
+Example create request:
+
+```json
+{ "quantity": 25 }
+```
+
+Example create response:
+
+```json
+{
+  "success": true,
+  "message": "SIM card order placed successfully! You will be notified when it is dispatched.",
+  "data": {
+    "order": {
+      "id": 101,
+      "quantity": 25,
+      "status": "pending",
+      "tracking_notes": null,
+      "dispatched_at": null,
+      "delivered_at": null,
+      "created_at": "2026-11-12T06:30:00+00:00"
+    }
+  }
+}
+```
+
+### Admin SIM order management
+
+| Method and path | Parameters | Result |
+|---|---|---|
+| `GET /api/admin/sim-orders` | Optional query `search` (name, shop, or email; max 100 characters), `status`, `from`, `to`, `page` | Paginated orders (15 per page), global status/quantity stats, last-30-day daily summary, filters, and retailer details including each retailer's effective SIM order limit |
+| `PUT /api/admin/sim-orders/{simOrder}` | JSON `status` (one of the five statuses above); optional `tracking_notes` (max 1000 characters) | Updates status/notes, sets dispatch/delivery timestamps the first time the corresponding status is entered, notifies the retailer, and returns the order |
+| `PUT /api/admin/sim-orders/retailers/{retailer}/limit` | JSON `sim_order_limit` (integer from 1 through 100000) | Updates the retailer's per-order limit and returns the retailer ID and new limit |
+
+The existing `GET /api/admin/retailers` and `GET /api/admin/retailers/{retailer}` responses also include `sim_order_limit`, so the admin app can display the configured override on the retailer profile. A `null` value means the default of 50 applies; use the limit endpoint above to set an explicit value.
+
+Status request example:
+
+```json
+{ "status": "dispatched", "tracking_notes": "Sent by courier." }
+```
+
+Limit request example:
+
+```json
+{ "sim_order_limit": 300 }
+```
+
+The admin API's `data.stats` contains `total`, `pending`, `processing`, `dispatched`, `delivered`, and `this_month_quantity`. `data.monthly_data` contains daily rows with `date`, `total_quantity`, and `total_orders`. API timestamps are ISO 8601 strings or `null`. Invalid limits/statuses or quantities beyond the effective retailer limit return `422`; a retailer calling an admin route receives `403`.
+
 ## Provider webhooks
 
 `POST /api/webhooks/ding` and `POST /api/webhooks/stripe` are server-to-server callback routes, not mobile-client endpoints. Configure them with the relevant provider and do not expose provider credentials or use the app user's bearer token. Ding callbacks are queued for processing. Stripe callback processing can return `{"status":"success"}` or `{"status":"ignored"}`.
 
 ## Postman collection
 
-Import [DingConnect API.postman_collection.json](./DingConnect%20API.postman_collection.json). Set the collection's `base_url` to your application origin and paste a token into `token`. The collection automatically saves a token from successful registration or OTP verification responses. It includes auth, public lookup, retailer, admin, webhook, upload, and export requests.
+Import [DingConnect API.postman_collection.json](./DingConnect%20API.postman_collection.json). Set the collection's `base_url` to your application origin and paste a token into `token`. The collection automatically saves a token from successful registration or OTP verification responses. It includes auth, public lookup, retailer, admin, SIM order, webhook, upload, and export requests.
 
 Every request has a saved **Success response format** example under its Postman **Responses** tab. These examples show the JSON keys/wrappers, HTTP success status, and content type. Download endpoints use illustrative file-content placeholders (or a small CSV sample); capture the live response to save the real PDF/XLSX/export file. The examples use dummy values and do not represent live account data.
