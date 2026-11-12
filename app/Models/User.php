@@ -36,6 +36,7 @@ class User extends Authenticatable
         'kyc_rejection_reason',
         'kyc_verified_at',
         'is_active',
+        'sim_order_limit',
         'ding_customer_id',
         'ding_secret',
         'last_login_at',
@@ -56,6 +57,7 @@ class User extends Authenticatable
         'last_login_at' => 'datetime',
         'kyc_verified_at' => 'datetime',
         'is_active' => 'boolean',
+        'sim_order_limit' => 'integer',
         'password' => 'hashed',
 
         'login_otp_expires_at' => 'datetime',

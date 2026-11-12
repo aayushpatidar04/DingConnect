@@ -16,6 +16,15 @@ const props = defineProps({
 });
 
 const creditForm = useForm({ amount: "", description: "" });
+const simLimitForm = useForm({
+    sim_order_limit: props.retailer.sim_order_limit ?? 500,
+});
+
+function updateSimLimit() {
+    simLimitForm.put(`/admin/sim-orders/retailers/${props.retailer.id}/limit`, {
+        preserveScroll: true,
+    });
+}
 
 const filters = reactive({
     search: props.filters.search ?? "",
@@ -388,6 +397,33 @@ const inputClass =
                             class="w-full py-2 bg-primary text-ink-100 rounded-lg hover:bg-primary-dark disabled:opacity-60 transition"
                         >
                             Credit Wallet
+                        </button>
+                    </form>
+                </div>
+
+                <div class="bg-surface-2 rounded-2xl p-6 border border-surface-3">
+                    <h3 class="text-lg font-semibold text-ink-900 mb-2">
+                        SIM Card Order Limit
+                    </h3>
+                    <p class="text-xs text-ink-500 mb-4">
+                        Max SIM quantity allowed in a single order for this retailer.
+                    </p>
+                    <form @submit.prevent="updateSimLimit" class="space-y-3">
+                        <input
+                            v-model.number="simLimitForm.sim_order_limit"
+                            type="number"
+                            min="1"
+                            max="100000"
+                            required
+                            class="w-full px-3 py-2 border border-surface-3 rounded-lg bg-surface-3 text-ink-900 input-dark"
+                        />
+                        <InputError :message="simLimitForm.errors.sim_order_limit" />
+                        <button
+                            type="submit"
+                            :disabled="simLimitForm.processing"
+                            class="w-full py-2 bg-primary hover:bg-primary-hover text-ink-100 rounded-lg disabled:opacity-60 transition text-sm font-semibold shadow-md shadow-primary/20"
+                        >
+                            Update SIM Limit
                         </button>
                     </form>
                 </div>

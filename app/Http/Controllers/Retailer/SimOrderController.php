@@ -13,7 +13,10 @@ class SimOrderController extends Controller
 {
     public function index(Request $request)
     {
-        $orders = $request->user()
+        $user = $request->user();
+        $simOrderLimit = $user->sim_order_limit ?? 50;
+
+        $orders = $user
             ->simOrders()
             ->filter($request->only(['status', 'from', 'to']))
             ->orderByDesc('created_at')
@@ -30,26 +33,33 @@ class SimOrderController extends Controller
             ]);
 
         $stats = [
-            'total' => $request->user()->simOrders()->count(),
-            'pending' => $request->user()->simOrders()->where('status', SimOrder::STATUS_PENDING)->count(),
-            'dispatched' => $request->user()->simOrders()->where('status', SimOrder::STATUS_DISPATCHED)->count(),
-            'delivered' => $request->user()->simOrders()->where('status', SimOrder::STATUS_DELIVERED)->count(),
+            'total' => $user->simOrders()->count(),
+            'pending' => $user->simOrders()->where('status', SimOrder::STATUS_PENDING)->count(),
+            'dispatched' => $user->simOrders()->where('status', SimOrder::STATUS_DISPATCHED)->count(),
+            'delivered' => $user->simOrders()->where('status', SimOrder::STATUS_DELIVERED)->count(),
+            'sim_order_limit' => $simOrderLimit,
         ];
 
         return Inertia::render('Retailer/SimOrders/Index', [
             'orders' => $orders,
             'stats' => $stats,
             'filters' => $request->only(['status', 'from', 'to']),
+            'simOrderLimit' => $simOrderLimit,
         ]);
     }
 
     public function store(Request $request)
     {
+        $user = $request->user();
+        $maxLimit = $user->sim_order_limit ?? 500;
+
         $data = $request->validate([
-            'quantity' => ['required', 'integer', 'min:1', 'max:10000'],
+            'quantity' => ['required', 'integer', 'min:1', "max:{$maxLimit}"],
+        ], [
+            'quantity.max' => "You cannot order more than {$maxLimit} SIM cards in a single order based on your account limit.",
         ]);
 
-        $order = $request->user()->simOrders()->create([
+        $order = $user->simOrders()->create([
             'quantity' => $data['quantity'],
             'status' => SimOrder::STATUS_PENDING,
         ]);

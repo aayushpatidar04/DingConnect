@@ -26,6 +26,7 @@ class SimOrderStatusUpdatedNotification extends Notification
             SimOrder::STATUS_PROCESSING => 'Processing',
             SimOrder::STATUS_DISPATCHED => 'Dispatched',
             SimOrder::STATUS_DELIVERED => 'Delivered',
+            SimOrder::STATUS_REJECTED => 'Rejected',
         ];
 
         $label = $statusLabels[$this->simOrder->status] ?? ucfirst($this->simOrder->status);

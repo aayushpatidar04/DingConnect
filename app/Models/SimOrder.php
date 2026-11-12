@@ -21,11 +21,14 @@ class SimOrder extends Model
 
     public const STATUS_DELIVERED = 'delivered';
 
+    public const STATUS_REJECTED = 'rejected';
+
     public const STATUSES = [
         self::STATUS_PENDING,
         self::STATUS_PROCESSING,
         self::STATUS_DISPATCHED,
         self::STATUS_DELIVERED,
+        self::STATUS_REJECTED,
     ];
 
     protected $fillable = [

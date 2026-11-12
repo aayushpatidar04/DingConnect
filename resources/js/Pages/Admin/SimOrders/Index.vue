@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { Head, router, useForm } from "@inertiajs/vue3";
 import { computed, reactive, ref, watch } from "vue";
 import AdminLayout from "@/Layouts/AdminLayout.vue";
@@ -74,6 +74,32 @@ function submitUpdate() {
     });
 }
 
+// Retailer Limit Modal management
+const showLimitModal = ref(false);
+const activeRetailer = ref(null);
+
+const limitForm = useForm({
+    sim_order_limit: 500,
+});
+
+function openLimitModal(retailer) {
+    if (!retailer) return;
+    activeRetailer.value = retailer;
+    limitForm.sim_order_limit = retailer.sim_order_limit ?? 500;
+    limitForm.clearErrors();
+    showLimitModal.value = true;
+}
+
+function submitLimit() {
+    limitForm.put(`/admin/sim-orders/retailers/${activeRetailer.value.id}/limit`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            showLimitModal.value = false;
+            activeRetailer.value = null;
+        },
+    });
+}
+
 const statusBadge = (status) => {
     switch (status) {
         case "pending":
@@ -84,6 +110,8 @@ const statusBadge = (status) => {
             return "bg-purple-500/10 text-purple-600 border-purple-500/20";
         case "delivered":
             return "bg-emerald-500/10 text-emerald-600 border-emerald-500/20";
+        case "rejected":
+            return "bg-red-500/10 text-red-600 border-red-500/20";
         default:
             return "bg-surface-3 text-ink-600 border-surface-4";
     }
@@ -101,10 +129,10 @@ const maxDailyQty = computed(() =>
     <div class="space-y-6">
         <div>
             <h1 class="text-3xl font-bold text-ink-900 mb-1">
-                SIM Card Orders Management
+                SIM Card Orders & Retailer Limits
             </h1>
             <p class="text-ink-500">
-                Review and manage retailer SIM card orders, dispatch status, and tracking.
+                Review and manage retailer SIM card orders, dispatch/rejection status, and individual order limits.
             </p>
         </div>
 
@@ -148,36 +176,62 @@ const maxDailyQty = computed(() =>
             </div>
         </div>
 
-        <!-- Analytics Chart Card -->
-        <div class="bg-surface-2 border border-surface-3 rounded-2xl p-6">
-            <h3 class="text-lg font-semibold text-ink-900 mb-4">
-                SIM Ordering Analytics (Last 30 Days)
-            </h3>
-            <div v-if="monthlyData.length === 0" class="text-center py-8 text-ink-400">
+        <!-- Analytics Chart Card with High Contrast UI -->
+        <div class="bg-surface-2 border border-surface-3 rounded-2xl p-6 shadow-sm">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-lg font-bold text-ink-900">
+                        SIM Ordering Analytics (Last 30 Days)
+                    </h3>
+                    <p class="text-xs text-ink-500 mt-0.5">
+                        Daily requested SIM card quantities
+                    </p>
+                </div>
+            </div>
+
+            <div v-if="monthlyData.length === 0" class="text-center py-12 text-ink-400">
                 No orders recorded in the last 30 days.
             </div>
-            <div v-else class="h-48 flex items-end gap-2 pt-6 pb-2 px-2 overflow-x-auto">
-                <div
-                    v-for="item in monthlyData"
-                    :key="item.date"
-                    class="flex-1 flex flex-col items-center group relative min-w-[28px]"
-                >
-                    <!-- Tooltip -->
+            <div v-else class="relative pt-6 pb-8 px-2">
+                <!-- Y-Axis Gridlines -->
+                <div class="absolute inset-0 flex flex-col justify-between pointer-events-none pb-8 pt-6 opacity-20">
+                    <div class="border-b border-ink-500 w-full"></div>
+                    <div class="border-b border-ink-500 w-full"></div>
+                    <div class="border-b border-ink-500 w-full"></div>
+                </div>
+
+                <div class="h-56 flex items-end gap-2 relative z-10 overflow-x-auto">
                     <div
-                        class="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center bg-surface-900 text-ink-100 text-xs rounded-lg py-1 px-2 z-10 whitespace-nowrap shadow-lg"
+                        v-for="item in monthlyData"
+                        :key="item.date"
+                        class="flex-1 flex flex-col items-center group relative min-w-[32px]"
                     >
-                        <span class="font-bold">{{ item.date }}</span>
-                        <span>{{ item.total_quantity }} SIMs ({{ item.total_orders }} orders)</span>
+                        <!-- Tooltip -->
+                        <div
+                            class="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center bg-surface-950 text-ink-100 text-xs rounded-xl py-1.5 px-3 z-20 whitespace-nowrap shadow-xl border border-surface-800"
+                        >
+                            <span class="font-bold text-primary">{{ item.date }}</span>
+                            <span class="text-ink-200">{{ item.total_quantity }} SIMs ({{ item.total_orders }} orders)</span>
+                        </div>
+
+                        <!-- Bar Value Tag on Hover -->
+                        <span class="text-[10px] font-bold text-ink-700 mb-1 opacity-0 group-hover:opacity-100 transition">
+                            {{ item.total_quantity }}
+                        </span>
+
+                        <!-- Bar -->
+                        <div
+                            class="w-full bg-primary hover:bg-primary-hover rounded-t-lg transition-all duration-300 shadow-md shadow-primary/20"
+                            :style="{
+                                height: Math.max(12, (item.total_quantity / maxDailyQty) * 100) + '%',
+                            }"
+                        ></div>
+
+                        <!-- Date Label -->
+                        <span class="text-[11px] font-medium text-ink-700 mt-2 whitespace-nowrap">
+                            {{ item.date.slice(5) }}
+                        </span>
                     </div>
-                    <div
-                        class="w-full bg-primary/80 hover:bg-primary rounded-t transition-all duration-200"
-                        :style="{
-                            height: Math.max(8, (item.total_quantity / maxDailyQty) * 100) + '%',
-                        }"
-                    ></div>
-                    <span class="text-[10px] text-ink-400 mt-2 rotate-[-45deg] sm:rotate-0 truncate">
-                        {{ item.date.slice(5) }}
-                    </span>
                 </div>
             </div>
         </div>
@@ -200,6 +254,7 @@ const maxDailyQty = computed(() =>
                     <option value="processing">Processing</option>
                     <option value="dispatched">Dispatched</option>
                     <option value="delivered">Delivered</option>
+                    <option value="rejected">Rejected</option>
                 </select>
                 <input
                     v-model="filters.from"
@@ -214,7 +269,7 @@ const maxDailyQty = computed(() =>
             </div>
             <button
                 @click="resetFilters"
-                class="px-4 py-2 text-sm text-ink-500 hover:text-ink-900 transition"
+                class="px-4 py-2 text-sm text-ink-600 hover:text-ink-900 font-medium transition"
             >
                 Reset Filters
             </button>
@@ -225,7 +280,7 @@ const maxDailyQty = computed(() =>
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="border-b border-surface-3 bg-surface-3/50 text-xs font-semibold text-ink-500 uppercase tracking-wider">
+                        <tr class="border-b border-surface-3 bg-surface-3/50 text-xs font-semibold text-ink-600 uppercase tracking-wider">
                             <th class="p-4">ID</th>
                             <th class="p-4">Retailer / Shop</th>
                             <th class="p-4">Quantity</th>
@@ -237,7 +292,7 @@ const maxDailyQty = computed(() =>
                     </thead>
                     <tbody class="divide-y divide-surface-3 text-sm text-ink-900">
                         <tr v-if="orders.data.length === 0">
-                            <td colspan="7" class="text-center py-8 text-ink-400">
+                            <td colspan="7" class="text-center py-10 text-ink-500 font-medium">
                                 No SIM orders found.
                             </td>
                         </tr>
@@ -250,7 +305,7 @@ const maxDailyQty = computed(() =>
                                 #{{ order.id }}
                             </td>
                             <td class="p-4">
-                                <div class="font-medium">
+                                <div class="font-medium text-ink-900">
                                     {{ order.retailer?.shop_name || order.retailer?.name }}
                                 </div>
                                 <div class="text-xs text-ink-500">
@@ -268,16 +323,23 @@ const maxDailyQty = computed(() =>
                                     {{ order.status }}
                                 </span>
                             </td>
-                            <td class="p-4 text-xs text-ink-600 max-w-xs truncate">
+                            <td class="p-4 text-xs text-ink-700 max-w-xs truncate">
                                 {{ order.tracking_notes || '-' }}
                             </td>
-                            <td class="p-4 text-xs text-ink-500">
+                            <td class="p-4 text-xs text-ink-600">
                                 {{ order.created_at }}
                             </td>
-                            <td class="p-4 text-right">
+                            <td class="p-4 text-right space-x-2 whitespace-nowrap">
+                                <button
+                                    @click="openLimitModal(order.retailer)"
+                                    class="px-3 py-1.5 bg-surface-3 hover:bg-surface-4 text-ink-800 rounded-xl text-xs font-medium transition"
+                                    title="Edit Retailer SIM Order Limit"
+                                >
+                                    Set Limit
+                                </button>
                                 <button
                                     @click="openUpdateModal(order)"
-                                    class="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-ink-100 rounded-xl text-xs font-medium transition"
+                                    class="px-3 py-1.5 bg-primary/15 text-primary hover:bg-primary hover:text-ink-100 rounded-xl text-xs font-medium transition"
                                 >
                                     Update Status
                                 </button>
@@ -305,7 +367,7 @@ const maxDailyQty = computed(() =>
                             :class="[
                                 link.active
                                     ? 'bg-primary text-ink-100 border-primary'
-                                    : 'text-ink-600 hover:bg-surface-3',
+                                    : 'text-ink-700 hover:bg-surface-3',
                                 !link.url ? 'opacity-40 cursor-not-allowed' : '',
                             ]"
                         />
@@ -334,7 +396,7 @@ const maxDailyQty = computed(() =>
 
                 <form @submit.prevent="submitUpdate" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-semibold text-ink-500 uppercase mb-1">
+                        <label class="block text-xs font-semibold text-ink-600 uppercase mb-1">
                             Status
                         </label>
                         <select
@@ -345,18 +407,19 @@ const maxDailyQty = computed(() =>
                             <option value="processing">Processing</option>
                             <option value="dispatched">Dispatched</option>
                             <option value="delivered">Delivered</option>
+                            <option value="rejected">Rejected (Shortage / Other)</option>
                         </select>
                         <InputError :message="updateForm.errors.status" class="mt-1" />
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-ink-500 uppercase mb-1">
-                            Tracking Notes / Courier Info
+                        <label class="block text-xs font-semibold text-ink-600 uppercase mb-1">
+                            Tracking Notes / Rejection Reason
                         </label>
                         <textarea
                             v-model="updateForm.tracking_notes"
                             rows="3"
-                            placeholder="Enter courier name, tracking number, or dispatch notes..."
+                            placeholder="Enter courier info, tracking number, or reason for rejection..."
                             class="w-full border border-surface-3 rounded-xl p-3 text-sm bg-surface-3 text-ink-900 focus:outline-none focus:border-primary"
                         ></textarea>
                         <InputError :message="updateForm.errors.tracking_notes" class="mt-1" />
@@ -366,7 +429,7 @@ const maxDailyQty = computed(() =>
                         <button
                             type="button"
                             @click="showUpdateModal = false"
-                            class="px-4 py-2 rounded-xl text-sm font-medium text-ink-600 hover:bg-surface-3 transition"
+                            class="px-4 py-2 rounded-xl text-sm font-medium text-ink-700 hover:bg-surface-3 transition"
                         >
                             Cancel
                         </button>
@@ -376,6 +439,63 @@ const maxDailyQty = computed(() =>
                             class="px-5 py-2 bg-primary hover:bg-primary-hover text-ink-100 rounded-xl text-sm font-medium transition shadow-lg shadow-primary/20 disabled:opacity-50"
                         >
                             Save & Notify Retailer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Set Retailer SIM Limit Modal -->
+        <div
+            v-if="showLimitModal"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        >
+            <div class="bg-surface-2 border border-surface-3 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-ink-900">
+                        Set SIM Order Limit for {{ activeRetailer?.shop_name || activeRetailer?.name }}
+                    </h3>
+                    <button
+                        @click="showLimitModal = false"
+                        class="text-ink-400 hover:text-ink-900"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitLimit" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-ink-600 uppercase mb-1">
+                            Max SIM Quantity Per Single Order
+                        </label>
+                        <input
+                            v-model.number="limitForm.sim_order_limit"
+                            type="number"
+                            min="1"
+                            max="100000"
+                            required
+                            class="w-full border border-surface-3 rounded-xl px-4 py-2.5 text-sm bg-surface-3 text-ink-900 focus:outline-none focus:border-primary"
+                        />
+                        <p class="text-xs text-ink-500 mt-1">
+                            Retailer will be restricted from placing single orders exceeding this quantity.
+                        </p>
+                        <InputError :message="limitForm.errors.sim_order_limit" class="mt-1" />
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-2">
+                        <button
+                            type="button"
+                            @click="showLimitModal = false"
+                            class="px-4 py-2 rounded-xl text-sm font-medium text-ink-700 hover:bg-surface-3 transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            :disabled="limitForm.processing"
+                            class="px-5 py-2 bg-primary hover:bg-primary-hover text-ink-100 rounded-xl text-sm font-medium transition shadow-lg shadow-primary/20 disabled:opacity-50"
+                        >
+                            Update Limit
                         </button>
                     </div>
                 </form>

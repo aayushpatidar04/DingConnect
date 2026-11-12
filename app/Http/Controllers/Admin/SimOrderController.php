@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\SimOrder;
+use App\Models\User;
 use App\Notifications\SimOrderStatusUpdatedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -97,5 +98,18 @@ class SimOrderController extends Controller
         $simOrder->user->notify(new SimOrderStatusUpdatedNotification($simOrder));
 
         return back()->with('success', 'Order status updated to '.ucfirst($data['status']).'.');
+    }
+
+    public function updateRetailerLimit(Request $request, User $retailer)
+    {
+        $data = $request->validate([
+            'sim_order_limit' => ['required', 'integer', 'min:1', 'max:100000'],
+        ]);
+
+        $retailer->update([
+            'sim_order_limit' => $data['sim_order_limit'],
+        ]);
+
+        return back()->with('success', "SIM order limit for {$retailer->shop_name} updated to {$data['sim_order_limit']}.");
     }
 }

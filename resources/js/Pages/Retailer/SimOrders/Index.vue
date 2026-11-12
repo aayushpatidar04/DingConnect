@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { Head, useForm } from "@inertiajs/vue3";
 import { ref } from "vue";
 import RetailerLayout from "@/Layouts/RetailerLayout.vue";
@@ -11,6 +11,7 @@ const props = defineProps({
     orders: Object,
     stats: Object,
     filters: Object,
+    simOrderLimit: { type: Number, default: 500 },
 });
 
 const showOrderModal = ref(false);
@@ -39,6 +40,8 @@ const statusBadge = (status) => {
             return "bg-purple-500/10 text-purple-600 border-purple-500/20";
         case "delivered":
             return "bg-emerald-500/10 text-emerald-600 border-emerald-500/20";
+        case "rejected":
+            return "bg-red-500/10 text-red-600 border-red-500/20";
         default:
             return "bg-surface-3 text-ink-600 border-surface-4";
     }
@@ -59,15 +62,20 @@ const statusBadge = (status) => {
                     Place new SIM card orders and track dispatch status and history.
                 </p>
             </div>
-            <button
-                @click="showOrderModal = true"
-                class="px-5 py-2.5 bg-primary hover:bg-primary-hover text-ink-100 font-medium rounded-xl transition shadow-lg shadow-primary/20 flex items-center justify-center space-x-2"
-            >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                <span>Order SIM Cards</span>
-            </button>
+            <div class="flex items-center space-x-3">
+                <span class="text-xs bg-surface-2 border border-surface-3 px-3 py-2 rounded-xl text-ink-700 font-medium">
+                    Max Order Limit: <strong class="text-primary">{{ simOrderLimit }} SIMs</strong>
+                </span>
+                <button
+                    @click="showOrderModal = true"
+                    class="px-5 py-2.5 bg-primary hover:bg-primary-hover text-ink-100 font-medium rounded-xl transition shadow-lg shadow-primary/20 flex items-center justify-center space-x-2"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Order SIM Cards</span>
+                </button>
+            </div>
         </div>
 
         <!-- Stats Grid -->
@@ -103,7 +111,7 @@ const statusBadge = (status) => {
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="border-b border-surface-3 bg-surface-3/50 text-xs font-semibold text-ink-500 uppercase tracking-wider">
+                        <tr class="border-b border-surface-3 bg-surface-3/50 text-xs font-semibold text-ink-600 uppercase tracking-wider">
                             <th class="p-4">Order ID</th>
                             <th class="p-4">Quantity</th>
                             <th class="p-4">Status</th>
@@ -114,7 +122,7 @@ const statusBadge = (status) => {
                     </thead>
                     <tbody class="divide-y divide-surface-3 text-sm text-ink-900">
                         <tr v-if="orders.data.length === 0">
-                            <td colspan="6" class="text-center py-10 text-ink-400">
+                            <td colspan="6" class="text-center py-10 text-ink-500 font-medium">
                                 You haven't placed any SIM card orders yet. Click "Order SIM Cards" to get started.
                             </td>
                         </tr>
@@ -137,13 +145,13 @@ const statusBadge = (status) => {
                                     {{ order.status }}
                                 </span>
                             </td>
-                            <td class="p-4 text-xs text-ink-600 max-w-xs">
+                            <td class="p-4 text-xs text-ink-700 max-w-xs">
                                 {{ order.tracking_notes || 'Awaiting dispatch update...' }}
                             </td>
-                            <td class="p-4 text-xs text-ink-500">
+                            <td class="p-4 text-xs text-ink-600">
                                 {{ order.dispatched_at || '-' }}
                             </td>
-                            <td class="p-4 text-xs text-ink-500">
+                            <td class="p-4 text-xs text-ink-600">
                                 {{ order.created_at }}
                             </td>
                         </tr>
@@ -169,7 +177,7 @@ const statusBadge = (status) => {
                             :class="[
                                 link.active
                                     ? 'bg-primary text-ink-100 border-primary'
-                                    : 'text-ink-600 hover:bg-surface-3',
+                                    : 'text-ink-700 hover:bg-surface-3',
                                 !link.url ? 'opacity-40 cursor-not-allowed' : '',
                             ]"
                         />
@@ -198,19 +206,19 @@ const statusBadge = (status) => {
 
                 <form @submit.prevent="submitOrder" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-semibold text-ink-500 uppercase mb-1">
-                            Quantity of SIM Cards
+                        <label class="block text-xs font-semibold text-ink-600 uppercase mb-1">
+                            Quantity of SIM Cards (Max: {{ simOrderLimit }})
                         </label>
                         <input
                             v-model.number="orderForm.quantity"
                             type="number"
                             min="1"
-                            max="10000"
+                            :max="simOrderLimit"
                             required
                             class="w-full border border-surface-3 rounded-xl px-4 py-2.5 text-sm bg-surface-3 text-ink-900 focus:outline-none focus:border-primary"
                         />
-                        <p class="text-xs text-ink-400 mt-1">
-                            Enter the number of SIM cards you wish to order (e.g. 50, 100, 500).
+                        <p class="text-xs text-ink-500 mt-1">
+                            Your account is permitted to order up to {{ simOrderLimit }} SIM cards per single order.
                         </p>
                         <InputError :message="orderForm.errors.quantity" class="mt-1" />
                     </div>
@@ -219,7 +227,7 @@ const statusBadge = (status) => {
                         <button
                             type="button"
                             @click="showOrderModal = false"
-                            class="px-4 py-2 rounded-xl text-sm font-medium text-ink-600 hover:bg-surface-3 transition"
+                            class="px-4 py-2 rounded-xl text-sm font-medium text-ink-700 hover:bg-surface-3 transition"
                         >
                             Cancel
                         </button>
