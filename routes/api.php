@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\OfferController as WebOfferController;
 use App\Http\Controllers\Admin\RetailerAnalyticsController as WebRetailerAnalyticsController;
 use App\Http\Controllers\Admin\RetailerController as WebRetailerController;
 use App\Http\Controllers\Admin\RetailerLevelController as WebRetailerLevelController;
+use App\Http\Controllers\Admin\SimComparisonController;
 use App\Http\Controllers\Admin\SimOrderController as AdminSimOrderController;
 use App\Http\Controllers\Admin\TransactionController as WebTransactionController;
 use App\Http\Controllers\Api\Admin\OperatorController as AdminOperatorController;
@@ -63,6 +64,10 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
             ->whereNumber('retailer');
         Route::put('/sim-orders/{simOrder}', [AdminSimOrderController::class, 'updateStatus'])
             ->whereNumber('simOrder');
+        Route::get('/sim-comparisons', [SimComparisonController::class, 'index']);
+        Route::post('/sim-comparisons', [SimComparisonController::class, 'store']);
+        Route::get('/sim-comparisons/{simComparison}', [SimComparisonController::class, 'show'])
+            ->whereNumber('simComparison');
 
         Route::get('/retailers/export', [WebRetailerController::class, 'export']);
         Route::apiResource('retailers', AdminRetailerController::class);

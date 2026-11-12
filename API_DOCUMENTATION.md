@@ -2,7 +2,7 @@
 
 This reference describes the application API under `/api`. It is intended for mobile clients and uses Laravel Sanctum personal access tokens.
 
-> **NEW changes — APIs added since baseline `e16d8f6efa17fca87d88a334455c2814b717ae89`:** retailer commissions (`GET /api/retailer/commissions`), offer eligibility (`GET /api/retailer/offers/eligible`), and offers on the retailer dashboard/recharge; admin analytics (`GET /api/admin/analytics`), commission levels/rates, retailer level assignment/history, commission reports/export, offer/redemption management, and **SIM order management** (retailer order/list endpoints and admin order/status/retailer-limit endpoints). SIM order endpoints are detailed in the section marked **NEW — SIM orders** and grouped in a **NEW** Postman folder. The Postman collection includes a saved response-format example for every request.
+> **NEW changes — APIs added since baseline `e16d8f6efa17fca87d88a334455c2814b717ae89`:** retailer commissions (`GET /api/retailer/commissions`), offer eligibility (`GET /api/retailer/offers/eligible`), and offers on the retailer dashboard/recharge; admin analytics (`GET /api/admin/analytics`), commission levels/rates, retailer level assignment/history, commission reports/export, offer/redemption management, SIM order management, and **SIM provider-file comparisons**. SIM comparison routes are detailed in the section marked **NEW — SIM provider-file comparisons** and grouped in a **NEW** Postman folder. The Postman collection includes a saved response-format example for every request.
 >
 > Historical retailer-connection backfill is intentionally an internal Artisan command, not a public API endpoint.
 
@@ -426,12 +426,95 @@ Limit request example:
 
 The admin API's `data.stats` contains `total`, `pending`, `processing`, `dispatched`, `delivered`, and `this_month_quantity`. `data.monthly_data` contains daily rows with `date`, `total_quantity`, and `total_orders`. API timestamps are ISO 8601 strings or `null`. Invalid limits/statuses or quantities beyond the effective retailer limit return `422`; a retailer calling an admin route receives `403`.
 
+## NEW — SIM provider-file comparisons
+
+These admin-only Sanctum endpoints expose the SIM reconciliation and provider-file comparison functionality added to the web application. Send a bearer token for an active admin account and `Accept: application/json`.
+
+| Method and path | Parameters | Result |
+|---|---|---|
+| `GET /api/admin/sim-comparisons` | Optional `page` query parameter | Paginated history (15 per page), summary counts, admin/operator details, and an `operators` array for selecting a provider. Detailed row data is returned by the show endpoint, not included in the list. |
+| `POST /api/admin/sim-comparisons` | Multipart form-data: required `operator_id` (existing operator ID), `reconciliation_month` (`YYYY-MM`), and `report_file` (XLSX, XLS, CSV, or TXT; max 10 MB) | Compares the provider report with successful internal transactions for that operator and month. Returns `201` and the saved comparison. |
+| `GET /api/admin/sim-comparisons/{simComparison}` | Path `simComparison` is the comparison ID | Returns the summary and full `report_data` for matched, missing-from-provider, and additional provider records. |
+
+The uploaded file must pass content-based validation for a supported format, use one of the allowed extensions, and include the case-insensitive headers `Provider`, `Mobile`, `Serial`, and `Country`. For mobile numbers, matching ignores non-digit characters. The API response contains `success`, `message` where applicable, and `data.comparison`. Validation or report-content errors return `422` with Laravel's standard `message` and `errors` object; unexpected processing failures use the framework's standard `500` response.
+
+Example upload response format:
+
+```json
+{
+  "success": true,
+  "message": "SIM connection reconciliation completed successfully.",
+  "data": {
+    "comparison": {
+      "id": 12,
+      "admin_id": 1,
+      "operator_id": 3,
+      "reconciliation_month": "2026-11",
+      "file_name": "provider_report.csv",
+      "provider_name": "GiffGaff",
+      "total_internal": 2,
+      "total_provider": 2,
+      "matched_count": 1,
+      "missing_count": 1,
+      "additional_count": 1,
+      "report_data": {
+        "matched": [
+          {
+            "mobile": "07123456789",
+            "serial": "SN12345",
+            "provider": "GiffGaff",
+            "country": "UK",
+            "retailer": {
+              "id": 42,
+              "name": "Example Retailer",
+              "shop_name": "Example Shop",
+              "email": "retailer@example.com"
+            },
+            "internal_date": "12 Nov 2026 06:20"
+          }
+        ],
+        "missing_from_provider": [
+          {
+            "id": 1001,
+            "mobile": "07987654321",
+            "serial": "TXN-1001",
+            "provider": "GiffGaff",
+            "country": "United Kingdom",
+            "retailer": {
+              "id": 42,
+              "name": "Example Retailer",
+              "shop_name": "Example Shop",
+              "email": "retailer@example.com"
+            },
+            "created_at": "12 Nov 2026 06:15"
+          }
+        ],
+        "additional_in_provider": [
+          {
+            "provider": "GiffGaff",
+            "mobile": "07000111222",
+            "serial": "SN67890",
+            "country": "UK"
+          }
+        ]
+      },
+      "admin": { "id": 1, "name": "Admin User" },
+      "operator": { "id": 3, "name": "GiffGaff" },
+      "created_at": "2026-11-12T06:30:00+00:00",
+      "updated_at": "2026-11-12T06:30:00+00:00"
+    }
+  }
+}
+```
+
+The show response uses the same `data.comparison` shape. The list response uses `data.comparisons` for pagination and `data.operators` for operator choices; each list row omits `report_data`.
+
 ## Provider webhooks
 
 `POST /api/webhooks/ding` and `POST /api/webhooks/stripe` are server-to-server callback routes, not mobile-client endpoints. Configure them with the relevant provider and do not expose provider credentials or use the app user's bearer token. Ding callbacks are queued for processing. Stripe callback processing can return `{"status":"success"}` or `{"status":"ignored"}`.
 
 ## Postman collection
 
-Import [DingConnect API.postman_collection.json](./DingConnect%20API.postman_collection.json). Set the collection's `base_url` to your application origin and paste a token into `token`. The collection automatically saves a token from successful registration or OTP verification responses. It includes auth, public lookup, retailer, admin, SIM order, webhook, upload, and export requests.
+Import [DingConnect API.postman_collection.json](./DingConnect%20API.postman_collection.json). Set the collection's `base_url` to your application origin and paste a token into `token`. The collection automatically saves a token from successful registration or OTP verification responses. It includes auth, public lookup, retailer, admin, SIM order and SIM comparison, webhook, upload, and export requests.
 
 Every request has a saved **Success response format** example under its Postman **Responses** tab. These examples show the JSON keys/wrappers, HTTP success status, and content type. Download endpoints use illustrative file-content placeholders (or a small CSV sample); capture the live response to save the real PDF/XLSX/export file. The examples use dummy values and do not represent live account data.
