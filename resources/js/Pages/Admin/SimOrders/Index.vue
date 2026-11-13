@@ -110,6 +110,19 @@ const priceForm = useForm({
     })),
 });
 
+watch(
+    () => props.simProducts,
+    (newProducts) => {
+        priceForm.products = newProducts.map((product) => ({
+            id: product.id,
+            provider_name: product.provider_name,
+            category: product.category,
+            price: Number(product.price),
+        }));
+    },
+    { deep: true }
+);
+
 const productsByProvider = computed(() => {
     const groups = new Map();
 
