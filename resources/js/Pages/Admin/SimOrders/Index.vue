@@ -12,6 +12,7 @@ const props = defineProps({
     stats: Object,
     filters: Object,
     monthlyData: Array,
+    simProducts: { type: Array, default: () => [] },
 });
 
 const filters = reactive({
@@ -79,13 +80,13 @@ const showLimitModal = ref(false);
 const activeRetailer = ref(null);
 
 const limitForm = useForm({
-    sim_order_limit: 50,
+    sim_order_limit: 500,
 });
 
 function openLimitModal(retailer) {
     if (!retailer) return;
     activeRetailer.value = retailer;
-    limitForm.sim_order_limit = retailer.sim_order_limit ?? 20;
+    limitForm.sim_order_limit = retailer.sim_order_limit ?? 500;
     limitForm.clearErrors();
     showLimitModal.value = true;
 }
@@ -98,6 +99,43 @@ function submitLimit() {
             activeRetailer.value = null;
         },
     });
+}
+
+const priceForm = useForm({
+    products: props.simProducts.map((product) => ({
+        id: product.id,
+        provider_name: product.provider_name,
+        category: product.category,
+        price: Number(product.price),
+    })),
+});
+
+const productsByProvider = computed(() => {
+    const groups = new Map();
+
+    priceForm.products.forEach((product, index) => {
+        if (!groups.has(product.provider_name)) {
+            groups.set(product.provider_name, []);
+        }
+
+        groups.get(product.provider_name).push({ ...product, index });
+    });
+
+    return Array.from(groups, ([providerName, products]) => ({ providerName, products }));
+});
+
+function submitProductPrices() {
+    priceForm.put("/admin/sim-orders/product-prices", {
+        preserveScroll: true,
+    });
+}
+
+function formatCategory(category) {
+    return category.endsWith("GBP") ? `£${category.slice(0, -3)}` : category;
+}
+
+function formatPrice(price) {
+    return Number(price).toFixed(2);
 }
 
 const statusBadge = (status) => {
@@ -179,7 +217,7 @@ const hoveredPoint = ref(null);
                 SIM Card Orders & Retailer Limits
             </h1>
             <p class="text-ink-500">
-                Review and manage retailer SIM card orders, dispatch/rejection status, and individual order limits.
+                Review and manage itemized retailer SIM card orders, dispatch/rejection status, and individual order limits.
             </p>
         </div>
 
@@ -234,8 +272,14 @@ const hoveredPoint = ref(null);
                         Interactive trend of requested SIM card volumes over time
                     </p>
                 </div>
-                <div v-if="hoveredPoint" class="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-xl font-semibold border border-primary/20">
-                    {{ hoveredPoint.date }}: <strong class="text-ink-900">{{ hoveredPoint.total_quantity }} SIMs</strong> ({{ hoveredPoint.total_orders }} orders)
+                <!-- Fixed height status box to prevent any layout shifting -->
+                <div class="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-xl font-semibold border border-primary/20 h-8 flex items-center min-w-[220px] justify-center">
+                    <span v-if="hoveredPoint">
+                        {{ hoveredPoint.date }}: <strong class="text-ink-900">{{ hoveredPoint.total_quantity }} SIMs</strong> ({{ hoveredPoint.total_orders }} ord)
+                    </span>
+                    <span v-else class="text-ink-500 italic">
+                        Hover over any point on graph
+                    </span>
                 </div>
             </div>
 
@@ -267,8 +311,9 @@ const hoveredPoint = ref(null);
                         <circle
                             :cx="pt.x"
                             :cy="pt.y"
-                            r="5"
-                            class="fill-surface-2 stroke-primary transition-all duration-200 cursor-pointer"
+                            :r="hoveredPoint && hoveredPoint.date === pt.date ? 8 : 5"
+                            :class="hoveredPoint && hoveredPoint.date === pt.date ? 'fill-primary stroke-surface-1' : 'fill-surface-2 stroke-primary'"
+                            class="transition-all duration-150 cursor-pointer shadow"
                             stroke-width="3"
                             @mouseenter="hoveredPoint = pt"
                             @mouseleave="hoveredPoint = null"
@@ -276,7 +321,7 @@ const hoveredPoint = ref(null);
                     </g>
                 </svg>
 
-                <!-- X Axis Date Labels (sampled or all) -->
+                <!-- X Axis Date Labels -->
                 <div class="flex justify-between items-center text-[11px] text-ink-500 font-medium px-4 mt-2">
                     <span v-if="monthlyData.length > 0">{{ monthlyData[0].date }}</span>
                     <span v-if="monthlyData.length > 2">{{ monthlyData[Math.floor(monthlyData.length / 2)].date }}</span>
@@ -284,6 +329,65 @@ const hoveredPoint = ref(null);
                 </div>
             </div>
         </div>
+
+        <!-- Editable SIM product prices -->
+        <section class="bg-surface-2 border border-surface-3 rounded-2xl p-6 shadow-sm space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                    <h3 class="text-lg font-bold text-ink-900">SIM & Top-up Product Prices</h3>
+                    <p class="text-sm text-ink-500 mt-1">
+                        Update a product price here. Retailers will see the new price when they place their next order.
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    @click="submitProductPrices"
+                    :disabled="priceForm.processing || simProducts.length === 0"
+                    class="px-5 py-2.5 bg-primary hover:bg-primary-hover text-ink-100 font-medium rounded-xl transition shadow-lg shadow-primary/20 disabled:opacity-50"
+                >
+                    {{ priceForm.processing ? "Saving..." : "Save Prices" }}
+                </button>
+            </div>
+
+            <InputError :message="priceForm.errors.products" />
+
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <div
+                    v-for="group in productsByProvider"
+                    :key="group.providerName"
+                    class="rounded-xl border border-surface-3 bg-surface-3/30 p-4 space-y-3"
+                >
+                    <h4 class="font-bold text-ink-900">{{ group.providerName }}</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div
+                            v-for="product in group.products"
+                            :key="product.id"
+                            class="flex items-center justify-between gap-3 rounded-lg bg-surface-2 border border-surface-3 p-3"
+                        >
+                            <label :for="`sim-product-price-${product.id}`" class="text-sm font-medium text-ink-700">
+                                {{ formatCategory(product.category) }} SIM
+                            </label>
+                            <div class="w-32">
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-ink-500">£</span>
+                                    <input
+                                        :id="`sim-product-price-${product.id}`"
+                                        v-model.number="priceForm.products[product.index].price"
+                                        type="number"
+                                        min="0"
+                                        max="100000"
+                                        step="0.01"
+                                        required
+                                        class="w-full border border-surface-3 rounded-lg pl-7 pr-3 py-2 text-sm bg-surface-2 text-ink-900 focus:outline-none focus:border-primary text-right font-semibold"
+                                    />
+                                </div>
+                                <InputError :message="priceForm.errors[`products.${product.index}.price`]" class="mt-1" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <!-- Filters -->
         <div class="bg-surface-2 border border-surface-3 rounded-2xl p-4 flex flex-wrap gap-4 items-center justify-between">
@@ -332,7 +436,7 @@ const hoveredPoint = ref(null);
                         <tr class="border-b border-surface-3 bg-surface-3/50 text-xs font-semibold text-ink-600 uppercase tracking-wider">
                             <th class="p-4">ID</th>
                             <th class="p-4">Retailer / Shop</th>
-                            <th class="p-4">Quantity</th>
+                            <th class="p-4">Itemized Breakdown</th>
                             <th class="p-4">Status</th>
                             <th class="p-4">Tracking & Notes</th>
                             <th class="p-4">Ordered At</th>
@@ -361,8 +465,21 @@ const hoveredPoint = ref(null);
                                     {{ order.retailer?.email }} | {{ order.retailer?.phone }}
                                 </div>
                             </td>
-                            <td class="p-4 font-bold">
-                                {{ order.quantity }} SIMs
+                            <td class="p-4">
+                                <div class="font-bold text-ink-900 mb-1">{{ order.quantity }} Total SIMs</div>
+                                <div class="space-y-1">
+                                    <div
+                                        v-for="(item, idx) in order.items"
+                                        :key="idx"
+                                        class="text-xs inline-flex items-center bg-surface-3 px-2 py-0.5 rounded mr-1 mb-1 font-medium text-ink-800"
+                                    >
+                                        <span class="font-bold mr-1">{{ item.provider_name }}</span>
+                                        <span class="text-primary bg-primary/10 px-1 py-0.5 rounded mr-1">{{ formatCategory(item.category) }}</span>
+                                        <span>({{ item.quantity }})</span>
+                                        <span v-if="item.unit_price !== null" class="ml-1 text-ink-500">@ £{{ formatPrice(item.unit_price) }}</span>
+                                    </div>
+                                    <span v-if="!order.items || order.items.length === 0" class="text-xs text-ink-400">–</span>
+                                </div>
                             </td>
                             <td class="p-4">
                                 <span

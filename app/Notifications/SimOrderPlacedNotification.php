@@ -24,12 +24,21 @@ class SimOrderPlacedNotification extends Notification
     {
         $retailer = $this->simOrder->user;
 
-        return (new MailMessage)
+        $mail = (new MailMessage)
             ->subject('New SIM Card Order #'.$this->simOrder->id)
             ->greeting('New SIM Card Order Received')
             ->line("Retailer **{$retailer->shop_name}** ({$retailer->name}) has placed a new SIM card order.")
             ->line("**Order ID:** #{$this->simOrder->id}")
-            ->line("**Quantity:** {$this->simOrder->quantity} SIM cards")
+            ->line("**Total Quantity:** {$this->simOrder->quantity} SIM cards")
+            ->line('Itemized Breakdown:');
+
+        foreach ($this->simOrder->items()->with(['operator', 'product'])->get() as $item) {
+            $providerName = $item->product?->provider_name ?? $item->operator?->name ?? 'Unknown network';
+            $unitPrice = $item->unit_price === null ? '' : " at £{$item->unit_price} each";
+            $mail->line("- **{$providerName}** ({$item->category}): {$item->quantity} SIMs{$unitPrice}");
+        }
+
+        return $mail
             ->action('View Order', url('/admin/sim-orders'))
             ->line('Please review and process this order.');
     }

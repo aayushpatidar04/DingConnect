@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\SimOrder;
+use App\Models\SimOrderProduct;
 use App\Models\User;
 use App\Notifications\SimOrderPlacedNotification;
 use App\Notifications\SimOrderStatusUpdatedNotification;
@@ -18,7 +19,11 @@ class SimOrderTest extends TestCase
     {
         Notification::fake();
 
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
+        $product = SimOrderProduct::where('provider_name', 'EE')
+            ->where('category', '10GBP')
+            ->firstOrFail();
+
         $retailer = User::factory()->create([
             'role' => 'retailer',
             'kyc_status' => 'approved',
@@ -27,7 +32,9 @@ class SimOrderTest extends TestCase
         ]);
 
         $response = $this->actingAs($retailer)->post('/retailer/sim-orders', [
-            'quantity' => 100,
+            'items' => [
+                ['sim_order_product_id' => $product->id, 'quantity' => 100],
+            ],
         ]);
 
         $response->assertRedirect();
@@ -36,12 +43,22 @@ class SimOrderTest extends TestCase
             'quantity' => 100,
             'status' => 'pending',
         ]);
+        $this->assertDatabaseHas('sim_order_items', [
+            'sim_order_product_id' => $product->id,
+            'category' => '10GBP',
+            'quantity' => 100,
+            'unit_price' => '10.00',
+        ]);
 
         Notification::assertSentTo($admin, SimOrderPlacedNotification::class);
     }
 
     public function test_retailer_cannot_exceed_sim_order_limit(): void
     {
+        $product = SimOrderProduct::where('provider_name', 'EE')
+            ->where('category', '10GBP')
+            ->firstOrFail();
+
         $retailer = User::factory()->create([
             'role' => 'retailer',
             'kyc_status' => 'approved',
@@ -50,10 +67,12 @@ class SimOrderTest extends TestCase
         ]);
 
         $response = $this->actingAs($retailer)->post('/retailer/sim-orders', [
-            'quantity' => 100,
+            'items' => [
+                ['sim_order_product_id' => $product->id, 'quantity' => 100],
+            ],
         ]);
 
-        $response->assertSessionHasErrors('quantity');
+        $response->assertSessionHasErrors('items');
         $this->assertDatabaseCount('sim_orders', 0);
     }
 
@@ -61,7 +80,7 @@ class SimOrderTest extends TestCase
     {
         Notification::fake();
 
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
         $retailer = User::factory()->create([
             'role' => 'retailer',
             'kyc_status' => 'approved',
@@ -89,7 +108,7 @@ class SimOrderTest extends TestCase
 
     public function test_admin_can_update_retailer_sim_order_limit(): void
     {
-        $admin = User::factory()->create(['role' => 'admin']);
+        $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
         $retailer = User::factory()->create([
             'role' => 'retailer',
             'sim_order_limit' => 50,
@@ -102,5 +121,53 @@ class SimOrderTest extends TestCase
         $response->assertRedirect();
         $retailer->refresh();
         $this->assertEquals(300, $retailer->sim_order_limit);
+    }
+
+    public function test_admin_can_update_sim_product_prices_seen_by_retailers(): void
+    {
+        Notification::fake();
+
+        $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
+        $retailer = User::factory()->create([
+            'role' => 'retailer',
+            'kyc_status' => 'approved',
+            'is_active' => true,
+        ]);
+        $product = SimOrderProduct::where('provider_name', 'Vodafone')
+            ->where('category', '10GBP')
+            ->firstOrFail();
+        $productIndex = SimOrderProduct::orderBy('id')->pluck('id')->search($product->id);
+
+        $response = $this->actingAs($admin)->put('/admin/sim-orders/product-prices', [
+            'products' => [
+                ['id' => $product->id, 'price' => 12],
+            ],
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('sim_order_products', [
+            'id' => $product->id,
+            'price' => '12.00',
+        ]);
+
+        $this->actingAs($retailer)
+            ->get('/retailer/sim-orders')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Retailer/SimOrders/Index')
+                ->where("simProducts.{$productIndex}.price", '12.00')
+            );
+
+        $this->actingAs($retailer)->post('/retailer/sim-orders', [
+            'items' => [
+                ['sim_order_product_id' => $product->id, 'quantity' => 1],
+            ],
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('sim_order_items', [
+            'sim_order_product_id' => $product->id,
+            'unit_price' => '12.00',
+            'quantity' => 1,
+        ]);
     }
 }

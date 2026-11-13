@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\SimOrder;
+use App\Models\SimOrderProduct;
 use App\Models\User;
 use App\Notifications\SimOrderStatusUpdatedNotification;
 use Illuminate\Http\JsonResponse;
@@ -27,7 +28,13 @@ class SimOrderController extends Controller
             ])
             : $request->only(['search', 'status', 'from', 'to']);
 
-        $orders = SimOrder::with('user:id,name,shop_name,email,phone,sim_order_limit')
+        $orderQuery = SimOrder::with('user:id,name,shop_name,email,phone,sim_order_limit');
+
+        if (! $request->is('api/*')) {
+            $orderQuery->with(['items.operator:id,name', 'items.product']);
+        }
+
+        $orders = $orderQuery
             ->filter($filters)
             ->orderByDesc('created_at')
             ->paginate(15)
@@ -39,6 +46,12 @@ class SimOrderController extends Controller
                     'quantity' => $order->quantity,
                     'status' => $order->status,
                     'tracking_notes' => $order->tracking_notes,
+                    'items' => $order->items->map(fn ($item) => [
+                        'provider_name' => $item->product?->provider_name ?? $item->operator?->name,
+                        'category' => $item->category,
+                        'quantity' => $item->quantity,
+                        'unit_price' => $item->unit_price,
+                    ]),
                     'dispatched_at' => $order->dispatched_at?->format('d M Y H:i'),
                     'delivered_at' => $order->delivered_at?->format('d M Y H:i'),
                     'created_at' => $order->created_at->format('d M Y H:i'),
@@ -96,6 +109,7 @@ class SimOrderController extends Controller
             'stats' => $stats,
             'filters' => $filters,
             'monthlyData' => $monthlyData,
+            'simProducts' => SimOrderProduct::orderBy('id')->get(['id', 'provider_name', 'category', 'price']),
         ]);
     }
 

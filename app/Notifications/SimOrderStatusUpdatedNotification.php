@@ -35,7 +35,14 @@ class SimOrderStatusUpdatedNotification extends Notification
             ->greeting('SIM Card Order Update')
             ->line("Your SIM card order **#{$this->simOrder->id}** has been updated.")
             ->line("**Status:** {$label}")
-            ->line("**Quantity:** {$this->simOrder->quantity} SIM cards");
+            ->line("**Total Quantity:** {$this->simOrder->quantity} SIM cards")
+            ->line('Itemized Breakdown:');
+
+        foreach ($this->simOrder->items()->with(['operator', 'product'])->get() as $item) {
+            $providerName = $item->product?->provider_name ?? $item->operator?->name ?? 'Unknown network';
+            $unitPrice = $item->unit_price === null ? '' : " at £{$item->unit_price} each";
+            $mail->line("- **{$providerName}** ({$item->category}): {$item->quantity} SIMs{$unitPrice}");
+        }
 
         if ($this->simOrder->tracking_notes) {
             $mail->line("**Notes:** {$this->simOrder->tracking_notes}");

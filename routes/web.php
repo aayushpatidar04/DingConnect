@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\RetailerLevelController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Admin\SimComparisonController;
 use App\Http\Controllers\Admin\SimOrderController as AdminSimOrderController;
+use App\Http\Controllers\Admin\SimOrderProductController as AdminSimOrderProductController;
 use App\Http\Controllers\Admin\TransactionController as AdminTransactionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\AuthController;
@@ -142,6 +143,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
 
     Route::get('sim-orders', [AdminSimOrderController::class, 'index'])->name('sim-orders.index');
     Route::put('sim-orders/retailer-limit/{retailer}', [AdminSimOrderController::class, 'updateRetailerLimit'])->name('sim-orders.retailer-limit');
+    Route::put('sim-orders/product-prices', [AdminSimOrderProductController::class, 'update'])->name('sim-orders.product-prices.update');
     Route::put('sim-orders/{simOrder}', [AdminSimOrderController::class, 'updateStatus'])->name('sim-orders.update-status');
 
     Route::get('sim-comparisons', [SimComparisonController::class, 'index'])->name('sim-comparisons.index');
