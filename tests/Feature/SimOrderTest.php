@@ -170,4 +170,31 @@ class SimOrderTest extends TestCase
             'quantity' => 1,
         ]);
     }
+
+    public function test_admin_can_add_and_delete_sim_products(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
+
+        $response = $this->actingAs($admin)->post('/admin/sim-orders/products', [
+            'provider_name' => 'CustomNetwork',
+            'category' => '50GBP',
+            'price' => 45.00,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('sim_order_products', [
+            'provider_name' => 'CustomNetwork',
+            'category' => '50GBP',
+            'price' => '45.00',
+        ]);
+
+        $product = SimOrderProduct::where('provider_name', 'CustomNetwork')->firstOrFail();
+
+        $this->actingAs($admin)->delete("/admin/sim-orders/products/{$product->id}")
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('sim_order_products', [
+            'id' => $product->id,
+        ]);
+    }
 }

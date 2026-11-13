@@ -143,7 +143,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
 
     Route::get('sim-orders', [AdminSimOrderController::class, 'index'])->name('sim-orders.index');
     Route::put('sim-orders/retailer-limit/{retailer}', [AdminSimOrderController::class, 'updateRetailerLimit'])->name('sim-orders.retailer-limit');
+    Route::post('sim-orders/products', [AdminSimOrderProductController::class, 'store'])->name('sim-orders.products.store');
     Route::put('sim-orders/product-prices', [AdminSimOrderProductController::class, 'update'])->name('sim-orders.product-prices.update');
+    Route::delete('sim-orders/products/{simOrderProduct}', [AdminSimOrderProductController::class, 'destroy'])->name('sim-orders.products.destroy');
     Route::put('sim-orders/{simOrder}', [AdminSimOrderController::class, 'updateStatus'])->name('sim-orders.update-status');
 
     Route::get('sim-comparisons', [SimComparisonController::class, 'index'])->name('sim-comparisons.index');

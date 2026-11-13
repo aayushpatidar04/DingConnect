@@ -130,6 +130,31 @@ function submitProductPrices() {
     });
 }
 
+const showAddProductModal = ref(false);
+const addProductForm = useForm({
+    provider_name: "",
+    category: "",
+    price: 10.00,
+});
+
+function submitNewProduct() {
+    addProductForm.post("/admin/sim-orders/products", {
+        preserveScroll: true,
+        onSuccess: () => {
+            showAddProductModal.value = false;
+            addProductForm.reset();
+        },
+    });
+}
+
+function deleteProduct(productId) {
+    if (confirm("Are you sure you want to delete this SIM product?")) {
+        router.delete(`/admin/sim-orders/products/${productId}`, {
+            preserveScroll: true,
+        });
+    }
+}
+
 function formatCategory(category) {
     return category.endsWith("GBP") ? `£${category.slice(0, -3)}` : category;
 }
@@ -336,17 +361,26 @@ const hoveredPoint = ref(null);
                 <div>
                     <h3 class="text-lg font-bold text-ink-900">SIM & Top-up Product Prices</h3>
                     <p class="text-sm text-ink-500 mt-1">
-                        Update a product price here. Retailers will see the new price when they place their next order.
+                        Update product prices or add new SIM products dynamically. Retailers will see them immediately.
                     </p>
                 </div>
-                <button
-                    type="button"
-                    @click="submitProductPrices"
-                    :disabled="priceForm.processing || simProducts.length === 0"
-                    class="px-5 py-2.5 bg-primary hover:bg-primary-hover text-ink-100 font-medium rounded-xl transition shadow-lg shadow-primary/20 disabled:opacity-50"
-                >
-                    {{ priceForm.processing ? "Saving..." : "Save Prices" }}
-                </button>
+                <div class="flex items-center space-x-3">
+                    <button
+                        type="button"
+                        @click="showAddProductModal = true"
+                        class="px-4 py-2.5 bg-surface-3 hover:bg-surface-4 text-ink-900 font-medium rounded-xl transition border border-surface-4 text-sm flex items-center space-x-1.5"
+                    >
+                        <span>+ Add SIM Product</span>
+                    </button>
+                    <button
+                        type="button"
+                        @click="submitProductPrices"
+                        :disabled="priceForm.processing || simProducts.length === 0"
+                        class="px-5 py-2.5 bg-primary hover:bg-primary-hover text-ink-100 font-medium rounded-xl transition shadow-lg shadow-primary/20 disabled:opacity-50 text-sm"
+                    >
+                        {{ priceForm.processing ? "Saving..." : "Save Prices" }}
+                    </button>
+                </div>
             </div>
 
             <InputError :message="priceForm.errors.products" />
@@ -364,9 +398,19 @@ const hoveredPoint = ref(null);
                             :key="product.id"
                             class="flex items-center justify-between gap-3 rounded-lg bg-surface-2 border border-surface-3 p-3"
                         >
-                            <label :for="`sim-product-price-${product.id}`" class="text-sm font-medium text-ink-700">
-                                {{ formatCategory(product.category) }} SIM
-                            </label>
+                            <div class="flex items-center justify-between space-x-2">
+                                <label :for="`sim-product-price-${product.id}`" class="text-sm font-medium text-ink-700">
+                                    {{ formatCategory(product.category) }} SIM
+                                </label>
+                                <button
+                                    type="button"
+                                    @click="deleteProduct(product.id)"
+                                    class="text-xs text-red-500 hover:text-red-700 p-1"
+                                    title="Delete product"
+                                >
+                                    ✕
+                                </button>
+                            </div>
                             <div class="w-32">
                                 <div class="relative">
                                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-ink-500">£</span>
@@ -662,6 +706,89 @@ const hoveredPoint = ref(null);
                             class="px-5 py-2 bg-primary hover:bg-primary-hover text-ink-100 rounded-xl text-sm font-medium transition shadow-lg shadow-primary/20 disabled:opacity-50"
                         >
                             Update Limit
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add SIM Product Modal -->
+        <div
+            v-if="showAddProductModal"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        >
+            <div class="bg-surface-2 border border-surface-3 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-ink-900">
+                        Add New SIM Product
+                    </h3>
+                    <button
+                        @click="showAddProductModal = false"
+                        class="text-ink-400 hover:text-ink-900"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitNewProduct" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-ink-600 uppercase mb-1">
+                            Provider Name
+                        </label>
+                        <input
+                            v-model="addProductForm.provider_name"
+                            type="text"
+                            placeholder="e.g. EE, Vodafone, Lebara, Lyca Mobile"
+                            required
+                            class="w-full border border-surface-3 rounded-xl px-4 py-2.5 text-sm bg-surface-3 text-ink-900 focus:outline-none focus:border-primary"
+                        />
+                        <InputError :message="addProductForm.errors.provider_name" class="mt-1" />
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-ink-600 uppercase mb-1">
+                            Category / Tier
+                        </label>
+                        <input
+                            v-model="addProductForm.category"
+                            type="text"
+                            placeholder="e.g. 10GBP, 50GBP, Standard"
+                            required
+                            class="w-full border border-surface-3 rounded-xl px-4 py-2.5 text-sm bg-surface-3 text-ink-900 focus:outline-none focus:border-primary"
+                        />
+                        <InputError :message="addProductForm.errors.category" class="mt-1" />
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-ink-600 uppercase mb-1">
+                            Price (£)
+                        </label>
+                        <input
+                            v-model.number="addProductForm.price"
+                            type="number"
+                            min="0"
+                            max="100000"
+                            step="0.01"
+                            required
+                            class="w-full border border-surface-3 rounded-xl px-4 py-2.5 text-sm bg-surface-3 text-ink-900 focus:outline-none focus:border-primary font-semibold"
+                        />
+                        <InputError :message="addProductForm.errors.price" class="mt-1" />
+                    </div>
+
+                    <div class="flex justify-end space-x-3 pt-2">
+                        <button
+                            type="button"
+                            @click="showAddProductModal = false"
+                            class="px-4 py-2 rounded-xl text-sm font-medium text-ink-700 hover:bg-surface-3 transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            :disabled="addProductForm.processing"
+                            class="px-5 py-2 bg-primary hover:bg-primary-hover text-ink-100 rounded-xl text-sm font-medium transition shadow-lg shadow-primary/20 disabled:opacity-50"
+                        >
+                            Add Product
                         </button>
                     </div>
                 </form>
