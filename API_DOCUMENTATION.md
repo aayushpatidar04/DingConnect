@@ -2,7 +2,7 @@
 
 This reference describes the application API under `/api`. It is intended for mobile clients and uses Laravel Sanctum personal access tokens.
 
-> **NEW changes — APIs added since baseline `e16d8f6efa17fca87d88a334455c2814b717ae89`:** retailer commissions (`GET /api/retailer/commissions`), offer eligibility (`GET /api/retailer/offers/eligible`), and offers on the retailer dashboard/recharge; admin analytics (`GET /api/admin/analytics`), commission levels/rates, retailer level assignment/history, commission reports/export, offer/redemption management, itemized SIM orders with dynamic product management and bulk retailer limits (default limit 500), and **SIM provider-file comparisons** (multiple providers and normalized matching). These newest changes are marked in their sections below and in the Postman collection. Each request includes a saved response-format example.
+> **NEW changes — APIs added since baseline `e16d8f6efa17fca87d88a334455c2814b717ae89`:** retailer commissions (`GET /api/retailer/commissions`), cashback offer eligibility and dashboard/recharge integration; retailer network offer and poster feeds; admin analytics, commission levels/rates and reports, retailer level assignment/history, cashback offer/redemption management, network plan and poster management; itemized SIM orders with dynamic product management and bulk retailer limits (default limit 500); and **SIM provider-file comparisons** (multiple providers and normalized matching). These newest changes are marked in their sections below and in the Postman collection. Each request includes a saved response-format example.
 >
 > Historical retailer-connection backfill is intentionally an internal Artisan command, not a public API endpoint.
 
@@ -365,6 +365,82 @@ These routes require an active admin account.
 | `GET /api/admin/offers/{offer}/redemptions` | Returns up to 100 most recent redemption rows for the offer. |
 
 Offer JSON fields: required `title`, `type` (`percent` or `fixed`), `value`, `expires_at`, and `audience` (`all` or `selected`); optional `description`, `max_cashback`, `min_amount`, `max_amount`, `starts_at`, `per_retailer_limit`, `total_limit`, `is_active`, `operator_ids`, and `retailer_ids`. Percentage values cannot exceed 100. A selected audience requires at least one retailer ID. The API reuses the same eligibility, reservation, and settlement rules as web recharge.
+
+## NEW — Network offer feed and poster/advertisement feeds
+
+These are separate from cashback offers. The network-offer feed reads active operator plans, while poster feeds contain retailer-targeted announcements, advertisements, and greetings. Retailer routes require an active retailer account and approved KYC. Admin management routes require an active admin account. Send `Accept: application/json`; poster create/update requests use multipart form-data for image uploads.
+
+### Retailer feeds
+
+| Method and path | Parameters | Result |
+|---|---|---|
+| `GET /api/retailer/network-offers` | None | Active networks that have at least one active plan, including each network's country and active plans. |
+| `GET /api/retailer/posters` | None | Live posters visible to the authenticated retailer based on `audience` (`all`, their assigned commission level, or an explicit retailer assignment). |
+
+Network-offer response shape:
+
+```json
+{
+  "success": true,
+  "data": {
+    "networks": [
+      {
+        "id": 12,
+        "name": "Vodafone",
+        "logo_url": "https://example.com/storage/operators/vodafone.png",
+        "country_name": "United Kingdom",
+        "country_iso": "GB",
+        "plans": [
+          {
+            "id": 3,
+            "price": 10,
+            "currency": "GBP",
+            "benefits": ["40 GB data"]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Poster feed rows contain `id`, `title`, `description`, `image_url`, `link_url`, `poster_type` (`advertisement`, `festive_greeting`, or `announcement`), `expires_at` (ISO 8601 or `null`), and `status`. Only active, started, unexpired posters matching the retailer's audience are returned.
+
+### Admin network plan management
+
+| Method and path | Request / result |
+|---|---|
+| `GET /api/admin/network-plans` | Returns all plans and operator options in `data.plans` and `data.operators`. |
+| `POST /api/admin/network-plans` | JSON plan fields below; creates a plan and returns `201`. |
+| `PUT /api/admin/network-plans/{operator_plan}` | Same required fields as create; updates the plan. |
+| `DELETE /api/admin/network-plans/{operator_plan}` | Deletes the plan and returns a success message. |
+
+Plan create/update JSON requires `operator_id` (existing operator), `price` (numeric and greater than zero), `currency` (three uppercase letters), `benefits` (1–20 strings, max 255 characters each), and boolean `is_active`. A price must be unique for its operator and currency. The list response summarizes each plan with `id`, `operator_id`, operator name, country ISO, `logo_url`, `price`, `currency`, `benefits`, and `is_active`. Create/update return `data` containing the saved plan and its operator relation.
+
+Example request:
+
+```json
+{
+  "operator_id": 12,
+  "price": 10,
+  "currency": "GBP",
+  "benefits": ["40 GB data", "Unlimited calls"],
+  "is_active": true
+}
+```
+
+### Admin poster management
+
+| Method and path | Request / result |
+|---|---|
+| `GET /api/admin/posters` | Returns all posters plus active commission-level and retailer options. |
+| `POST /api/admin/posters` | Multipart form-data described below; creates a poster and returns `201`. |
+| `PUT /api/admin/posters/{poster}` | Multipart form-data with the same required fields; `image` is optional and replaces the current image when supplied. |
+| `DELETE /api/admin/posters/{poster}` | Deletes the poster and its stored image; returns a success message. |
+
+Create/update fields: required `title` (max 150), `poster_type` (`advertisement`, `festive_greeting`, `announcement`), and `audience` (`all`, `levels`, `retailers`); `image` is required on create and must be JPEG, PNG, JPG, or WebP up to 4 MB; optional `description` (max 1000), valid `link_url` (max 500), `starts_at`, `expires_at`, and boolean `is_active` (send `1` or `0` in multipart form-data). For `audience=levels`, provide at least one existing `level_ids[]`; for `audience=retailers`, provide at least one existing `retailer_ids[]`. The audience ID arrays are validated even when supplied for other audience types.
+
+The admin list formats posters with `image_url`, `level_ids`, `level_names`, `retailer_ids`, schedule, active flag, status, and file size. Create/update return the saved poster model with `image_path` and its `levels` and `retailers` relations (not the list's `image_url` presentation field). On upload, send multipart form-data and let the client set the multipart `Content-Type` boundary. For reliable PHP multipart parsing on updates, send the form as `POST` with `_method=PUT` (as shown in Postman); Laravel routes it to the documented `PUT` endpoint. The retailer feed returns the presentation fields described above.
 
 ## NEW — Itemized SIM orders, dynamic products, and retailer order limits
 

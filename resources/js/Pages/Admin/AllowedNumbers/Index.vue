@@ -192,7 +192,7 @@ const labelClass = "block text-xs text-ink-500 uppercase tracking-wider mb-1";
                         Mobile and serial pairs authorized for ReadReceipt PIN
                         recharges
                     </p>
-                    <p>Total uploaded files: {{ folders.length }}</p>
+                    <p>Total uploaded files: {{ folders?.length ?? 0 }}</p>
                 </div>
                 <button
                     @click="openAdd"

@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\CommissionLevelController as WebCommissionLevelCo
 use App\Http\Controllers\Admin\CommissionRateController as WebCommissionRateController;
 use App\Http\Controllers\Admin\CommissionReportController as WebCommissionReportController;
 use App\Http\Controllers\Admin\OfferController as WebOfferController;
+use App\Http\Controllers\Admin\OperatorPlanController as AdminOperatorPlanController;
+use App\Http\Controllers\Admin\PosterController as AdminPosterController;
 use App\Http\Controllers\Admin\RetailerAnalyticsController as WebRetailerAnalyticsController;
 use App\Http\Controllers\Admin\RetailerController as WebRetailerController;
 use App\Http\Controllers\Admin\RetailerLevelController as WebRetailerLevelController;
@@ -25,8 +27,10 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\Retailer\WalletController as RetailerWalletController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\WebhookController;
+use App\Http\Controllers\NetworkOfferController;
 use App\Http\Controllers\Retailer\CommissionController as WebRetailerCommissionController;
 use App\Http\Controllers\Retailer\OfferController as WebRetailerOfferController;
+use App\Http\Controllers\Retailer\PosterController as RetailerPosterController;
 use App\Http\Controllers\Retailer\RechargeController;
 use App\Http\Controllers\Retailer\SimOrderController as RetailerSimOrderController;
 use App\Http\Controllers\Retailer\TransactionController as RetailerTransactionController;
@@ -115,6 +119,16 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         Route::put('/offers/{offer}', [WebOfferController::class, 'update'])->whereNumber('offer');
         Route::delete('/offers/{offer}', [WebOfferController::class, 'destroy'])->whereNumber('offer');
 
+        Route::get('/posters', [AdminPosterController::class, 'index']);
+        Route::post('/posters', [AdminPosterController::class, 'store']);
+        Route::put('/posters/{poster}', [AdminPosterController::class, 'update'])->whereNumber('poster');
+        Route::delete('/posters/{poster}', [AdminPosterController::class, 'destroy'])->whereNumber('poster');
+
+        Route::get('/network-plans', [AdminOperatorPlanController::class, 'index']);
+        Route::post('/network-plans', [AdminOperatorPlanController::class, 'store']);
+        Route::put('/network-plans/{operator_plan}', [AdminOperatorPlanController::class, 'update'])->whereNumber('operator_plan');
+        Route::delete('/network-plans/{operator_plan}', [AdminOperatorPlanController::class, 'destroy'])->whereNumber('operator_plan');
+
         Route::get('/allowed-numbers/sample', [AdminAllowedNumberController::class, 'downloadSample']);
         Route::post('/allowed-numbers/import-file', [AdminAllowedNumberController::class, 'importFile']);
         Route::get('/allowed-numbers/files/{allowedNumberFile}/download', [AdminAllowedNumberController::class, 'downloadFile']);
@@ -126,6 +140,8 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         Route::get('/dashboard', [DashboardController::class, 'retailer']);
         Route::get('/commissions', [WebRetailerCommissionController::class, 'index']);
         Route::get('/offers/eligible', [WebRetailerOfferController::class, 'eligible']);
+        Route::get('/posters', [RetailerPosterController::class, 'index']);
+        Route::get('/network-offers', [NetworkOfferController::class, 'index']);
         Route::get('/sim-orders', [RetailerSimOrderController::class, 'index']);
         Route::post('/sim-orders', [RetailerSimOrderController::class, 'store']);
         Route::get('/profile', [ProfileController::class, 'show']);

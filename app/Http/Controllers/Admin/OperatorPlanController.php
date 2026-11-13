@@ -6,15 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Operator;
 use App\Models\OperatorPlan;
 use Illuminate\Database\Query\Builder as QueryBuilder;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
-use Inertia\Response;
 
 class OperatorPlanController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request)
     {
         $plans = OperatorPlan::query()
             ->with('operator.country:id,iso_code')
@@ -43,28 +41,46 @@ class OperatorPlanController extends Controller
                 'label' => $operator->name.($operator->country ? " ({$operator->country->iso_code})" : ''),
             ]);
 
-        return Inertia::render('Admin/NetworkPlans/Index', compact('plans', 'operators'));
+        $data = compact('plans', 'operators');
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => $data]);
+        }
+
+        return Inertia::render('Admin/NetworkPlans/Index', $data);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request)
     {
         $data = $this->validated($request);
 
-        OperatorPlan::query()->create($data);
+        $plan = OperatorPlan::query()->create($data);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => $plan->load('operator.country:id,iso_code')], 201);
+        }
 
         return back()->with('success', 'Network plan created.');
     }
 
-    public function update(Request $request, OperatorPlan $operatorPlan): RedirectResponse
+    public function update(Request $request, OperatorPlan $operatorPlan)
     {
         $operatorPlan->update($this->validated($request, $operatorPlan));
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => $operatorPlan->fresh()->load('operator.country:id,iso_code')]);
+        }
 
         return back()->with('success', 'Network plan updated.');
     }
 
-    public function destroy(OperatorPlan $operatorPlan): RedirectResponse
+    public function destroy(Request $request, OperatorPlan $operatorPlan)
     {
         $operatorPlan->delete();
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Network plan deleted.']);
+        }
 
         return back()->with('success', 'Network plan deleted.');
     }

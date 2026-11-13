@@ -85,6 +85,16 @@
       "key": "sim_order_product_id",
       "value": "1",
       "type": "string"
+    },
+    {
+      "key": "network_plan_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "poster_id",
+      "value": "1",
+      "type": "string"
     }
   ],
   "item": [
@@ -4925,6 +4935,644 @@
               ],
               "cookie": [],
               "body": "{\n  \"success\": true,\n  \"data\": {\n    \"comparison\": {\n      \"id\": 12,\n      \"admin_id\": 1,\n      \"operator_id\": 3,\n      \"reconciliation_month\": \"2026-11\",\n      \"file_name\": \"provider_report.csv\",\n      \"provider_name\": \"GiffGaff, Three\",\n      \"total_internal\": 2,\n      \"total_provider\": 2,\n      \"matched_count\": 1,\n      \"missing_count\": 1,\n      \"additional_count\": 1,\n      \"report_data\": {\n        \"matched\": [\n          {\n            \"mobile\": \"07123456789\",\n            \"serial\": \"SN12345\",\n            \"provider\": \"GiffGaff\",\n            \"country\": \"UK\",\n            \"retailer\": {\n              \"id\": 42,\n              \"name\": \"Example Retailer\",\n              \"shop_name\": \"Example Shop\",\n              \"email\": \"retailer@example.com\"\n            },\n            \"internal_date\": \"12 Nov 2026 06:20\"\n          }\n        ],\n        \"missing_from_provider\": [\n          {\n            \"id\": 1001,\n            \"mobile\": \"07987654321\",\n            \"serial\": \"TXN-1001\",\n            \"provider\": \"GiffGaff\",\n            \"country\": \"United Kingdom\",\n            \"retailer\": {\n              \"id\": 42,\n              \"name\": \"Example Retailer\",\n              \"shop_name\": \"Example Shop\",\n              \"email\": \"retailer@example.com\"\n            },\n            \"created_at\": \"12 Nov 2026 06:15\"\n          }\n        ],\n        \"additional_in_provider\": [\n          {\n            \"provider\": \"GiffGaff\",\n            \"mobile\": \"07000111222\",\n            \"serial\": \"SN67890\",\n            \"country\": \"UK\"\n          }\n        ]\n      },\n      \"admin\": {\n        \"id\": 1,\n        \"name\": \"Admin User\"\n      },\n      \"operator\": {\n        \"id\": 3,\n        \"name\": \"GiffGaff\"\n      },\n      \"created_at\": \"2026-11-12T06:30:00+00:00\",\n      \"updated_at\": \"2026-11-12T06:30:00+00:00\",\n      \"operators\": [\n        {\n          \"id\": 3,\n          \"name\": \"GiffGaff\"\n        },\n        {\n          \"id\": 4,\n          \"name\": \"Three\"\n        }\n      ],\n      \"operator_ids\": [\n        3,\n        4\n      ]\n    }\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "NEW - Network offers and poster feeds",
+      "description": "Network offer feed and retailer-targeted poster feed APIs, plus admin network plan and poster management. Retailer APIs require active retailer role and approved KYC; admin APIs require active admin role. See API_DOCUMENTATION.md for validation and audience details.",
+      "item": [
+        {
+          "name": "Retailer network offers feed",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/network-offers",
+            "description": "Returns active networks with at least one active plan. Each plan includes id, numeric price, currency, and benefits. Requires approved retailer authentication.\n\nResponse format: see the saved success response example."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/retailer/network-offers"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"networks\": [\n      {\n        \"id\": 12,\n        \"name\": \"Vodafone\",\n        \"logo_url\": \"https://example.com/storage/operators/vodafone.png\",\n        \"country_name\": \"United Kingdom\",\n        \"country_iso\": \"GB\",\n        \"plans\": [\n          {\n            \"id\": 3,\n            \"price\": 10,\n            \"currency\": \"GBP\",\n            \"benefits\": [\n              \"40 GB data\",\n              \"Unlimited calls\"\n            ]\n          }\n        ]\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Retailer poster and feed",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/retailer/posters",
+            "description": "Returns only active, started, unexpired posters visible to the authenticated retailer through audience=all, their commission level, or their retailer assignment. Poster types: advertisement, festive_greeting, announcement.\n\nResponse format: see the saved success response example."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/retailer/posters"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"posters\": [\n      {\n        \"id\": 21,\n        \"title\": \"Winter data offer\",\n        \"description\": \"Share this offer with customers.\",\n        \"image_url\": \"/storage/posters/winter-offer.jpg\",\n        \"link_url\": \"https://example.com/offer\",\n        \"poster_type\": \"advertisement\",\n        \"expires_at\": \"2026-12-31T23:59:59+00:00\",\n        \"status\": \"active\"\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Admin list network plans",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/network-plans",
+            "description": "Returns all plans and operator options. Plans include operator name and country/logo information.\n\nResponse format: see the saved success response example."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/network-plans"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"plans\": [\n      {\n        \"id\": 3,\n        \"operator_id\": 12,\n        \"operator\": \"Vodafone\",\n        \"country_iso\": \"GB\",\n        \"logo_url\": \"https://example.com/storage/operators/vodafone.png\",\n        \"price\": 10,\n        \"currency\": \"GBP\",\n        \"benefits\": [\n          \"40 GB data\",\n          \"Unlimited calls\"\n        ],\n        \"is_active\": true\n      }\n    ],\n    \"operators\": [\n      {\n        \"id\": 12,\n        \"label\": \"Vodafone (GB)\"\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Admin create network plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/network-plans",
+            "description": "Requires operator_id, price (>0), three uppercase-letter currency, 1?20 benefits (each max 255 chars), and boolean is_active. Price must be unique for that operator and currency.\n\nResponse format: see the saved success response example.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operator_id\": 12,\n  \"price\": 10,\n  \"currency\": \"GBP\",\n  \"benefits\": [\n    \"40 GB data\",\n    \"Unlimited calls\"\n  ],\n  \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/network-plans",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"operator_id\": 12,\n  \"price\": 10,\n  \"currency\": \"GBP\",\n  \"benefits\": [\n    \"40 GB data\",\n    \"Unlimited calls\"\n  ],\n  \"is_active\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 3,\n    \"operator_id\": 12,\n    \"price\": \"10.00\",\n    \"currency\": \"GBP\",\n    \"benefits\": [\n      \"40 GB data\",\n      \"Unlimited calls\"\n    ],\n    \"is_active\": true,\n    \"created_at\": \"2026-11-13T10:00:00.000000Z\",\n    \"updated_at\": \"2026-11-13T10:00:00.000000Z\",\n    \"operator\": {\n      \"id\": 12,\n      \"name\": \"Vodafone\",\n      \"country\": {\n        \"id\": 1,\n        \"iso_code\": \"GB\"\n      }\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Admin update network plan",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/network-plans/{{network_plan_id}}",
+            "description": "PUT requires the complete plan payload (operator_id, price, currency, benefits, is_active), not a partial patch.\n\nResponse format: see the saved success response example.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operator_id\": 12,\n  \"price\": 12,\n  \"currency\": \"GBP\",\n  \"benefits\": [\n    \"50 GB data\",\n    \"Unlimited calls\"\n  ],\n  \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/network-plans/{{network_plan_id}}",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"operator_id\": 12,\n  \"price\": 12,\n  \"currency\": \"GBP\",\n  \"benefits\": [\n    \"50 GB data\",\n    \"Unlimited calls\"\n  ],\n  \"is_active\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 3,\n    \"operator_id\": 12,\n    \"price\": \"12.00\",\n    \"currency\": \"GBP\",\n    \"benefits\": [\n      \"50 GB data\",\n      \"Unlimited calls\"\n    ],\n    \"is_active\": true,\n    \"created_at\": \"2026-11-13T10:00:00.000000Z\",\n    \"updated_at\": \"2026-11-13T11:00:00.000000Z\",\n    \"operator\": {\n      \"id\": 12,\n      \"name\": \"Vodafone\",\n      \"country\": {\n        \"id\": 1,\n        \"iso_code\": \"GB\"\n      }\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Admin delete network plan",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/network-plans/{{network_plan_id}}",
+            "description": "Permanently deletes this operator plan.\n\nResponse format: see the saved success response example."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/network-plans/{{network_plan_id}}"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Network plan deleted.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Admin list posters",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/posters",
+            "description": "Returns all posters, including scheduled or paused rows, plus active commission-level and retailer options. image_url is a storage URL; file_size is in bytes.\n\nResponse format: see the saved success response example."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/posters"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"posters\": [\n      {\n        \"id\": 21,\n        \"title\": \"Winter data offer\",\n        \"description\": \"Share this offer with customers.\",\n        \"image_url\": \"/storage/posters/winter-offer.jpg\",\n        \"link_url\": \"https://example.com/offer\",\n        \"poster_type\": \"advertisement\",\n        \"audience\": \"all\",\n        \"level_ids\": [],\n        \"level_names\": [],\n        \"retailer_ids\": [],\n        \"starts_at\": null,\n        \"expires_at\": \"2026-12-31T23:59\",\n        \"is_active\": true,\n        \"status\": \"active\",\n        \"file_size\": 245760\n      }\n    ],\n    \"commissionLevels\": [\n      {\n        \"id\": 2,\n        \"label\": \"Gold\"\n      }\n    ],\n    \"retailers\": [\n      {\n        \"id\": 42,\n        \"label\": \"Example Retailer - Example Shop\"\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Admin create poster",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/posters",
+            "description": "Create a poster using multipart form-data. image is required (JPEG, PNG, JPG, or WebP; max 4 MB). poster_type: advertisement, festive_greeting, announcement. audience: all, levels, retailers. is_active: 1 or 0. For levels send level_ids[]; for retailers send retailer_ids[]. Do not manually set Content-Type; Postman supplies the multipart boundary.\n\nResponse format: see the saved success response example. The returned model uses image_path; the admin list uses image_url.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Winter data offer",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Share this offer with customers.",
+                  "type": "text"
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": ""
+                },
+                {
+                  "key": "link_url",
+                  "value": "https://example.com/offer",
+                  "type": "text"
+                },
+                {
+                  "key": "poster_type",
+                  "value": "advertisement",
+                  "type": "text"
+                },
+                {
+                  "key": "audience",
+                  "value": "all",
+                  "type": "text"
+                },
+                {
+                  "key": "is_active",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "expires_at",
+                  "value": "2026-12-31 23:59:59",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/posters",
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "title",
+                      "value": "Winter data offer",
+                      "type": "text"
+                    },
+                    {
+                      "key": "description",
+                      "value": "Share this offer with customers.",
+                      "type": "text"
+                    },
+                    {
+                      "key": "image",
+                      "type": "file",
+                      "src": ""
+                    },
+                    {
+                      "key": "link_url",
+                      "value": "https://example.com/offer",
+                      "type": "text"
+                    },
+                    {
+                      "key": "poster_type",
+                      "value": "advertisement",
+                      "type": "text"
+                    },
+                    {
+                      "key": "audience",
+                      "value": "all",
+                      "type": "text"
+                    },
+                    {
+                      "key": "is_active",
+                      "value": "1",
+                      "type": "text"
+                    },
+                    {
+                      "key": "expires_at",
+                      "value": "2026-12-31 23:59:59",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 21,\n    \"title\": \"Winter data offer\",\n    \"description\": \"Share this offer with customers.\",\n    \"image_path\": \"posters/winter-offer.jpg\",\n    \"link_url\": \"https://example.com/offer\",\n    \"poster_type\": \"advertisement\",\n    \"audience\": \"all\",\n    \"starts_at\": null,\n    \"expires_at\": \"2026-12-31T23:59:59.000000Z\",\n    \"is_active\": true,\n    \"created_by\": 1,\n    \"created_at\": \"2026-11-13T10:00:00.000000Z\",\n    \"updated_at\": \"2026-11-13T10:00:00.000000Z\",\n    \"levels\": [],\n    \"retailers\": []\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Admin update poster",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/posters/{{poster_id}}",
+            "description": "Sends POST with _method=PUT for PHP multipart file parsing; Laravel routes it as PUT. Requires title, poster_type, and audience plus the other validated fields; is_active is 1 or 0. image is optional; omit it to keep the current file, or supply a replacement image. For levels send level_ids[]; for retailers send retailer_ids[]. Do not manually set multipart Content-Type.\n\nResponse format: see the saved success response example.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "_method",
+                  "value": "PUT",
+                  "type": "text"
+                },
+                {
+                  "key": "title",
+                  "value": "Winter data offer - updated",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Updated copy.",
+                  "type": "text"
+                },
+                {
+                  "key": "link_url",
+                  "value": "https://example.com/offer",
+                  "type": "text"
+                },
+                {
+                  "key": "poster_type",
+                  "value": "advertisement",
+                  "type": "text"
+                },
+                {
+                  "key": "audience",
+                  "value": "all",
+                  "type": "text"
+                },
+                {
+                  "key": "is_active",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "expires_at",
+                  "value": "2026-12-31 23:59:59",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/posters/{{poster_id}}",
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "_method",
+                      "value": "PUT",
+                      "type": "text"
+                    },
+                    {
+                      "key": "title",
+                      "value": "Winter data offer - updated",
+                      "type": "text"
+                    },
+                    {
+                      "key": "description",
+                      "value": "Updated copy.",
+                      "type": "text"
+                    },
+                    {
+                      "key": "link_url",
+                      "value": "https://example.com/offer",
+                      "type": "text"
+                    },
+                    {
+                      "key": "poster_type",
+                      "value": "advertisement",
+                      "type": "text"
+                    },
+                    {
+                      "key": "audience",
+                      "value": "all",
+                      "type": "text"
+                    },
+                    {
+                      "key": "is_active",
+                      "value": "1",
+                      "type": "text"
+                    },
+                    {
+                      "key": "expires_at",
+                      "value": "2026-12-31 23:59:59",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 21,\n    \"title\": \"Winter data offer - updated\",\n    \"description\": \"Updated copy.\",\n    \"image_path\": \"posters/winter-offer.jpg\",\n    \"link_url\": \"https://example.com/offer\",\n    \"poster_type\": \"advertisement\",\n    \"audience\": \"all\",\n    \"starts_at\": null,\n    \"expires_at\": \"2026-12-31T23:59:59.000000Z\",\n    \"is_active\": true,\n    \"created_by\": 1,\n    \"created_at\": \"2026-11-13T10:00:00.000000Z\",\n    \"updated_at\": \"2026-11-13T11:00:00.000000Z\",\n    \"levels\": [],\n    \"retailers\": []\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Admin delete poster",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/api/admin/posters/{{poster_id}}",
+            "description": "Deletes the poster record and its stored image file.\n\nResponse format: see the saved success response example."
+          },
+          "response": [
+            {
+              "name": "Success response format",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/posters/{{poster_id}}"
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Poster deleted.\"\n}"
             }
           ]
         }

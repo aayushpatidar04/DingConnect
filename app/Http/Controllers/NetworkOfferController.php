@@ -7,11 +7,10 @@ use App\Models\OperatorPlan;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Inertia\Response;
 
 class NetworkOfferController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
         $networks = Operator::query()
             ->where('is_active', true)
@@ -40,6 +39,15 @@ class NetworkOfferController extends Controller
                 ])->values(),
             ])
             ->values();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'networks' => $networks,
+                ],
+            ]);
+        }
 
         return Inertia::render('NetworkOffers/Index', [
             'networks' => $networks,
