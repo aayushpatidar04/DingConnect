@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\SimOrderProduct;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -11,7 +12,17 @@ use Illuminate\Validation\Rule;
 
 class SimOrderProductController extends Controller
 {
-    public function store(Request $request): RedirectResponse
+    public function index(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'sim_products' => SimOrderProduct::orderBy('id')->get(['id', 'provider_name', 'category', 'price']),
+            ],
+        ]);
+    }
+
+    public function store(Request $request): JsonResponse|RedirectResponse
     {
         $data = $request->validate([
             'provider_name' => ['required', 'string', 'max:80'],
@@ -24,16 +35,24 @@ class SimOrderProductController extends Controller
             'price' => ['required', 'numeric', 'min:0', 'max:100000', 'decimal:0,2'],
         ]);
 
-        SimOrderProduct::create([
+        $product = SimOrderProduct::create([
             'provider_name' => trim($data['provider_name']),
             'category' => trim($data['category']),
             'price' => $data['price'],
         ]);
 
+        if ($request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'New SIM product added successfully.',
+                'data' => ['sim_product' => $product],
+            ], 201);
+        }
+
         return back()->with('success', 'New SIM product added successfully.');
     }
 
-    public function update(Request $request): RedirectResponse
+    public function update(Request $request): JsonResponse|RedirectResponse
     {
         $data = $request->validate([
             'products' => ['required', 'array', 'min:1'],
@@ -51,12 +70,34 @@ class SimOrderProductController extends Controller
             }
         });
 
+        if ($request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'SIM product prices updated successfully.',
+                'data' => [
+                    'sim_products' => SimOrderProduct::whereKey(collect($data['products'])->pluck('id'))
+                        ->orderBy('id')
+                        ->get(['id', 'provider_name', 'category', 'price']),
+                    'updated_count' => count($data['products']),
+                ],
+            ]);
+        }
+
         return back()->with('success', 'SIM product prices updated successfully.');
     }
 
-    public function destroy(SimOrderProduct $simOrderProduct): RedirectResponse
+    public function destroy(Request $request, SimOrderProduct $simOrderProduct): JsonResponse|RedirectResponse
     {
+        $productId = $simOrderProduct->id;
         $simOrderProduct->delete();
+
+        if ($request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'SIM product deleted successfully.',
+                'data' => ['sim_product_id' => $productId],
+            ]);
+        }
 
         return back()->with('success', 'SIM product deleted successfully.');
     }

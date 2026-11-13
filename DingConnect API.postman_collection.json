@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "e331be21-4ef8-49f9-bdf6-23574dacda41",
     "name": "DingConnect API",
-    "description": "DingConnect mobile application API. Set base_url to the application origin and token to a Sanctum bearer token. Requests marked NEW cover features added since API baseline e16d8f6efa17fca87d88a334455c2814b717ae89. See API_DOCUMENTATION.md for request details, validation, and response behavior. Every request includes a saved Postman response example showing its success response format; examples use illustrative values, not live data. Latest web parity: bulk retailer SIM limits, a default SIM order limit of 20, and multi-provider SIM comparisons with normalized phone matching. See NEW - SIM Orders and NEW - SIM File Comparisons.",
+    "description": "DingConnect mobile application API. Set base_url to the application origin and token to a Sanctum bearer token. Requests marked NEW cover features added since API baseline e16d8f6efa17fca87d88a334455c2814b717ae89. See API_DOCUMENTATION.md for request details, validation, and response behavior. Every request includes a saved Postman response example showing its success response format; examples use illustrative values, not live data. Latest web parity: itemized SIM orders, dynamic product management, bulk retailer SIM limits, a default SIM order limit of 500, and multi-provider SIM comparisons with normalized phone matching. See NEW - SIM Orders and NEW - SIM File Comparisons.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -79,6 +79,11 @@
     {
       "key": "sim_comparison_id",
       "value": "12",
+      "type": "string"
+    },
+    {
+      "key": "sim_order_product_id",
+      "value": "1",
       "type": "string"
     }
   ],
@@ -4287,7 +4292,7 @@
                   }
                 ],
                 "url": "{{base_url}}/api/retailer/sim-orders?status=pending&from=2026-01-01&to=2026-12-31&page=1",
-                "description": "Optional filters: status, from, to, page. Returns only the authenticated retailer?s orders.\n\nResponse format: see the saved success response example under this request."
+                "description": "Optional filters: status, from, to, page. Returns only the authenticated retailer?s orders, itemized products and snapshotted prices, current product catalog, operators, categories, and effective limit (500 when no retailer override is set).\n\nResponse format: see the saved success response example under this request."
               },
               "response": [
                 {
@@ -4312,7 +4317,7 @@
                     }
                   ],
                   "cookie": [],
-                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"orders\": {\n      \"current_page\": 1,\n      \"data\": [\n        {\n          \"id\": 101,\n          \"quantity\": 25,\n          \"status\": \"pending\",\n          \"tracking_notes\": null,\n          \"dispatched_at\": null,\n          \"delivered_at\": null,\n          \"created_at\": \"2026-11-12T06:30:00+00:00\"\n        }\n      ],\n      \"first_page_url\": \"{{base_url}}/api/retailer/sim-orders?page=1\",\n      \"from\": 1,\n      \"last_page\": 1,\n      \"last_page_url\": \"{{base_url}}/api/retailer/sim-orders?page=1\",\n      \"links\": [],\n      \"next_page_url\": null,\n      \"path\": \"{{base_url}}/api/retailer/sim-orders\",\n      \"per_page\": 15,\n      \"prev_page_url\": null,\n      \"to\": 1,\n      \"total\": 1\n    },\n    \"stats\": {\n      \"total\": 1,\n      \"pending\": 1,\n      \"dispatched\": 0,\n      \"delivered\": 0,\n      \"sim_order_limit\": 20\n    },\n    \"sim_order_limit\": 20,\n    \"filters\": {\n      \"status\": \"pending\",\n      \"from\": \"2026-01-01\",\n      \"to\": \"2026-12-31\"\n    }\n  }\n}"
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"orders\": {\n      \"current_page\": 1,\n      \"data\": [\n        {\n          \"id\": 101,\n          \"quantity\": 25,\n          \"status\": \"pending\",\n          \"tracking_notes\": null,\n          \"dispatched_at\": null,\n          \"delivered_at\": null,\n          \"created_at\": \"2026-11-12T06:30:00+00:00\",\n          \"items\": [\n            {\n              \"sim_order_product_id\": 1,\n              \"provider_name\": \"EE\",\n              \"category\": \"10GBP\",\n              \"quantity\": 25,\n              \"unit_price\": \"10.00\"\n            }\n          ]\n        }\n      ],\n      \"first_page_url\": \"{{base_url}}/api/retailer/sim-orders?page=1\",\n      \"from\": 1,\n      \"last_page\": 1,\n      \"last_page_url\": \"{{base_url}}/api/retailer/sim-orders?page=1\",\n      \"links\": [],\n      \"next_page_url\": null,\n      \"path\": \"{{base_url}}/api/retailer/sim-orders\",\n      \"per_page\": 15,\n      \"prev_page_url\": null,\n      \"to\": 1,\n      \"total\": 1\n    },\n    \"stats\": {\n      \"total\": 1,\n      \"pending\": 1,\n      \"dispatched\": 0,\n      \"delivered\": 0,\n      \"sim_order_limit\": 500\n    },\n    \"sim_order_limit\": 500,\n    \"filters\": {\n      \"status\": \"pending\",\n      \"from\": \"2026-01-01\",\n      \"to\": \"2026-12-31\"\n    },\n    \"operators\": [\n      {\n        \"id\": 1,\n        \"name\": \"EE\"\n      }\n    ],\n    \"sim_categories\": [\n      \"5GBP\",\n      \"10GBP\",\n      \"15GBP\",\n      \"Higher\"\n    ],\n    \"sim_products\": [\n      {\n        \"id\": 1,\n        \"provider_name\": \"EE\",\n        \"category\": \"10GBP\",\n        \"price\": \"10.00\"\n      }\n    ]\n  }\n}"
                 }
               ]
             },
@@ -4333,14 +4338,14 @@
                 "url": "{{base_url}}/api/retailer/sim-orders",
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"quantity\": 25\n}",
+                  "raw": "{\n  \"items\": [\n    {\n      \"sim_order_product_id\": 1,\n      \"quantity\": 10\n    },\n    {\n      \"sim_order_product_id\": 6,\n      \"quantity\": 15\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
                     }
                   }
                 },
-                "description": "Quantity must be an integer from 1 through your effective sim_order_limit. A null retailer limit defaults to 20. Admin users are notified after order creation.\n\nResponse format: see the saved success response example under this request."
+                "description": "Send unique sim_order_product_id values with non-negative integer quantities. The total must be at least 1 and no greater than the effective sim_order_limit (500 by default). Admin users are notified after order creation. Each order item snapshots the selected product category and current unit price.\n\nResponse format: see the saved success response example under this request."
               },
               "response": [
                 {
@@ -4369,7 +4374,7 @@
                     }
                   ],
                   "cookie": [],
-                  "body": "{\n  \"success\": true,\n  \"message\": \"SIM card order placed successfully! You will be notified when it is dispatched.\",\n  \"data\": {\n    \"order\": {\n      \"id\": 101,\n      \"quantity\": 25,\n      \"status\": \"pending\",\n      \"tracking_notes\": null,\n      \"dispatched_at\": null,\n      \"delivered_at\": null,\n      \"created_at\": \"2026-11-12T06:30:00+00:00\"\n    }\n  }\n}"
+                  "body": "{\n  \"success\": true,\n  \"message\": \"SIM card order placed successfully! You will be notified when it is dispatched.\",\n  \"data\": {\n    \"order\": {\n      \"id\": 101,\n      \"quantity\": 25,\n      \"status\": \"pending\",\n      \"tracking_notes\": null,\n      \"dispatched_at\": null,\n      \"delivered_at\": null,\n      \"created_at\": \"2026-11-12T06:30:00+00:00\",\n      \"items\": [\n        {\n          \"sim_order_product_id\": 1,\n          \"provider_name\": \"EE\",\n          \"category\": \"10GBP\",\n          \"quantity\": 10,\n          \"unit_price\": \"10.00\"\n        },\n        {\n          \"sim_order_product_id\": 6,\n          \"provider_name\": \"Vodafone\",\n          \"category\": \"10GBP\",\n          \"quantity\": 15,\n          \"unit_price\": \"10.00\"\n        }\n      ]\n    }\n  }\n}"
                 }
               ]
             }
@@ -4390,7 +4395,7 @@
                   }
                 ],
                 "url": "{{base_url}}/api/admin/sim-orders?search=Example&status=pending&from=2026-01-01&to=2026-12-31&page=1",
-                "description": "Optional filters: search retailer name/shop/email, status, from, to, page. Includes global counts, monthly quantity, and per-order retailer limit.\n\nResponse format: see the saved success response example under this request."
+                "description": "Optional filters: search retailer name/shop/email, status, from, to, page. Includes global counts, last-30-day quantities, per-order retailer limits, itemized product/price snapshots, and current SIM products. Null retailer overrides resolve to a default of 500.\n\nResponse format: see the saved success response example under this request."
               },
               "response": [
                 {
@@ -4415,7 +4420,7 @@
                     }
                   ],
                   "cookie": [],
-                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"orders\": {\n      \"current_page\": 1,\n      \"data\": [\n        {\n          \"id\": 101,\n          \"quantity\": 25,\n          \"status\": \"pending\",\n          \"tracking_notes\": null,\n          \"dispatched_at\": null,\n          \"delivered_at\": null,\n          \"created_at\": \"2026-11-12T06:30:00+00:00\",\n          \"retailer\": {\n            \"id\": 42,\n            \"name\": \"Example Retailer\",\n            \"shop_name\": \"Example Shop\",\n            \"email\": \"retailer@example.com\",\n            \"phone\": \"447700900123\",\n            \"sim_order_limit\": 20\n          }\n        }\n      ],\n      \"first_page_url\": \"{{base_url}}/api/admin/sim-orders?page=1\",\n      \"from\": 1,\n      \"last_page\": 1,\n      \"last_page_url\": \"{{base_url}}/api/admin/sim-orders?page=1\",\n      \"links\": [],\n      \"next_page_url\": null,\n      \"path\": \"{{base_url}}/api/admin/sim-orders\",\n      \"per_page\": 15,\n      \"prev_page_url\": null,\n      \"to\": 1,\n      \"total\": 1\n    },\n    \"stats\": {\n      \"total\": 1,\n      \"pending\": 1,\n      \"processing\": 0,\n      \"dispatched\": 0,\n      \"delivered\": 0,\n      \"this_month_quantity\": 25\n    },\n    \"monthly_data\": [\n      {\n        \"date\": \"2026-11-12\",\n        \"total_quantity\": 25,\n        \"total_orders\": 1\n      }\n    ],\n    \"filters\": {\n      \"search\": \"Example\",\n      \"status\": \"pending\",\n      \"from\": \"2026-01-01\",\n      \"to\": \"2026-12-31\"\n    }\n  }\n}"
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"orders\": {\n      \"current_page\": 1,\n      \"data\": [\n        {\n          \"id\": 101,\n          \"quantity\": 25,\n          \"status\": \"pending\",\n          \"tracking_notes\": null,\n          \"dispatched_at\": null,\n          \"delivered_at\": null,\n          \"created_at\": \"2026-11-12T06:30:00+00:00\",\n          \"retailer\": {\n            \"id\": 42,\n            \"name\": \"Example Retailer\",\n            \"shop_name\": \"Example Shop\",\n            \"email\": \"retailer@example.com\",\n            \"phone\": \"447700900123\",\n            \"sim_order_limit\": 500\n          },\n          \"items\": [\n            {\n              \"sim_order_product_id\": 1,\n              \"provider_name\": \"EE\",\n              \"category\": \"10GBP\",\n              \"quantity\": 25,\n              \"unit_price\": \"10.00\"\n            }\n          ]\n        }\n      ],\n      \"first_page_url\": \"{{base_url}}/api/admin/sim-orders?page=1\",\n      \"from\": 1,\n      \"last_page\": 1,\n      \"last_page_url\": \"{{base_url}}/api/admin/sim-orders?page=1\",\n      \"links\": [],\n      \"next_page_url\": null,\n      \"path\": \"{{base_url}}/api/admin/sim-orders\",\n      \"per_page\": 15,\n      \"prev_page_url\": null,\n      \"to\": 1,\n      \"total\": 1\n    },\n    \"stats\": {\n      \"total\": 1,\n      \"pending\": 1,\n      \"processing\": 0,\n      \"dispatched\": 0,\n      \"delivered\": 0,\n      \"this_month_quantity\": 25\n    },\n    \"monthly_data\": [\n      {\n        \"date\": \"2026-11-12\",\n        \"total_quantity\": 25,\n        \"total_orders\": 1\n      }\n    ],\n    \"filters\": {\n      \"search\": \"Example\",\n      \"status\": \"pending\",\n      \"from\": \"2026-01-01\",\n      \"to\": \"2026-12-31\"\n    },\n    \"sim_products\": [\n      {\n        \"id\": 1,\n        \"provider_name\": \"EE\",\n        \"category\": \"10GBP\",\n        \"price\": \"10.00\"\n      }\n    ]\n  }\n}"
                 }
               ]
             },
@@ -4472,7 +4477,219 @@
                     }
                   ],
                   "cookie": [],
-                  "body": "{\n  \"success\": true,\n  \"message\": \"Order status updated to Dispatched.\",\n  \"data\": {\n    \"order\": {\n      \"id\": 101,\n      \"quantity\": 25,\n      \"status\": \"dispatched\",\n      \"tracking_notes\": \"Sent by courier.\",\n      \"dispatched_at\": \"2026-11-12T06:35:00+00:00\",\n      \"delivered_at\": null,\n      \"created_at\": \"2026-11-12T06:30:00+00:00\",\n      \"retailer\": {\n        \"id\": 42,\n        \"name\": \"Example Retailer\",\n        \"shop_name\": \"Example Shop\",\n        \"email\": \"retailer@example.com\",\n        \"phone\": \"447700900123\",\n        \"sim_order_limit\": 20\n      }\n    }\n  }\n}"
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Order status updated to Dispatched.\",\n  \"data\": {\n    \"order\": {\n      \"id\": 101,\n      \"quantity\": 25,\n      \"status\": \"dispatched\",\n      \"tracking_notes\": \"Sent by courier.\",\n      \"dispatched_at\": \"2026-11-12T06:35:00+00:00\",\n      \"delivered_at\": null,\n      \"created_at\": \"2026-11-12T06:30:00+00:00\",\n      \"retailer\": {\n        \"id\": 42,\n        \"name\": \"Example Retailer\",\n        \"shop_name\": \"Example Shop\",\n        \"email\": \"retailer@example.com\",\n        \"phone\": \"447700900123\",\n        \"sim_order_limit\": 500\n      },\n      \"items\": [\n        {\n          \"sim_order_product_id\": 1,\n          \"provider_name\": \"EE\",\n          \"category\": \"10GBP\",\n          \"quantity\": 25,\n          \"unit_price\": \"10.00\"\n        }\n      ]\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "List SIM products",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/sim-orders/products",
+                "description": "Returns all current SIM products, including provider, category, and price.\n\nResponse format: see the saved success response example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{base_url}}/api/admin/sim-orders/products"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"sim_products\": [\n      {\n        \"id\": 1,\n        \"provider_name\": \"EE\",\n        \"category\": \"10GBP\",\n        \"price\": \"10.00\"\n      }\n    ]\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "Add SIM product",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/sim-orders/products",
+                "description": "Creates a product; category must be unique for its provider. Price is numeric, 0?100000, with at most 2 decimal places.\n\nResponse format: see the saved success response example under this request.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"provider_name\": \"CustomNetwork\",\n  \"category\": \"50GBP\",\n  \"price\": \"45.00\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{base_url}}/api/admin/sim-orders/products",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"provider_name\": \"CustomNetwork\",\n  \"category\": \"50GBP\",\n  \"price\": \"45.00\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"New SIM product added successfully.\",\n  \"data\": {\n    \"sim_product\": {\n      \"id\": 26,\n      \"provider_name\": \"CustomNetwork\",\n      \"category\": \"50GBP\",\n      \"price\": \"45.00\",\n      \"created_at\": \"2026-11-12T06:30:00+00:00\",\n      \"updated_at\": \"2026-11-12T06:30:00+00:00\"\n    }\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "Bulk update SIM product prices",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/sim-orders/product-prices",
+                "description": "Updates prices for unique existing product IDs. Each price must be numeric, 0?100000, with at most 2 decimal places.\n\nResponse format: see the saved success response example under this request.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"products\": [\n    {\n      \"id\": 1,\n      \"price\": \"11.50\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{base_url}}/api/admin/sim-orders/product-prices",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"products\": [\n    {\n      \"id\": 1,\n      \"price\": \"11.50\"\n    }\n  ]\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"SIM product prices updated successfully.\",\n  \"data\": {\n    \"sim_products\": [\n      {\n        \"id\": 1,\n        \"provider_name\": \"EE\",\n        \"category\": \"10GBP\",\n        \"price\": \"11.50\"\n      }\n    ],\n    \"updated_count\": 1\n  }\n}"
+                }
+              ]
+            },
+            {
+              "name": "Delete SIM product",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": "{{base_url}}/api/admin/sim-orders/products/{{sim_order_product_id}}",
+                "description": "Deletes the current catalog entry. Existing order item category and unit-price snapshots remain; the product ID on historical items becomes null.\n\nResponse format: see the saved success response example under this request."
+              },
+              "response": [
+                {
+                  "name": "Success response format",
+                  "originalRequest": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": "{{base_url}}/api/admin/sim-orders/products/{{sim_order_product_id}}"
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"SIM product deleted successfully.\",\n  \"data\": {\n    \"sim_product_id\": 1\n  }\n}"
                 }
               ]
             },

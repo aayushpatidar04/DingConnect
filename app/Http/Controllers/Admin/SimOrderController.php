@@ -28,13 +28,11 @@ class SimOrderController extends Controller
             ])
             : $request->only(['search', 'status', 'from', 'to']);
 
-        $orderQuery = SimOrder::with('user:id,name,shop_name,email,phone,sim_order_limit');
-
-        if (! $request->is('api/*')) {
-            $orderQuery->with(['items.operator:id,name', 'items.product']);
-        }
-
-        $orders = $orderQuery
+        $orders = SimOrder::with([
+            'user:id,name,shop_name,email,phone,sim_order_limit',
+            'items.operator:id,name',
+            'items.product',
+        ])
             ->filter($filters)
             ->orderByDesc('created_at')
             ->paginate(15)
@@ -61,7 +59,7 @@ class SimOrderController extends Controller
                         'shop_name' => $order->user->shop_name,
                         'email' => $order->user->email,
                         'phone' => $order->user->phone,
-                        'sim_order_limit' => $order->user->sim_order_limit ?? 20,
+                        'sim_order_limit' => $order->user->sim_order_limit ?? 500,
                     ] : null,
                 ]);
 
@@ -99,6 +97,7 @@ class SimOrderController extends Controller
                     'orders' => $orders,
                     'stats' => $stats,
                     'monthly_data' => $monthlyData,
+                    'sim_products' => SimOrderProduct::orderBy('id')->get(['id', 'provider_name', 'category', 'price']),
                     'filters' => $filters,
                 ],
             ]);
@@ -142,7 +141,13 @@ class SimOrderController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Order status updated to '.ucfirst($data['status']).'.',
-                'data' => ['order' => $this->apiOrderData($simOrder->load('user:id,name,shop_name,email,phone,sim_order_limit'))],
+                'data' => [
+                    'order' => $this->apiOrderData($simOrder->load([
+                        'user:id,name,shop_name,email,phone,sim_order_limit',
+                        'items.operator:id,name',
+                        'items.product',
+                    ])),
+                ],
             ]);
         }
 
@@ -188,13 +193,20 @@ class SimOrderController extends Controller
             'dispatched_at' => $order->dispatched_at?->toIso8601String(),
             'delivered_at' => $order->delivered_at?->toIso8601String(),
             'created_at' => $order->created_at?->toIso8601String(),
+            'items' => $order->items->map(fn ($item) => [
+                'sim_order_product_id' => $item->sim_order_product_id,
+                'provider_name' => $item->product?->provider_name ?? $item->operator?->name,
+                'category' => $item->category,
+                'quantity' => $item->quantity,
+                'unit_price' => $item->unit_price,
+            ]),
             'retailer' => $order->user ? [
                 'id' => $order->user->id,
                 'name' => $order->user->name,
                 'shop_name' => $order->user->shop_name,
                 'email' => $order->user->email,
                 'phone' => $order->user->phone,
-                'sim_order_limit' => $order->user->sim_order_limit ?? 20,
+                'sim_order_limit' => $order->user->sim_order_limit ?? 500,
             ] : null,
         ];
     }

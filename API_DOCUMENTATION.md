@@ -2,7 +2,7 @@
 
 This reference describes the application API under `/api`. It is intended for mobile clients and uses Laravel Sanctum personal access tokens.
 
-> **NEW changes — APIs added since baseline `e16d8f6efa17fca87d88a334455c2814b717ae89`:** retailer commissions (`GET /api/retailer/commissions`), offer eligibility (`GET /api/retailer/offers/eligible`), and offers on the retailer dashboard/recharge; admin analytics (`GET /api/admin/analytics`), commission levels/rates, retailer level assignment/history, commission reports/export, offer/redemption management, SIM order management (including bulk retailer limits and a default limit of 20), and **SIM provider-file comparisons** (multiple providers and normalized matching). These newest changes are marked in their sections below and in the Postman collection. Each request includes a saved response-format example.
+> **NEW changes — APIs added since baseline `e16d8f6efa17fca87d88a334455c2814b717ae89`:** retailer commissions (`GET /api/retailer/commissions`), offer eligibility (`GET /api/retailer/offers/eligible`), and offers on the retailer dashboard/recharge; admin analytics (`GET /api/admin/analytics`), commission levels/rates, retailer level assignment/history, commission reports/export, offer/redemption management, itemized SIM orders with dynamic product management and bulk retailer limits (default limit 500), and **SIM provider-file comparisons** (multiple providers and normalized matching). These newest changes are marked in their sections below and in the Postman collection. Each request includes a saved response-format example.
 >
 > Historical retailer-connection backfill is intentionally an internal Artisan command, not a public API endpoint.
 
@@ -366,23 +366,30 @@ These routes require an active admin account.
 
 Offer JSON fields: required `title`, `type` (`percent` or `fixed`), `value`, `expires_at`, and `audience` (`all` or `selected`); optional `description`, `max_cashback`, `min_amount`, `max_amount`, `starts_at`, `per_retailer_limit`, `total_limit`, `is_active`, `operator_ids`, and `retailer_ids`. Percentage values cannot exceed 100. A selected audience requires at least one retailer ID. The API reuses the same eligibility, reservation, and settlement rules as web recharge.
 
-## NEW — SIM orders and retailer order limit
+## NEW — Itemized SIM orders, dynamic products, and retailer order limits
 
-These are the mobile APIs for the SIM ordering functionality added to the web application. They use Sanctum bearer tokens and JSON. Admin endpoints require an active admin account; retailer endpoints require an active retailer account and approved KYC. SIM quantities and limits are counts of SIM cards, not currency values.
+**Latest web-parity changes:** Retailers can order multiple provider/category products in one order. Admins can add products, bulk-update their prices, and remove products. Each order item stores the product category and unit-price snapshot so later catalog changes do not alter order history.
+
+These are the mobile APIs for the itemized SIM ordering functionality added to the web application. They use Sanctum bearer tokens and JSON. Admin endpoints require an active admin account; retailer endpoints require an active retailer account and approved KYC. SIM quantities and limits are counts of SIM cards, not currency values. The product catalog is managed by admins and includes provider, category, and current unit price.
 
 ### Retailer SIM orders
 
 | Method and path | Parameters | Result |
 |---|---|---|
-| `GET /api/retailer/sim-orders` | Optional query `status` (`pending`, `processing`, `dispatched`, `delivered`, `rejected`), `from`, `to`, `page` | Own orders only, paginated 15 per page, with status counts, configured order limit, and applied filters |
-| `POST /api/retailer/sim-orders` | JSON body with required integer `quantity` (minimum 1; cannot exceed the retailer's limit) | Creates a `pending` order and notifies admins; returns `201` |
+| `GET /api/retailer/sim-orders` | Optional query `status` (`pending`, `processing`, `dispatched`, `delivered`, `rejected`), `from`, `to`, `page` | Own orders only, paginated 15 per page, with status counts, effective order limit, filters, operators, SIM categories, and current `sim_products` |
+| `POST /api/retailer/sim-orders` | JSON `items` array; each row requires `sim_order_product_id` and integer `quantity` (minimum 0). At least one total SIM is required; product IDs must be unique and total quantity cannot exceed the retailer limit. | Creates one pending order with per-product item rows and current unit-price snapshots; notifies admins; returns `201` |
 
-When `users.sim_order_limit` is null, the default limit is **20 SIM cards per order**. The GET response reports the effective limit as `data.sim_order_limit` and `data.stats.sim_order_limit`; the same effective limit is enforced by POST. Admins can update an individual or bulk retailer limit as described below.
+When `users.sim_order_limit` is null, the default limit is **500 SIM cards per order**. The GET response reports the effective limit as `data.sim_order_limit` and `data.stats.sim_order_limit`; the same effective limit is enforced against the sum of all item quantities by POST. Zero-quantity items are ignored when creating the order. Admins can update an individual or bulk retailer limit as described below.
 
 Example create request:
 
 ```json
-{ "quantity": 25 }
+{
+  "items": [
+    { "sim_order_product_id": 1, "quantity": 10 },
+    { "sim_order_product_id": 6, "quantity": 15 }
+  ]
+}
 ```
 
 Example create response:
@@ -397,6 +404,22 @@ Example create response:
       "quantity": 25,
       "status": "pending",
       "tracking_notes": null,
+      "items": [
+        {
+          "sim_order_product_id": 1,
+          "provider_name": "EE",
+          "category": "10GBP",
+          "quantity": 10,
+          "unit_price": "10.00"
+        },
+        {
+          "sim_order_product_id": 6,
+          "provider_name": "Vodafone",
+          "category": "10GBP",
+          "quantity": 15,
+          "unit_price": "10.00"
+        }
+      ],
       "dispatched_at": null,
       "delivered_at": null,
       "created_at": "2026-11-12T06:30:00+00:00"
@@ -409,11 +432,15 @@ Example create response:
 
 | Method and path | Parameters | Result |
 |---|---|---|
-| `GET /api/admin/sim-orders` | Optional query `search` (name, shop, or email; max 100 characters), `status`, `from`, `to`, `page` | Paginated orders (15 per page), global status/quantity stats, last-30-day daily summary, filters, and retailer details including each retailer's effective SIM order limit |
-| `PUT /api/admin/sim-orders/{simOrder}` | JSON `status` (one of the five statuses above); optional `tracking_notes` (max 1000 characters) | Updates status/notes, sets dispatch/delivery timestamps the first time the corresponding status is entered, notifies the retailer, and returns the order |
+| `GET /api/admin/sim-orders` | Optional query `search` (name, shop, or email; max 100 characters), `status`, `from`, `to`, `page` | Paginated orders (15 per page), itemized products and snapshotted prices, global status/quantity stats, last-30-day daily summary, filters, current `sim_products`, and retailer details including each retailer's effective SIM order limit |
+| `PUT /api/admin/sim-orders/{simOrder}` | JSON `status` (one of the five statuses above); optional `tracking_notes` (max 1000 characters) | Updates status/notes, sets dispatch/delivery timestamps the first time the corresponding status is entered, notifies the retailer, and returns order with items |
 | `PUT /api/admin/sim-orders/retailers/{retailer}/limit` | JSON `sim_order_limit` (integer from 1 through 100000) | Updates the retailer's per-order limit and returns the retailer ID and new limit |
+| `GET /api/admin/sim-orders/products` | None | Lists current SIM products (`id`, `provider_name`, `category`, `price`) |
+| `POST /api/admin/sim-orders/products` | JSON `provider_name` (string, max 80), `category` (string, max 20; unique per provider), `price` (0–100000, max 2 decimal places) | Adds a product; returns `201` and `data.sim_product` |
+| `PUT /api/admin/sim-orders/product-prices` | JSON `products` array of unique `{id, price}` entries; each ID must exist and each price must be 0–100000 with at most 2 decimal places | Bulk updates prices; returns the updated products and `updated_count` |
+| `DELETE /api/admin/sim-orders/products/{simOrderProduct}` | Product ID | Deletes the current product; existing order item price/category snapshots remain, and the deleted product reference becomes null |
 
-The existing `GET /api/admin/retailers` and `GET /api/admin/retailers/{retailer}` responses also include `sim_order_limit`, so the admin app can display the configured override on the retailer profile. A `null` value means the default of 20 applies; use either limit endpoint above to set an explicit value.
+The existing `GET /api/admin/retailers` and `GET /api/admin/retailers/{retailer}` responses also include `sim_order_limit`, so the admin app can display the configured override on the retailer profile. A `null` value means the default of 500 applies; use either limit endpoint above to set an explicit value.
 
 Status request example:
 
@@ -427,7 +454,7 @@ Limit request example:
 { "sim_order_limit": 300 }
 ```
 
-The admin API's `data.stats` contains `total`, `pending`, `processing`, `dispatched`, `delivered`, and `this_month_quantity`. `data.monthly_data` contains daily rows with `date`, `total_quantity`, and `total_orders`. API timestamps are ISO 8601 strings or `null`. Invalid limits/statuses or quantities beyond the effective retailer limit return `422`; a retailer calling an admin route receives `403`.
+The admin API's `data.stats` contains `total`, `pending`, `processing`, `dispatched`, `delivered`, and `this_month_quantity`. `data.monthly_data` contains daily rows with `date`, `total_quantity`, and `total_orders`. API timestamps are ISO 8601 strings or `null`. Invalid limits/statuses/product IDs/prices or quantities beyond the effective retailer limit return `422`; a retailer calling an admin route receives `403`.
 
 ## NEW — SIM provider-file comparisons
 

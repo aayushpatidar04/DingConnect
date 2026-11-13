@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\RetailerController as WebRetailerController;
 use App\Http\Controllers\Admin\RetailerLevelController as WebRetailerLevelController;
 use App\Http\Controllers\Admin\SimComparisonController;
 use App\Http\Controllers\Admin\SimOrderController as AdminSimOrderController;
+use App\Http\Controllers\Admin\SimOrderProductController;
 use App\Http\Controllers\Admin\TransactionController as WebTransactionController;
 use App\Http\Controllers\Api\Admin\OperatorController as AdminOperatorController;
 use App\Http\Controllers\Api\Admin\RetailerController as AdminRetailerController;
@@ -60,6 +61,11 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         Route::get('/dashboard', [DashboardController::class, 'admin']);
         Route::get('/analytics', [WebRetailerAnalyticsController::class, 'index']);
         Route::get('/sim-orders', [AdminSimOrderController::class, 'index']);
+        Route::get('/sim-orders/products', [SimOrderProductController::class, 'index']);
+        Route::post('/sim-orders/products', [SimOrderProductController::class, 'store']);
+        Route::put('/sim-orders/product-prices', [SimOrderProductController::class, 'update']);
+        Route::delete('/sim-orders/products/{simOrderProduct}', [SimOrderProductController::class, 'destroy'])
+            ->whereNumber('simOrderProduct');
         Route::put('/sim-orders/retailers/{retailer}/limit', [AdminSimOrderController::class, 'updateRetailerLimit'])
             ->whereNumber('retailer');
         Route::put('/sim-orders/{simOrder}', [AdminSimOrderController::class, 'updateStatus'])
